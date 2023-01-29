@@ -1,0 +1,24 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.3.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+        exclude: .*\.ipynb$
+      - id: check-yaml
+      - id: check-added-large-files
+  - repo: https://github.com/psf/black
+    rev: 22.6.0
+    hooks:
+      - id: black
+      - id: black-jupyter
+  - repo: https://github.com/PyCQA/pylint
+    rev: v2.15.0
+    hooks:
+      - id: pylint
+  - repo: https://github.com/nbQA-dev/nbQA
+    rev: 1.4.0
+    hooks:
+      - id: nbqa-pylint
