@@ -1,4 +1,6 @@
 # pylint: disable=unused-argument
+import asyncio
+
 import openai
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
@@ -14,21 +16,23 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 # noinspection PyUnusedLocal
 async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    answer = await display_gpt_completion(update.effective_message.text)
+    await display_gpt_completion(update, temperature=0)
+    await asyncio.sleep(1)
+    await display_gpt_completion(update, temperature=1)
+
+
+async def display_gpt_completion(update: Update, temperature: int) -> None:
+    prompt = update.effective_message.text
+    completion = await request_gpt_completion(prompt, temperature=temperature)
+    answer = f"**T={temperature}**\n\n" + prompt + completion
     await update.effective_chat.send_message(text=answer, parse_mode="Markdown")
 
 
-async def display_gpt_completion(prompt: str) -> str:
-    completion = await request_gpt_completion(prompt)
-    return prompt + completion
-
-
-async def request_gpt_completion(prompt: str) -> str:
+async def request_gpt_completion(prompt: str, temperature: float = 1) -> str:
     if MOCK_GPT:
         return "\nhErE gOeS gPt ReSpOnSe (iT's a mOCK!)"
 
-    # TODO oleksandr: replace with "text-davinci-003"
-    gpt_response = await openai.Completion.acreate(prompt=prompt, engine="text-ada-001")
+    gpt_response = await openai.Completion.acreate(prompt=prompt, engine="text-davinci-003", temperature=1)
     assert len(gpt_response.choices) == 1, f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
 
     return gpt_response.choices[0].text
