@@ -10,7 +10,6 @@ load_dotenv()
 
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 ALLOWED_USERS = os.environ["ALLOWED_USERS"].split(",")
-print(ALLOWED_USERS)
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
