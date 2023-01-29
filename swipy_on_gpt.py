@@ -22,12 +22,17 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.effective_chat.send_message(text="Hey Vsauce, Swipy here!")
 
 
-# noinspection PyUnusedLocal
-async def gpt(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def perform_gpt_completion(prompt: str) -> str:
     # TODO oleksandr: replace with "text-davinci-003"
-    gpt_response = await openai.Completion.acreate(prompt=update.effective_message.text, engine="text-ada-001")
-    for choice in gpt_response.choices:
-        await update.effective_chat.send_message(text=choice.text, parse_mode="Markdown")
+    gpt_response = await openai.Completion.acreate(prompt=prompt, engine="text-ada-001")
+    assert len(gpt_response.choices) == 1, f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
+    return prompt + gpt_response.choices[0].text
+
+
+# noinspection PyUnusedLocal
+async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    answer = await perform_gpt_completion(update.effective_message.text)
+    await update.effective_chat.send_message(text=answer, parse_mode="Markdown")
 
 
 if __name__ == "__main__":
@@ -35,6 +40,6 @@ if __name__ == "__main__":
     allowed_users_filter = User(username=ALLOWED_USERS)
 
     application.add_handler(CommandHandler("start", start, filters=allowed_users_filter))
-    application.add_handler(MessageHandler(TEXT, gpt))
+    application.add_handler(MessageHandler(TEXT, reply_to_user))
 
     application.run_polling()
