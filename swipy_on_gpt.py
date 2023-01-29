@@ -25,7 +25,7 @@ async def display_gpt_completion(prompt: str) -> str:
 
 async def request_gpt_completion(prompt: str) -> str:
     if MOCK_GPT:
-        return "\n\nhErE gOeS gPt ReSpOnSe (iT's a mOCK!)"
+        return " hErE gOeS gPt ReSpOnSe (iT's a mOCK!)"
 
     # TODO oleksandr: replace with "text-davinci-003"
     gpt_response = await openai.Completion.acreate(prompt=prompt, engine="text-ada-001")
