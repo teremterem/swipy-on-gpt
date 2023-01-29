@@ -32,7 +32,9 @@ async def request_gpt_completion(prompt: str, temperature: float = 1) -> str:
     if MOCK_GPT:
         return "\nhErE gOeS gPt ReSpOnSe (iT's a mOCK!)"
 
-    gpt_response = await openai.Completion.acreate(prompt=prompt, engine="text-davinci-003", temperature=1)
+    gpt_response = await openai.Completion.acreate(
+        prompt=prompt, engine="text-davinci-003", temperature=temperature, max_tokens=160
+    )
     assert len(gpt_response.choices) == 1, f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
 
     return gpt_response.choices[0].text
