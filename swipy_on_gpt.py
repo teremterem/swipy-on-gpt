@@ -22,7 +22,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 # noinspection PyUnusedLocal
 async def gpt(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.effective_chat.send_message(text="GPT-3 ?")
+    await update.effective_chat.send_message(text=update.effective_message.text[::-1])
 
 
 if __name__ == "__main__":
