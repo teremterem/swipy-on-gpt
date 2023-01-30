@@ -36,7 +36,7 @@ class PaddedGptCompletion(GptCompletion):
 
 
 class DialogGptCompletion(PaddedGptCompletion):
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         prompt_template: str,
         user_name: str,
@@ -44,7 +44,7 @@ class DialogGptCompletion(PaddedGptCompletion):
         user_utterance: str,
         previous_completion: "DialogGptCompletion" = None,
         temperature: float = 1,
-    ):  # pylint: disable=too-many-arguments
+    ):
         self.user_name = user_name
         self.bot_name = bot_name
         self.previous_completion = previous_completion
