@@ -29,7 +29,7 @@ async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         )
 
     gpt_completion = DIALOG_GPT_T1.new_user_utterance(update.effective_message.text)
-    await update.effective_chat.send_message(text=gpt_completion.prompt, parse_mode=ParseMode.MARKDOWN)
+    # await update.effective_chat.send_message(text=gpt_completion.prompt, parse_mode=ParseMode.MARKDOWN)
     await gpt_completion.fulfil()
     await update.effective_chat.send_message(text=gpt_completion.completion, parse_mode=ParseMode.MARKDOWN)
 

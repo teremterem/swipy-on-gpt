@@ -20,7 +20,7 @@ class GptCompletion:
                 prompt=self.prompt,
                 engine="text-davinci-003",
                 temperature=self.temperature,
-                max_tokens=256,
+                max_tokens=512,
                 # TODO oleksandr: stop=["\n", " Human:", " AI:"],
             )
             self.completion = gpt_response.choices[0].text
