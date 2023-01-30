@@ -12,7 +12,7 @@ class GptCompletion:
         self.temperature = temperature
         self.completion: str | None = None
 
-    async def fulfil(self) -> str:
+    async def fulfil(self) -> None:
         if MOCK_GPT:
             self.completion = f"\n\nhErE gOeS gPt ReSpOnSe  (iT's a mOCK!) {random.randint(0, 1000000)}"
         else:
@@ -23,10 +23,8 @@ class GptCompletion:
                 max_tokens=256,
                 # TODO oleksandr: stop=["\n", " Human:", " AI:"],
             )
-            assert len(gpt_response.choices) == 1, f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
             self.completion = gpt_response.choices[0].text
-
-        return self.completion
+            assert len(gpt_response.choices) == 1, f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
 
 
 class PaddedGptCompletion(GptCompletion):
@@ -56,6 +54,8 @@ class DialogGptCompletion(PaddedGptCompletion):
         prompt_content = "\n".join(prompt_parts)
         super().__init__(prompt_template=prompt_template, prompt_content=prompt_content, temperature=temperature)
 
+        self.completion_before_strip: str | None = None
+
     def build_prompt_content(self, prompt_parts: list[str]) -> None:
         if self.previous_completion is not None:
             self.previous_completion.build_prompt_content(prompt_parts)
@@ -69,6 +69,11 @@ class DialogGptCompletion(PaddedGptCompletion):
 
     def utterance_prefix(self, utterer_name) -> str:
         return f"*{utterer_name}*:"
+
+    async def fulfil(self) -> None:
+        await super().fulfil()
+        self.completion_before_strip = self.completion
+        self.completion = self.completion.strip()
 
 
 class DialogGptCompletionHistory:
