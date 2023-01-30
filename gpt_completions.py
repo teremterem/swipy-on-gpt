@@ -18,14 +18,14 @@ class SimpleGptCompletion:
     async def display_gpt_completion(self, update: Update) -> None:
         prompt = self.create_prompt(update)
         await update.effective_chat.send_message(text=prompt)
-        completion = await self.request_gpt_completion(prompt)
+        completion = await self.request_gpt_completion(prompt, update)
         message = f"==== {self.display_model_name()} ====\n\n{prompt}{completion}"
         await update.effective_chat.send_message(text=message, parse_mode=ParseMode.MARKDOWN)
 
     def display_model_name(self) -> str:
         return f"{self.__class__.__name__} T={self.temperature}"
 
-    async def request_gpt_completion(self, prompt: str) -> str:
+    async def request_gpt_completion(self, prompt: str, update: Update) -> str:  # pylint: disable=unused-argument
         if MOCK_GPT:
             return f"\n\nhErE gOeS gPt ReSpOnSe  (iT's a mOCK!) {random.randint(0, 1000000)}"
 
@@ -57,9 +57,9 @@ class DialogGptCompletion(SimpleGptCompletion):
     def create_bot_name(self) -> str:
         return " *Swipy:*"
 
-    async def request_gpt_completion(self, prompt: str) -> str:
-        completion = await super().request_gpt_completion(prompt)
-        # TODO oleksandr: await update.effective_chat.send_message(text=repr(completion))
+    async def request_gpt_completion(self, prompt: str, update: Update) -> str:
+        completion = await super().request_gpt_completion(prompt, update)
+        await update.effective_chat.send_message(text=repr(completion))
         completion = completion.strip()
         self.dialog_history.append(" ".join([self.create_bot_name(), completion.strip()]))
         return " " + completion
