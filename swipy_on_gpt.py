@@ -31,7 +31,7 @@ async def display_gpt_completion(update: Update, temperature: int) -> None:
 
 async def request_gpt_completion(prompt: str, temperature: float = 1) -> str:
     if MOCK_GPT:
-        return f"\nhErE gOeS gPt ReSpOnSe {random.randint(0, 1000)} (iT's a mOCK!) "
+        return f"\nhErE gOeS gPt ReSpOnSe  (iT's a mOCK!) {random.randint(0, 1000000)}"
 
     gpt_response = await openai.Completion.acreate(
         prompt=prompt, engine="text-davinci-003", temperature=temperature, max_tokens=160
