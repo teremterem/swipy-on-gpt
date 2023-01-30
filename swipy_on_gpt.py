@@ -1,44 +1,37 @@
 # pylint: disable=unused-argument
 import asyncio
-import random
 
-import openai
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from telegram.ext.filters import User, TEXT
 
-from swipy_config import TELEGRAM_TOKEN, ALLOWED_USERS, MOCK_GPT
+from gpt_completions import SimpleCompletionBase
+from swipy_config import TELEGRAM_TOKEN, ALLOWED_USERS
+
+SIMPLE_GPT_COMP_T0: SimpleCompletionBase
+SIMPLE_GPT_COMP_T1: SimpleCompletionBase
+
+
+def init_gpt_completions() -> None:
+    global SIMPLE_GPT_COMP_T0, SIMPLE_GPT_COMP_T1  # pylint: disable=global-statement
+    SIMPLE_GPT_COMP_T0 = SimpleCompletionBase(temperature=0)
+    SIMPLE_GPT_COMP_T1 = SimpleCompletionBase(temperature=1)
+
+
+init_gpt_completions()
 
 
 # noinspection PyUnusedLocal
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    init_gpt_completions()
     await update.effective_chat.send_message(text="Hey Vsauce, Swipy here!")
 
 
 # noinspection PyUnusedLocal
 async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await display_gpt_completion(update, temperature=0)
+    await SIMPLE_GPT_COMP_T0.display_gpt_completion(update)
     await asyncio.sleep(1)
-    await display_gpt_completion(update, temperature=1)
-
-
-async def display_gpt_completion(update: Update, temperature: int) -> None:
-    prompt = update.effective_message.text
-    completion = await request_gpt_completion(prompt, temperature=temperature)
-    answer = f"**T={temperature}**\n\n" + prompt + completion
-    await update.effective_chat.send_message(text=answer, parse_mode="Markdown")
-
-
-async def request_gpt_completion(prompt: str, temperature: float = 1) -> str:
-    if MOCK_GPT:
-        return f"\nhErE gOeS gPt ReSpOnSe  (iT's a mOCK!) {random.randint(0, 1000000)}"
-
-    gpt_response = await openai.Completion.acreate(
-        prompt=prompt, engine="text-davinci-003", temperature=temperature, max_tokens=160
-    )
-    assert len(gpt_response.choices) == 1, f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
-
-    return gpt_response.choices[0].text
+    await SIMPLE_GPT_COMP_T1.display_gpt_completion(update)
 
 
 def main() -> None:
