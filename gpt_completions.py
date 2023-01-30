@@ -17,11 +17,11 @@ class SimpleGptCompletion:
     async def display_gpt_completion(self, update: Update) -> None:
         prompt = self.create_prompt(update)
         completion = await self.request_gpt_completion(prompt)
-        answer = self.display_model_name() + prompt + completion
+        answer = f"                *{self.display_model_name()}*\n\n{prompt}{completion}"
         await update.effective_chat.send_message(text=answer, parse_mode=ParseMode.MARKDOWN)
 
     def display_model_name(self) -> str:
-        return f"{self.__class__.__name__} *T={self.temperature}*\n\n"
+        return f"{self.__class__.__name__} T={self.temperature}"
 
     async def request_gpt_completion(self, prompt: str) -> str:
         if MOCK_GPT:
