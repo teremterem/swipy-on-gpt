@@ -24,7 +24,7 @@ class SimpleGptCompletion:
     def display_model_name(self) -> str:
         return f"{self.__class__.__name__} T={self.temperature}"
 
-    async def request_gpt_completion(self, prompt: str, update: Update) -> str:  # pylint: disable=unused-argument
+    async def request_gpt_completion(self, prompt: str, update: Update) -> str:
         if MOCK_GPT:
             return f"\n\nhErE gOeS gPt ReSpOnSe  (iT's a mOCK!) {random.randint(0, 1000000)}"
 
@@ -36,9 +36,9 @@ class SimpleGptCompletion:
             max_tokens=256,
             # TODO oleksandr: stop=["\n", " Human:", " AI:"],
         )
-        assert len(gpt_response.choices) == 1, f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
         response_text = gpt_response.choices[0].text
         await update.effective_chat.send_message(text=repr(response_text))
+        assert len(gpt_response.choices) == 1, f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
 
         return gpt_response.choices[0].text
 
