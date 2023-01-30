@@ -23,7 +23,7 @@ async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     global DIALOG_GPT_T1
     if DIALOG_GPT_T1 is None:
         DIALOG_GPT_T1 = DialogGptCompletionHistory(
-            user_name=update.effective_user.username,
+            user_name=update.effective_user.first_name,
             bot_name="Swipy",
             temperature=1,
         )
