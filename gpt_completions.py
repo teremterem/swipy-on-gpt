@@ -7,17 +7,17 @@ from swipy_config import MOCK_GPT
 
 
 class GptCompletion:
-    def __init__(self, prompt: str, temperature: float = 1):
+    def __init__(self, prompt: str, temperature: float):
         self.prompt = prompt
         self.temperature = temperature
         self.completion: str | None = None
 
-    async def fulfil(self, prompt: str) -> str:
+    async def fulfil(self) -> str:
         if MOCK_GPT:
             self.completion = f"\n\nhErE gOeS gPt ReSpOnSe  (iT's a mOCK!) {random.randint(0, 1000000)}"
         else:
             gpt_response = await openai.Completion.acreate(
-                prompt=prompt,
+                prompt=self.prompt,
                 engine="text-davinci-003",
                 temperature=self.temperature,
                 max_tokens=256,
@@ -30,7 +30,7 @@ class GptCompletion:
 
 
 class PaddedGptCompletion(GptCompletion):
-    def __init__(self, prompt_content: str, prompt_template: str = "%s", temperature: float = 1):
+    def __init__(self, prompt_content: str, prompt_template: str, temperature: float):
         prompt = prompt_template.format(prompt_content)
         super().__init__(prompt=prompt, temperature=temperature)
 
@@ -41,9 +41,9 @@ class DialogGptCompletion(PaddedGptCompletion):
         user_name: str,
         bot_name: str,
         user_utterance: str,
+        prompt_template: str,
+        temperature: float,
         previous_completion: "DialogGptCompletion" = None,
-        prompt_template: str = "%s",
-        temperature: float = 1,
     ):
         self.user_name = user_name
         self.bot_name = bot_name
@@ -72,7 +72,7 @@ class DialogGptCompletion(PaddedGptCompletion):
 
 
 class DialogGptCompletionHistory:
-    def __init__(self, user_name: str, bot_name: str, prompt_template: str = "%s", temperature: float = 1):
+    def __init__(self, user_name: str, bot_name: str, prompt_template: str = "{}", temperature: float = 1):
         self.user_name = user_name
         self.bot_name = bot_name
         self.prompt_template = prompt_template
@@ -80,8 +80,8 @@ class DialogGptCompletionHistory:
 
         self.completions: list[DialogGptCompletion] = []
 
-    def create(self, user_utterance: str) -> DialogGptCompletion:
-        return DialogGptCompletion(
+    def new_user_utterance(self, user_utterance: str) -> DialogGptCompletion:
+        gpt_completion = DialogGptCompletion(
             prompt_template=self.prompt_template,
             user_name=self.user_name,
             bot_name=self.bot_name,
@@ -89,3 +89,5 @@ class DialogGptCompletionHistory:
             previous_completion=self.completions[-1] if self.completions else None,
             temperature=self.temperature,
         )
+        self.completions.append(gpt_completion)
+        return gpt_completion
