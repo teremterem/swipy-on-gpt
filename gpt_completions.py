@@ -63,3 +63,22 @@ class DialogGptCompletion(PaddedGptCompletion):
 
         if self.user_utterance is not None:
             prompt_parts.append(f"*{self.user_name}*: {self.user_utterance}")
+
+
+class DialogGptCompletionHistory:
+    def __init__(self, prompt_template: str, user_name: str, bot_name: str, temperature: float = 1):
+        self.prompt_template = prompt_template
+        self.user_name = user_name
+        self.bot_name = bot_name
+        self.temperature = temperature
+        self.completions: list[DialogGptCompletion] = []
+
+    def create(self, user_utterance: str) -> DialogGptCompletion:
+        return DialogGptCompletion(
+            prompt_template=self.prompt_template,
+            user_name=self.user_name,
+            bot_name=self.bot_name,
+            user_utterance=user_utterance,
+            previous_completion=self.completions[-1] if self.completions else None,
+            temperature=self.temperature,
+        )
