@@ -34,10 +34,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 # noinspection PyUnusedLocal
 async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await SIMPLE_GPT_COMP_T0.display_gpt_completion(update)
-    await asyncio.sleep(1)
-    await SIMPLE_GPT_COMP_T1.display_gpt_completion(update)
-    await asyncio.sleep(1)
+    # await SIMPLE_GPT_COMP_T0.display_gpt_completion(update)
+    # await asyncio.sleep(1)
+    # await SIMPLE_GPT_COMP_T1.display_gpt_completion(update)
+    # await asyncio.sleep(1)
     await DIALOG_GPT_COMP_T0.display_gpt_completion(update)
     await asyncio.sleep(1)
     await DIALOG_GPT_COMP_T1.display_gpt_completion(update)

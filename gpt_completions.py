@@ -14,7 +14,7 @@ class SimpleGptCompletion:
         return update.effective_message.text
 
     async def display_gpt_completion(self, update: Update) -> None:
-        prompt = update.effective_message.text
+        prompt = self.create_prompt(update)
         completion = await self.request_gpt_completion(prompt)
         answer = self.display_model_name() + prompt + completion
         await update.effective_chat.send_message(text=answer, parse_mode="Markdown")
@@ -45,4 +45,5 @@ class DialogGptCompletion(SimpleGptCompletion):
 
     def create_prompt(self, update: Update) -> str:
         self.dialog_history.append(update.effective_message.text)
-        return "\n".join(self.dialog_history)
+        prompt = "\n".join(self.dialog_history)
+        return prompt
