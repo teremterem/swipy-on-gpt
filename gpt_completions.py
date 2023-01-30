@@ -30,47 +30,54 @@ class GptCompletion:
 
 
 class PaddedGptCompletion(GptCompletion):
-    def __init__(self, prompt_template: str, prompt_content: str, temperature: float = 1):
+    def __init__(self, prompt_content: str, prompt_template: str = "%s", temperature: float = 1):
         prompt = prompt_template.format(prompt_content)
-        super().__init__(prompt, temperature)
+        super().__init__(prompt=prompt, temperature=temperature)
 
 
 class DialogGptCompletion(PaddedGptCompletion):
     def __init__(  # pylint: disable=too-many-arguments
         self,
-        prompt_template: str,
         user_name: str,
         bot_name: str,
         user_utterance: str,
         previous_completion: "DialogGptCompletion" = None,
+        prompt_template: str = "%s",
         temperature: float = 1,
     ):
         self.user_name = user_name
         self.bot_name = bot_name
         self.user_utterance = user_utterance
         self.previous_completion = previous_completion
+
         prompt_parts = []
         self.build_prompt_content(prompt_parts)
-        prompt_parts.append(f"*{self.bot_name}*:")
+        prompt_parts.append(self.utterance_prefix(self.bot_name))
         prompt_content = "\n".join(prompt_parts)
-        super().__init__(prompt_template, prompt_content, temperature)
+        super().__init__(prompt_template=prompt_template, prompt_content=prompt_content, temperature=temperature)
 
     def build_prompt_content(self, prompt_parts: list[str]) -> None:
         if self.previous_completion is not None:
             self.previous_completion.build_prompt_content(prompt_parts)
             if self.previous_completion.completion is not None:
-                prompt_parts.append(f"*{self.previous_completion.bot_name}*: {self.previous_completion.completion}")
+                prompt_parts.append(
+                    f"{self.utterance_prefix(self.previous_completion.bot_name)} {self.previous_completion.completion}"
+                )
 
         if self.user_utterance is not None:
-            prompt_parts.append(f"*{self.user_name}*: {self.user_utterance}")
+            prompt_parts.append(f"{self.utterance_prefix(self.user_name)} {self.user_utterance}")
+
+    def utterance_prefix(self, utterer_name) -> str:
+        return f"*{utterer_name}*:"
 
 
 class DialogGptCompletionHistory:
-    def __init__(self, prompt_template: str, user_name: str, bot_name: str, temperature: float = 1):
-        self.prompt_template = prompt_template
+    def __init__(self, user_name: str, bot_name: str, prompt_template: str = "%s", temperature: float = 1):
         self.user_name = user_name
         self.bot_name = bot_name
+        self.prompt_template = prompt_template
         self.temperature = temperature
+
         self.completions: list[DialogGptCompletion] = []
 
     def create(self, user_utterance: str) -> DialogGptCompletion:
