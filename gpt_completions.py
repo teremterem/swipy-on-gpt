@@ -1,3 +1,4 @@
+# pylint: disable=too-few-public-methods
 import random
 
 import openai
@@ -5,7 +6,7 @@ import openai
 from swipy_config import MOCK_GPT
 
 
-class GptCompletion:  # pylint: disable=too-few-public-methods
+class GptCompletion:
     def __init__(self, prompt: str, temperature: float = 1):
         self.prompt = prompt
         self.temperature = temperature
@@ -26,3 +27,11 @@ class GptCompletion:  # pylint: disable=too-few-public-methods
             self.completion = gpt_response.choices[0].text
 
         return self.completion
+
+
+class PaddedGptCompletion(GptCompletion):
+    def __init__(self, prompt_template: str, prompt_content: str, temperature: float = 1):
+        prompt = prompt_template.format(prompt_content)
+        super().__init__(prompt, temperature)
+        self.temperature = temperature
+        self.completion: str | None = None
