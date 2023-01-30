@@ -1,4 +1,4 @@
-import asyncio
+import itertools
 import random
 
 import openai
@@ -18,8 +18,8 @@ class SimpleGptCompletion:
     async def display_gpt_completion(self, update: Update) -> None:
         prompt = self.create_prompt(update)
         await update.effective_chat.send_message(text=prompt)
-        await asyncio.sleep(1)
         completion = await self.request_gpt_completion(prompt)
+        await update.effective_chat.send_message(text=repr(completion))
         message = f"==== {self.display_model_name()} ====\n\n{prompt}{completion}"
         await update.effective_chat.send_message(text=message, parse_mode=ParseMode.MARKDOWN)
 
@@ -28,13 +28,13 @@ class SimpleGptCompletion:
 
     async def request_gpt_completion(self, prompt: str) -> str:
         if MOCK_GPT:
-            return f"\nhErE gOeS gPt ReSpOnSe  (iT's a mOCK!) {random.randint(0, 1000000)}"
+            return f"\n\nhErE gOeS gPt ReSpOnSe  (iT's a mOCK!) {random.randint(0, 1000000)}"
 
         gpt_response = await openai.Completion.acreate(
             prompt=prompt,
             engine="text-davinci-003",
             temperature=self.temperature,
-            max_tokens=160,
+            max_tokens=256,
             # TODO oleksandr: stop=["\n", " Human:", " AI:"],
         )
         assert len(gpt_response.choices) == 1, f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
@@ -49,7 +49,7 @@ class DialogGptCompletion(SimpleGptCompletion):
 
     def create_prompt(self, update: Update) -> str:
         self.dialog_history.append(" ".join([self.create_user_name(update), update.effective_message.text]))
-        prompt = "\n".join(self.dialog_history)
+        prompt = "\n".join(itertools.chain(self.dialog_history, [self.create_bot_name()]))
         return prompt
 
     def create_user_name(self, update: Update) -> str:
@@ -60,6 +60,6 @@ class DialogGptCompletion(SimpleGptCompletion):
 
     async def request_gpt_completion(self, prompt: str) -> str:
         completion = await super().request_gpt_completion(prompt)
-        completion = " ".join([self.create_bot_name(), completion.strip()])
-        self.dialog_history.append(completion)
-        return "\n" + completion
+        completion = completion.strip()
+        self.dialog_history.append(" ".join([self.create_bot_name(), completion.strip()]))
+        return " " + completion
