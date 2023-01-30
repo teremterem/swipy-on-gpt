@@ -33,5 +33,32 @@ class PaddedGptCompletion(GptCompletion):
     def __init__(self, prompt_template: str, prompt_content: str, temperature: float = 1):
         prompt = prompt_template.format(prompt_content)
         super().__init__(prompt, temperature)
-        self.temperature = temperature
-        self.completion: str | None = None
+
+
+class DialogGptCompletion(PaddedGptCompletion):
+    def __init__(
+        self,
+        prompt_template: str,
+        user_name: str,
+        bot_name: str,
+        user_utterance: str,
+        previous_completion: "DialogGptCompletion" = None,
+        temperature: float = 1,
+    ):  # pylint: disable=too-many-arguments
+        self.user_name = user_name
+        self.bot_name = bot_name
+        self.previous_completion = previous_completion
+        self.user_utterance = user_utterance
+        prompt_parts = []
+        self.build_prompt_content(prompt_parts)
+        prompt_parts.append(f"*{self.bot_name}*:")
+        prompt_content = "\n".join(prompt_parts)
+        super().__init__(prompt_template, prompt_content, temperature)
+
+    def build_prompt_content(self, prompt_parts: list[str]) -> None:
+        if self.previous_completion is not None:
+            self.previous_completion.build_prompt_content(prompt_parts)
+            if self.previous_completion.completion is not None:
+                prompt_parts.append(f"*{self.previous_completion.bot_name}*: {self.previous_completion.completion}")
+        if self.user_utterance is not None:
+            prompt_parts.append(f"*{self.user_name}*: {self.user_utterance}")
