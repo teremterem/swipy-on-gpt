@@ -2,6 +2,7 @@ import random
 
 import openai
 from telegram import Update
+from telegram.constants import ParseMode
 
 from swipy_config import MOCK_GPT
 
@@ -17,10 +18,10 @@ class SimpleGptCompletion:
         prompt = self.create_prompt(update)
         completion = await self.request_gpt_completion(prompt)
         answer = self.display_model_name() + prompt + completion
-        await update.effective_chat.send_message(text=answer, parse_mode="Markdown")
+        await update.effective_chat.send_message(text=answer, parse_mode=ParseMode.MARKDOWN)
 
     def display_model_name(self) -> str:
-        return f"{self.__class__.__name__} **T={self.temperature}**\n\n"
+        return f"{self.__class__.__name__} *T={self.temperature}*\n\n"
 
     async def request_gpt_completion(self, prompt: str) -> str:
         if MOCK_GPT:
@@ -44,6 +45,18 @@ class DialogGptCompletion(SimpleGptCompletion):
         self.dialog_history = []
 
     def create_prompt(self, update: Update) -> str:
-        self.dialog_history.append(update.effective_message.text)
+        self.dialog_history.append(" ".join([self.create_user_name(update), update.effective_message.text]))
         prompt = "\n".join(self.dialog_history)
         return prompt
+
+    def create_user_name(self, update: Update) -> str:
+        return f" *{update.effective_user.first_name}:*"
+
+    def create_bot_name(self) -> str:
+        return " *Swipy:*"
+
+    async def request_gpt_completion(self, prompt: str) -> str:
+        completion = await super().request_gpt_completion(prompt)
+        completion = self.create_bot_name() + completion
+        self.dialog_history.append(completion)
+        return "\n" + completion
