@@ -13,8 +13,11 @@ class SimpleCompletionBase:
     async def display_gpt_completion(self, update: Update) -> None:
         prompt = update.effective_message.text
         completion = await self.request_gpt_completion(prompt)
-        answer = f"**T={self.temperature}**\n\n" + prompt + completion
+        answer = self.display_model_name() + prompt + completion
         await update.effective_chat.send_message(text=answer, parse_mode="Markdown")
+
+    def display_model_name(self) -> str:
+        return f"{self.__class__.__name__} **T={self.temperature}**\n\n"
 
     async def request_gpt_completion(self, prompt: str) -> str:
         if MOCK_GPT:
