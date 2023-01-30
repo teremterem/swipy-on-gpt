@@ -47,8 +47,8 @@ class DialogGptCompletion(PaddedGptCompletion):
     ):
         self.user_name = user_name
         self.bot_name = bot_name
-        self.previous_completion = previous_completion
         self.user_utterance = user_utterance
+        self.previous_completion = previous_completion
         prompt_parts = []
         self.build_prompt_content(prompt_parts)
         prompt_parts.append(f"*{self.bot_name}*:")
@@ -60,5 +60,6 @@ class DialogGptCompletion(PaddedGptCompletion):
             self.previous_completion.build_prompt_content(prompt_parts)
             if self.previous_completion.completion is not None:
                 prompt_parts.append(f"*{self.previous_completion.bot_name}*: {self.previous_completion.completion}")
+
         if self.user_utterance is not None:
             prompt_parts.append(f"*{self.user_name}*: {self.user_utterance}")
