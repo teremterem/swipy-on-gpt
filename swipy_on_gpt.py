@@ -5,17 +5,22 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from telegram.ext.filters import User, TEXT
 
-from gpt_completions import SimpleCompletionBase
+from gpt_completions import SimpleGptCompletion, DialogGptCompletion
 from swipy_config import TELEGRAM_TOKEN, ALLOWED_USERS
 
-SIMPLE_GPT_COMP_T0: SimpleCompletionBase
-SIMPLE_GPT_COMP_T1: SimpleCompletionBase
+SIMPLE_GPT_COMP_T0: SimpleGptCompletion
+SIMPLE_GPT_COMP_T1: SimpleGptCompletion
+DIALOG_GPT_COMP_T0: DialogGptCompletion
+DIALOG_GPT_COMP_T1: DialogGptCompletion
 
 
 def init_gpt_completions() -> None:
-    global SIMPLE_GPT_COMP_T0, SIMPLE_GPT_COMP_T1  # pylint: disable=global-statement
-    SIMPLE_GPT_COMP_T0 = SimpleCompletionBase(temperature=0)
-    SIMPLE_GPT_COMP_T1 = SimpleCompletionBase(temperature=1)
+    # pylint: disable=global-statement
+    global SIMPLE_GPT_COMP_T0, SIMPLE_GPT_COMP_T1, DIALOG_GPT_COMP_T0, DIALOG_GPT_COMP_T1
+    SIMPLE_GPT_COMP_T0 = SimpleGptCompletion(temperature=0)
+    SIMPLE_GPT_COMP_T1 = SimpleGptCompletion(temperature=1)
+    DIALOG_GPT_COMP_T0 = DialogGptCompletion(temperature=0)
+    DIALOG_GPT_COMP_T1 = DialogGptCompletion(temperature=1)
 
 
 init_gpt_completions()
@@ -32,6 +37,10 @@ async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     await SIMPLE_GPT_COMP_T0.display_gpt_completion(update)
     await asyncio.sleep(1)
     await SIMPLE_GPT_COMP_T1.display_gpt_completion(update)
+    await asyncio.sleep(1)
+    await DIALOG_GPT_COMP_T0.display_gpt_completion(update)
+    await asyncio.sleep(1)
+    await DIALOG_GPT_COMP_T1.display_gpt_completion(update)
 
 
 def main() -> None:
