@@ -19,7 +19,6 @@ class SimpleGptCompletion:
         prompt = self.create_prompt(update)
         await update.effective_chat.send_message(text=prompt)
         completion = await self.request_gpt_completion(prompt)
-        await update.effective_chat.send_message(text=repr(completion))
         message = f"==== {self.display_model_name()} ====\n\n{prompt}{completion}"
         await update.effective_chat.send_message(text=message, parse_mode=ParseMode.MARKDOWN)
 
@@ -60,6 +59,7 @@ class DialogGptCompletion(SimpleGptCompletion):
 
     async def request_gpt_completion(self, prompt: str) -> str:
         completion = await super().request_gpt_completion(prompt)
+        # TODO oleksandr: await update.effective_chat.send_message(text=repr(completion))
         completion = completion.strip()
         self.dialog_history.append(" ".join([self.create_bot_name(), completion.strip()]))
         return " " + completion
