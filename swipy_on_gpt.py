@@ -5,7 +5,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from telegram.ext.filters import User, TEXT
 
-from gpt_completions import SimpleGptCompletion, DialogGptCompletion
+from gpt_completions_draft import SimpleGptCompletion, DialogGptCompletion
 from swipy_config import TELEGRAM_TOKEN, ALLOWED_USERS
 
 SIMPLE_GPT_COMP_T0: SimpleGptCompletion
