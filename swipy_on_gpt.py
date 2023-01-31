@@ -1,8 +1,7 @@
 # pylint: disable=unused-argument,global-statement
-import asyncio
 
 from telegram import Update
-from telegram.constants import ParseMode
+from telegram.constants import ParseMode, ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from telegram.ext.filters import User, TEXT
 
@@ -44,9 +43,6 @@ CURIOUS_PROMPT_T1 = DialogGptCompletionHistory(
 
 # noinspection PyUnusedLocal
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    NO_PROMPT_T0.clear_history()
-    NO_PROMPT_T1.clear_history()
-
     # TODO oleksandr: all utterances (even hardcoded ones) should always be visible to GPT-3
     await update.effective_chat.send_message(text=f"Hey Vsauce, {BOT_NAME} here!")
 
@@ -55,20 +51,22 @@ async def reply_with_gpt_completion(
     update: Update, context: ContextTypes.DEFAULT_TYPE, history: DialogGptCompletionHistory
 ) -> None:
     gpt_completion = history.new_user_utterance(update.effective_user.first_name, update.effective_message.text)
-    await asyncio.sleep(0.1)
-    await update.effective_chat.send_message(
-        text=f"{str(history).upper()}\n\n" f"{gpt_completion.prompt}",
-        parse_mode=ParseMode.MARKDOWN,
-    )
+    # make the telegram bot appear to be typing the message
+    await update.effective_chat.send_chat_action(ChatAction.TYPING)
+    # await update.effective_chat.send_message(
+    #     text=f"{str(history).upper()}\n\n" f"{gpt_completion.prompt}",
+    #     parse_mode=ParseMode.MARKDOWN,
+    # )
     await gpt_completion.fulfil()
+
     await update.effective_chat.send_message(text=gpt_completion.completion, parse_mode=ParseMode.MARKDOWN)
 
 
 # noinspection PyUnusedLocal
 async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await reply_with_gpt_completion(update, context, NO_PROMPT_T0)
-    await reply_with_gpt_completion(update, context, NO_PROMPT_T1)
-    await reply_with_gpt_completion(update, context, CURIOUS_PROMPT_T0)
+    # await reply_with_gpt_completion(update, context, NO_PROMPT_T0)
+    # await reply_with_gpt_completion(update, context, NO_PROMPT_T1)
+    # await reply_with_gpt_completion(update, context, CURIOUS_PROMPT_T0)
     await reply_with_gpt_completion(update, context, CURIOUS_PROMPT_T1)
 
 
