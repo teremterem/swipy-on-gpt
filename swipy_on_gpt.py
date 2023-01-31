@@ -78,7 +78,7 @@ async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     # await reply_with_gpt_completion(update, context, NO_PROMPT_T0)
     # await reply_with_gpt_completion(update, context, NO_PROMPT_T1)
     # await reply_with_gpt_completion(update, context, CURIOUS_PROMPT_T0)
-    await reply_with_gpt_completion(update, context, CURIOUS_PROMPT_T1)
+    await reply_with_gpt_completion(update, context, NO_PROMPT_T1)
 
 
 def main() -> None:
