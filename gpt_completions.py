@@ -24,7 +24,6 @@ class GptCompletion:
                 temperature=self.temperature,
                 max_tokens=512,
                 stop=self.stop_list,
-                # TODO oleksandr: stop=["\n", " Human:", " AI:"],
             )
             self.completion = gpt_response.choices[0].text
             assert len(gpt_response.choices) == 1, f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
@@ -81,7 +80,7 @@ class DialogGptCompletion(PaddedGptCompletion):  # pylint: disable=too-many-inst
             prompt_parts.append(f"{self.user_prefix} {self.user_utterance}")
 
     def utterance_prefix(self, utterer_name) -> str:
-        return f" *{utterer_name}*:"
+        return f"*{utterer_name}*:"
 
     async def fulfil(self) -> None:
         await super().fulfil()

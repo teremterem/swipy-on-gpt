@@ -34,9 +34,10 @@ async def reply_with_gpt_completion(
 ) -> None:
     gpt_completion = history.new_user_utterance(update.effective_user.first_name, update.effective_message.text)
     await asyncio.sleep(0.1)
-    await update.effective_chat.send_message(text=f"*{str(history)}*")  # print the experiment name
-    await asyncio.sleep(0.1)
-    await update.effective_chat.send_message(text=gpt_completion.prompt, parse_mode=ParseMode.MARKDOWN)
+    await update.effective_chat.send_message(
+        text=f"{str(history).upper()}\n\n" f"{gpt_completion.prompt}",
+        parse_mode=ParseMode.MARKDOWN,
+    )
     await gpt_completion.fulfil()
     await update.effective_chat.send_message(text=gpt_completion.completion, parse_mode=ParseMode.MARKDOWN)
 
