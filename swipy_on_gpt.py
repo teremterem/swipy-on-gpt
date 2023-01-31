@@ -11,11 +11,11 @@ from swipy_config import TELEGRAM_TOKEN, ALLOWED_USERS
 
 BOT_NAME = "Swipy"
 # TODO oleksandr: unhardcode the names
-CURIOS_PROMPT = (
-    "Swipy is a chatbot that uses GPT-3 to answer questions from a user by the name Oleksandr. "
-    "Swipy is genuinely curious and wants to learn more about Oleksandr. For that reason it asks Oleksandr followup "
-    "questions to clarify every detail that is not immediately clear to Swipy in whatever Oleksandr is telling "
-    "Swipy. Below is a conversation between Swipy and Oleksandr.\n\n"
+FOLLOWUP_PROMPT = (
+    "Your name is Swipy and the user's name is Oleksandr. Here is your dialog with Oleksandr. If Oleksandr mentions "
+    "any people, things, places, events etc. you don't know about (or if you don't know any details about mentioned "
+    "people, things, places, events etc. in relation to Oleksandr specificaly) then follow up with corresponding "
+    "clarifying questions to Oleksandr.\n\n"
 )
 
 NO_PROMPT_T0 = DialogGptCompletionHistory(
@@ -28,16 +28,16 @@ NO_PROMPT_T1 = DialogGptCompletionHistory(
     experiment_name="NO PROMPT",
     temperature=1,
 )
-CURIOUS_PROMPT_T0 = DialogGptCompletionHistory(
+FOLLOWUP_PROMPT_T0 = DialogGptCompletionHistory(
     bot_name=BOT_NAME,
-    experiment_name="CURIOUS PROMPT",
-    prompt_template=CURIOS_PROMPT + "{}",
+    experiment_name="FOLLOWUP PROMPT",
+    prompt_template=FOLLOWUP_PROMPT + "{}",
     temperature=0,
 )
-CURIOUS_PROMPT_T1 = DialogGptCompletionHistory(
+FOLLOWUP_PROMPT_T1 = DialogGptCompletionHistory(
     bot_name=BOT_NAME,
-    experiment_name="CURIOUS PROMPT",
-    prompt_template=CURIOS_PROMPT + "{}",
+    experiment_name="FOLLOWUP PROMPT",
+    prompt_template=FOLLOWUP_PROMPT + "{}",
     temperature=1,
 )
 
@@ -75,10 +75,7 @@ async def reply_with_gpt_completion(
 
 # noinspection PyUnusedLocal
 async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    # await reply_with_gpt_completion(update, context, NO_PROMPT_T0)
-    # await reply_with_gpt_completion(update, context, NO_PROMPT_T1)
-    # await reply_with_gpt_completion(update, context, CURIOUS_PROMPT_T0)
-    await reply_with_gpt_completion(update, context, NO_PROMPT_T1)
+    await reply_with_gpt_completion(update, context, FOLLOWUP_PROMPT_T1)
 
 
 def main() -> None:
