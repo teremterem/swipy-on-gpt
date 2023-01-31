@@ -1,4 +1,5 @@
 # pylint: disable=unused-argument,global-statement
+import asyncio
 
 from telegram import Update
 from telegram.constants import ParseMode, ChatAction
@@ -51,13 +52,23 @@ async def reply_with_gpt_completion(
     update: Update, context: ContextTypes.DEFAULT_TYPE, history: DialogGptCompletionHistory
 ) -> None:
     gpt_completion = history.new_user_utterance(update.effective_user.first_name, update.effective_message.text)
-    # make the telegram bot appear to be typing the message
-    await update.effective_chat.send_chat_action(ChatAction.TYPING)
+
+    keep_typing = True
+
+    async def keep_typing_task():
+        while keep_typing:
+            await update.effective_chat.send_chat_action(ChatAction.TYPING)
+            await asyncio.sleep(10)
+
+    await asyncio.sleep(1)
+    asyncio.get_event_loop().create_task(keep_typing_task())
+
     # await update.effective_chat.send_message(
     #     text=f"{str(history).upper()}\n\n" f"{gpt_completion.prompt}",
     #     parse_mode=ParseMode.MARKDOWN,
     # )
     await gpt_completion.fulfil()
+    keep_typing = False
 
     await update.effective_chat.send_message(text=gpt_completion.completion, parse_mode=ParseMode.MARKDOWN)
 
