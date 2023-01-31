@@ -77,18 +77,18 @@ class DialogGptCompletion(PaddedGptCompletion):
 
 
 class DialogGptCompletionHistory:
-    def __init__(self, user_name: str, bot_name: str, prompt_template: str = "{}", temperature: float = 1):
-        self.user_name = user_name
+    def __init__(self, bot_name: str, experiment_name, prompt_template: str = "{}", temperature: float = 1):
         self.bot_name = bot_name
+        self.experiment_name = experiment_name
         self.prompt_template = prompt_template
         self.temperature = temperature
 
         self.completions: list[DialogGptCompletion] = []
 
-    def new_user_utterance(self, user_utterance: str) -> DialogGptCompletion:
+    def new_user_utterance(self, user_name: str, user_utterance: str) -> DialogGptCompletion:
         gpt_completion = DialogGptCompletion(
             prompt_template=self.prompt_template,
-            user_name=self.user_name,
+            user_name=user_name,
             bot_name=self.bot_name,
             user_utterance=user_utterance,
             previous_completion=self.completions[-1] if self.completions else None,
@@ -96,3 +96,9 @@ class DialogGptCompletionHistory:
         )
         self.completions.append(gpt_completion)
         return gpt_completion
+
+    def clear_history(self) -> None:
+        self.completions = []
+
+    def __str__(self) -> str:
+        return f"{self.experiment_name} T={self.temperature:.1f}"
