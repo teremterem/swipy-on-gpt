@@ -9,24 +9,46 @@ from telegram.ext.filters import User, TEXT
 from gpt_completions import DialogGptCompletionHistory
 from swipy_config import TELEGRAM_TOKEN, ALLOWED_USERS
 
-DIALOG_GPT_NO_PROMPT_T0 = DialogGptCompletionHistory(
-    bot_name="Swipy",
+BOT_NAME = "Swipy"
+# TODO oleksandr: unhardcode the names
+CURIOS_PROMPT = (
+    "Swipy is a chatbot that uses GPT-3 to answer questions from a user by the name Oleksandr. "
+    "Swipy is genuinely curious and wants to learn more about Oleksandr. For that reason it asks Oleksandr followup "
+    "questions to clarify every detail that is not immediately clear to Swipy in whatever Oleksandr is telling "
+    "Swipy. Below is a conversation between Swipy and Oleksandr.\n\n"
+)
+
+NO_PROMPT_T0 = DialogGptCompletionHistory(
+    bot_name=BOT_NAME,
     experiment_name="NO PROMPT",
     temperature=0,
 )
-DIALOG_GPT_NO_PROMPT_T1 = DialogGptCompletionHistory(
-    bot_name="Swipy",
+NO_PROMPT_T1 = DialogGptCompletionHistory(
+    bot_name=BOT_NAME,
     experiment_name="NO PROMPT",
+    temperature=1,
+)
+CURIOUS_PROMPT_T0 = DialogGptCompletionHistory(
+    bot_name=BOT_NAME,
+    experiment_name="CURIOUS PROMPT",
+    prompt_template=CURIOS_PROMPT + "{}",
+    temperature=0,
+)
+CURIOUS_PROMPT_T1 = DialogGptCompletionHistory(
+    bot_name=BOT_NAME,
+    experiment_name="CURIOUS PROMPT",
+    prompt_template=CURIOS_PROMPT + "{}",
     temperature=1,
 )
 
 
 # noinspection PyUnusedLocal
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    DIALOG_GPT_NO_PROMPT_T0.clear_history()
-    DIALOG_GPT_NO_PROMPT_T1.clear_history()
+    NO_PROMPT_T0.clear_history()
+    NO_PROMPT_T1.clear_history()
 
-    await update.effective_chat.send_message(text="Hey Vsauce, Swipy here!")
+    # TODO oleksandr: all utterances (even hardcoded ones) should always be visible to GPT-3
+    await update.effective_chat.send_message(text=f"Hey Vsauce, {BOT_NAME} here!")
 
 
 async def reply_with_gpt_completion(
@@ -44,8 +66,10 @@ async def reply_with_gpt_completion(
 
 # noinspection PyUnusedLocal
 async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await reply_with_gpt_completion(update, context, DIALOG_GPT_NO_PROMPT_T0)
-    await reply_with_gpt_completion(update, context, DIALOG_GPT_NO_PROMPT_T1)
+    await reply_with_gpt_completion(update, context, NO_PROMPT_T0)
+    await reply_with_gpt_completion(update, context, NO_PROMPT_T1)
+    await reply_with_gpt_completion(update, context, CURIOUS_PROMPT_T0)
+    await reply_with_gpt_completion(update, context, CURIOUS_PROMPT_T1)
 
 
 def main() -> None:

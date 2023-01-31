@@ -62,7 +62,7 @@ class DialogGptCompletion(PaddedGptCompletion):  # pylint: disable=too-many-inst
             prompt_content=prompt_content,
             temperature=temperature,
             stop_list=[
-                # "\n",
+                # "\n",  # TODO oleksandr: enable this if it's the very first exchange ?
                 self.user_prefix,
                 # self.bot_prefix,
             ],
