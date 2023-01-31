@@ -64,7 +64,7 @@ class DialogGptCompletion(PaddedGptCompletion):  # pylint: disable=too-many-inst
             stop_list=[
                 # "\n",
                 self.user_prefix,
-                self.bot_prefix,
+                # self.bot_prefix,
             ],
         )
 
