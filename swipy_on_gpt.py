@@ -1,7 +1,7 @@
-# pylint: disable=unused-argument,global-statement
+# pylint: disable=unused-argument
 import asyncio
 
-from telegram import Update
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.constants import ParseMode, ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from telegram.ext.filters import User, TEXT
@@ -14,26 +14,10 @@ BOT_NAME = "Swipy"
 FOLLOWUP_PROMPT = (
     "Your name is Swipy and the user's name is Oleksandr. Here is your dialog with Oleksandr. If Oleksandr mentions "
     "any people, things, places, events etc. you don't know about (or if you don't know any details about mentioned "
-    "people, things, places, events etc. in relation to Oleksandr specificaly) then follow up with corresponding "
+    "people, things, places, events etc. in relation to Oleksandr specifically) then follow up with corresponding "
     "clarifying questions to Oleksandr.\n\n"
 )
 
-NO_PROMPT_T0 = DialogGptCompletionHistory(
-    bot_name=BOT_NAME,
-    experiment_name="NO PROMPT",
-    temperature=0,
-)
-NO_PROMPT_T1 = DialogGptCompletionHistory(
-    bot_name=BOT_NAME,
-    experiment_name="NO PROMPT",
-    temperature=1,
-)
-FOLLOWUP_PROMPT_T0 = DialogGptCompletionHistory(
-    bot_name=BOT_NAME,
-    experiment_name="FOLLOWUP PROMPT",
-    prompt_template=FOLLOWUP_PROMPT + "{}",
-    temperature=0,
-)
 FOLLOWUP_PROMPT_T1 = DialogGptCompletionHistory(
     bot_name=BOT_NAME,
     experiment_name="FOLLOWUP PROMPT",
@@ -70,7 +54,20 @@ async def reply_with_gpt_completion(
     await gpt_completion.fulfil()
     keep_typing = False
 
-    await update.effective_chat.send_message(text=gpt_completion.completion, parse_mode=ParseMode.MARKDOWN)
+    # add a button to the message
+    await update.effective_chat.send_message(
+        text=gpt_completion.completion,
+        parse_mode=ParseMode.MARKDOWN,
+        reply_markup=ReplyKeyboardMarkup(
+            [
+                [
+                    KeyboardButton(text="👍", callback_data="like"),
+                    KeyboardButton(text="👎", callback_data="dislike"),
+                ]
+            ],
+            resize_keyboard=True,
+        ),
+    )
 
 
 # noinspection PyUnusedLocal
