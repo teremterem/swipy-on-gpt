@@ -1,7 +1,7 @@
 # pylint: disable=unused-argument
 import asyncio
 
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import Update
 from telegram.constants import ParseMode, ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from telegram.ext.filters import User, TEXT
@@ -58,14 +58,14 @@ async def reply_with_gpt_completion(
     await update.effective_chat.send_message(
         text=gpt_completion.completion,
         parse_mode=ParseMode.MARKDOWN,
-        reply_markup=InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton(text="👍", callback_data="like"),
-                    InlineKeyboardButton(text="👎", callback_data="dislike"),
-                ]
-            ],
-        ),
+        # reply_markup=InlineKeyboardMarkup(
+        #     [
+        #         [
+        #             InlineKeyboardButton(text="👍", callback_data="like"),
+        #             InlineKeyboardButton(text="👎", callback_data="dislike"),
+        #         ]
+        #     ],
+        # ),
     )
 
 
