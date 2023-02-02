@@ -1,3 +1,5 @@
-from django.shortcuts import render  # pylint: disable=unused-import
+from django.http import HttpResponse, HttpRequest
 
-# Create your views here.
+
+def index(request: HttpRequest) -> HttpResponse:  # pylint: disable=unused-argument
+    return HttpResponse("Hello, world!")
