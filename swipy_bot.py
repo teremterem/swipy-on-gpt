@@ -74,15 +74,11 @@ async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     await reply_with_gpt_completion(update, context, FOLLOWUP_PROMPT_T1)
 
 
-def main() -> None:
-    application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-    allowed_users_filter = User(username=ALLOWED_USERS)
+application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+allowed_users_filter = User(username=ALLOWED_USERS)
 
-    application.add_handler(CommandHandler("start", start, filters=allowed_users_filter))
-    application.add_handler(MessageHandler(TEXT, reply_to_user))
-
-    application.run_polling()
-
+application.add_handler(CommandHandler("start", start, filters=allowed_users_filter))
+application.add_handler(MessageHandler(TEXT, reply_to_user))
 
 if __name__ == "__main__":
-    main()
+    application.run_polling()
