@@ -1,5 +1,5 @@
 django==4.1.6
 openai==0.26.4
-# python-dotenv==0.21.1  # TODO oleksandr: do we need this?
+python-dotenv==0.21.1
 python-telegram-bot==20.0
 uvicorn==0.20.0
