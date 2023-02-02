@@ -1,9 +1,6 @@
-black==22.12.0
-jupyterlab==3.5.3
+-c requirements.txt
+black==23.1.0
+jupyterlab==3.6.0
 pip-tools
-pre-commit==3.0.1
-pylint==2.15.10
-python-dotenv==0.21.1
-
-python-telegram-bot==20.0
-openai==0.26.4
+pre-commit==3.0.3
+pylint==2.16.1
