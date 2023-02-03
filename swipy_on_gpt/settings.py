@@ -9,10 +9,9 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
-import os
 from pathlib import Path
 
-from swipy_config import SWIPY_DJANGO_HOST
+from swipy_config import SWIPY_DJANGO_HOST, DJANGO_LOG_LEVEL, SWIPY_LOG_LEVEL
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -134,19 +133,19 @@ LOGGING = {
     },
     "root": {
         "handlers": ["console"],
-        "level": "DEBUG",  # TODO oleksandr: change back to WARNING ?
+        "level": SWIPY_LOG_LEVEL,
     },
     "loggers": {
         "django": {
             "handlers": ["console"],
-            "level": os.getenv("DJANGO_LOG_LEVEL", "DEBUG"),  # TODO oleksandr: change back to INFO ?
+            "level": DJANGO_LOG_LEVEL,
             "propagate": False,
         },
-        "django.request": {
-            # TODO oleksandr: get rid of this ? was added from here:
-            #  https://stackoverflow.com/questions/70864474/uvicorn-async-workers-are-still-working-synchronously
-            "handlers": ["console"],
-            "level": "DEBUG",
-        },
+        # "django.request": {
+        #     # TODO oleksandr: get rid of this ? was added from here:
+        #     #  https://stackoverflow.com/questions/70864474/uvicorn-async-workers-are-still-working-synchronously
+        #     "handlers": ["console"],
+        #     "level": "DEBUG",
+        # },
     },
 }
