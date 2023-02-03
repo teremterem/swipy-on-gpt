@@ -1,5 +1,4 @@
 # pylint: disable=too-few-public-methods
-import asyncio
 import random
 from typing import Collection
 
@@ -17,7 +16,7 @@ class GptCompletion:
 
     async def fulfil(self) -> None:
         if MOCK_GPT:
-            await asyncio.sleep(12)
+            # await asyncio.sleep(12)
             self.completion = f"\n\nhErE gOeS gPt ReSpOnSe  (iT's a mOCK!) {random.randint(0, 1000000)}"
         else:
             gpt_response = await openai.Completion.acreate(
