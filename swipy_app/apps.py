@@ -3,7 +3,7 @@ import asyncio
 from django.apps import AppConfig
 
 from swipy_bot import application
-from swipy_config import TELEGRAM_TOKEN, SWIPY_DJANGO_HOST
+from swipy_config import TELEGRAM_TOKEN, SWIPY_DJANGO_BASE_URL
 
 
 class SwipyAppConfig(AppConfig):  # pylint: disable=too-few-public-methods
@@ -14,7 +14,7 @@ class SwipyAppConfig(AppConfig):  # pylint: disable=too-few-public-methods
         async def _init_swipy_bot():
             await application.initialize()
 
-            webhook_url = f"{SWIPY_DJANGO_HOST}/{TELEGRAM_TOKEN}/"
+            webhook_url = f"{SWIPY_DJANGO_BASE_URL}/{TELEGRAM_TOKEN}/"
             # TODO oleksandr: use secret_token parameter of set_webhook instead of the token in the url
             await application.bot.set_webhook(webhook_url)
 

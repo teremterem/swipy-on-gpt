@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 import os
 from pathlib import Path
 
+from swipy_config import SWIPY_DJANGO_HOST
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -24,7 +26,7 @@ SECRET_KEY = "django-insecure-doijo=vz9n45$k!5_#dq0iqj88x+-4dp^immn@is6_&q#wjbj6
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]  # TODO oleksandr: change this to a list of allowed hosts
+ALLOWED_HOSTS = [SWIPY_DJANGO_HOST]
 
 # Application definition
 
