@@ -18,16 +18,17 @@ FOLLOWUP_PROMPT = (
     "clarifying questions to Oleksandr.\n\n"
 )
 
-FOLLOWUP_PROMPT_T1 = DialogGptCompletionHistory(
+DIALOG = DialogGptCompletionHistory(
     bot_name=BOT_NAME,
     experiment_name="FOLLOWUP PROMPT",
     prompt_template=FOLLOWUP_PROMPT + "{}",
-    temperature=1,
+    temperature=0.0,
 )
 
 
 # noinspection PyUnusedLocal
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    DIALOG.clear_history()
     # TODO oleksandr: all utterances (even hardcoded ones) should always be visible to GPT-3
     await update.effective_chat.send_message(text=f"Hey Vsauce, {BOT_NAME} here!")
 
@@ -71,7 +72,7 @@ async def reply_with_gpt_completion(
 
 # noinspection PyUnusedLocal
 async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await reply_with_gpt_completion(update, context, FOLLOWUP_PROMPT_T1)
+    await reply_with_gpt_completion(update, context, DIALOG)
 
 
 application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
