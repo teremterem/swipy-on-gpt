@@ -24,7 +24,7 @@ jobs:
         run: |
           echo "WEB_IMAGE=$(echo ${{env.WEB_IMAGE}} )" >> $GITHUB_ENV
       - name: Log in to Docker Hub
-        run: echo ${DOCKER_HUB_TOKEN} | docker login -u ${{ secrets.NAMESPACE }} --password-stdin
+        run: echo ${DOCKER_HUB_TOKEN} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
         env:
           DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
       - name: Pull images
