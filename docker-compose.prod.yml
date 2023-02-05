@@ -1,6 +1,7 @@
 services:
   swipy_server:
     image: "${WEB_IMAGE}"
+    # TODO oleksandr: do I need 0.0.0.0 here ?
     ports:
       - "0.0.0.0:80:8000"
     env_file:
