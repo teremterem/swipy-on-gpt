@@ -3,7 +3,7 @@ name: Continuous Integration and Delivery
 on: [ push ]
 
 env:
-  WEB_IMAGE: ${{ secrets.DOCKER_HUB_USERNAME }}/$(echo $GITHUB_REPOSITORY | tr '[:upper:]' '[:lower:]')
+  WEB_IMAGE: ${{ secrets.DOCKER_HUB_USERNAME }}/swipy-on-gpt
 
 jobs:
 
@@ -13,13 +13,6 @@ jobs:
     steps:
       - name: Checkout master
         uses: actions/checkout@v1
-        # TODO oleksandr: Why do I need to maintain secrets in Github ? Why not in DigitalOcean itself ?
-      - name: Add environment variables to .env
-        run: |
-          echo OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} >> .env
-          echo TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }} >> .env
-          echo ALLOWED_USERS=${{ secrets.ALLOWED_USERS }} >> .env
-          echo SWIPY_DJANGO_HOST=${{ secrets.SWIPY_DJANGO_HOST }} >> .env
       - name: Set environment variables
         run: |
           echo "WEB_IMAGE=$(echo ${{env.WEB_IMAGE}} )" >> $GITHUB_ENV
@@ -33,7 +26,7 @@ jobs:
       - name: Build images
         # TODO oleksandr: docker-compose.ci.yml ? or maybe build a docker image directly (without docker-compose) ?
         run: |
-          docker-compose -f docker-compose.yml build
+          docker build . -t ${{ env.WEB_IMAGE }}
       - name: Push images
         run: |
           docker push ${{ env.WEB_IMAGE }}
