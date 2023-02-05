@@ -13,6 +13,12 @@ jobs:
     steps:
       - name: Checkout master
         uses: actions/checkout@v1
+      - name: Add environment variables to .env
+        run: |
+          echo TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }} >> .env
+          echo SWIPY_DJANGO_HOST=${{ secrets.SWIPY_DJANGO_HOST }} >> .env
+          echo OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} >> .env
+          echo ALLOWED_USERS=${{ secrets.SECRET_KEY }} >> .env
       - name: Set environment variables
         run: |
           echo "WEB_IMAGE=$(echo ${{env.WEB_IMAGE}} )" >> $GITHUB_ENV
@@ -24,7 +30,6 @@ jobs:
         run: |
           docker pull ${{ env.WEB_IMAGE }} || true
       - name: Build images
-        # TODO oleksandr: docker-compose.ci.yml ? or maybe build a docker image directly (without docker-compose) ?
         run: |
           docker build . -t ${{ env.WEB_IMAGE }}
       - name: Push images
