@@ -7,34 +7,34 @@ env:
 
 jobs:
 
-  build:
-    name: Build Docker Images
-    runs-on: ubuntu-latest
-    # if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Checkout master
-        uses: actions/checkout@v1
-      - name: Set environment variables
-        run: |
-          echo "WEB_IMAGE=$(echo ${{env.WEB_IMAGE}} )" >> $GITHUB_ENV
-      - name: Log in to Docker Hub
-        run: echo ${DOCKER_HUB_TOKEN} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
-        env:
-          DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
-      - name: Pull images
-        run: |
-          docker pull ${{ env.WEB_IMAGE }} || true
-      - name: Build images
-        run: |
-          docker build . -t ${{ env.WEB_IMAGE }}
-      - name: Push images
-        run: |
-          docker push ${{ env.WEB_IMAGE }}
+#  build:
+#    name: Build Docker Images
+#    runs-on: ubuntu-latest
+#    # if: github.ref == 'refs/heads/main'
+#    steps:
+#      - name: Checkout master
+#        uses: actions/checkout@v1
+#      - name: Set environment variables
+#        run: |
+#          echo "WEB_IMAGE=$(echo ${{env.WEB_IMAGE}} )" >> $GITHUB_ENV
+#      - name: Log in to Docker Hub
+#        run: echo ${DOCKER_HUB_TOKEN} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+#        env:
+#          DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+#      - name: Pull images
+#        run: |
+#          docker pull ${{ env.WEB_IMAGE }} || true
+#      - name: Build images
+#        run: |
+#          docker build . -t ${{ env.WEB_IMAGE }}
+#      - name: Push images
+#        run: |
+#          docker push ${{ env.WEB_IMAGE }}
 
   deploy:
     name: Deploy to DigitalOcean
     runs-on: ubuntu-latest
-    needs: build
+#    needs: build
     # if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout master
@@ -69,5 +69,6 @@ jobs:
             docker pull $WEB_IMAGE
             pwd
             ls -la
+            cat ./docker-compose.prod.yml
             docker-compose -f docker-compose.prod.yml up -d
           ENDSSH
