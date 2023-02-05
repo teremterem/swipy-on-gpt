@@ -79,7 +79,7 @@ application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 allowed_users_filter = User(username=ALLOWED_USERS)
 
 application.add_handler(CommandHandler("start", start, filters=allowed_users_filter))
-application.add_handler(MessageHandler(TEXT, reply_to_user))
+application.add_handler(MessageHandler(TEXT & allowed_users_filter, reply_to_user))
 
 if __name__ == "__main__":
     application.run_polling()
