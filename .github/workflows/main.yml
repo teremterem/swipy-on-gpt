@@ -24,9 +24,9 @@ jobs:
         run: |
           echo "WEB_IMAGE=$(echo ${{env.WEB_IMAGE}} )" >> $GITHUB_ENV
       - name: Log in to Docker Hub
-        # TODO oleksandr: use --password-stdin
-        #  https://testdriven.io/blog/deploying-django-to-digitalocean-with-docker-and-github-actions/
-        run: docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_TOKEN }}
+        run: echo ${DOCKER_HUB_TOKEN} | docker login -u ${{ secrets.NAMESPACE }} --password-stdin
+        env:
+          DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
       - name: Pull images
         run: |
           docker pull ${{ env.WEB_IMAGE }} || true
@@ -56,8 +56,6 @@ jobs:
       - name: Build and deploy images on DigitalOcean
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-        # TODO oleksandr: use --password-stdin
-        #  https://testdriven.io/blog/deploying-django-to-digitalocean-with-docker-and-github-actions/
         run: |
           ssh -t -t -o StrictHostKeyChecking=no root@${{ secrets.DIGITAL_OCEAN_IP_ADDRESS }} << 'ENDSSH'
             cd /app
