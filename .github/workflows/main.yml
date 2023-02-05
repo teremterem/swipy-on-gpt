@@ -67,8 +67,5 @@ jobs:
             source .env
             docker login -u $DOCKER_HUB_USERNAME -p $secrets.DOCKER_HUB_TOKEN
             docker pull $WEB_IMAGE
-            pwd
-            ls -la
-            cat ./docker-compose.prod.yml
-            sudo docker-compose -f docker-compose.prod.yml up -d
+            docker-compose -f docker-compose.prod.yml up -d
           ENDSSH
