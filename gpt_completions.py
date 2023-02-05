@@ -20,6 +20,7 @@ class GptCompletion:
             self.completion = f"\n\nhErE gOeS gPt ReSpOnSe  (iT's a mOCK!) {random.randint(0, 1000000)}"
         else:
             gpt_response = await openai.Completion.acreate(
+                # TODO oleksandr: submit user id from Telegram (or from your database) too
                 prompt=self.prompt,
                 engine="text-davinci-003",
                 temperature=self.temperature,
