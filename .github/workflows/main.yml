@@ -7,36 +7,35 @@ env:
 
 jobs:
 
-#  build:
-#    name: Build Docker Images
-#    runs-on: ubuntu-latest
-#    # if: github.ref == 'refs/heads/main'
-#    steps:
-#      - name: Checkout master
-#        uses: actions/checkout@v1
-#      - name: Set environment variables
-#        run: |
-#          echo "WEB_IMAGE=$(echo ${{env.WEB_IMAGE}} )" >> $GITHUB_ENV
-#      - name: Log in to Docker Hub
-#        run: echo ${DOCKER_HUB_TOKEN} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
-#        env:
-#          DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
-#      - name: Pull images
-#        run: |
-#          docker pull ${{ env.WEB_IMAGE }} || true
-#      - name: Build images
-#        run: |
-#          docker build . -t ${{ env.WEB_IMAGE }}
-#      - name: Push images
-#        run: |
-#          docker push ${{ env.WEB_IMAGE }}
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    # TODO oleksandr: # if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v1
+      - name: Set environment variables
+        run: |
+          echo "WEB_IMAGE=$(echo ${{env.WEB_IMAGE}} )" >> $GITHUB_ENV
+      - name: Log in to Docker Hub
+        run: echo ${DOCKER_HUB_TOKEN} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+        env:
+          DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Pull images
+        run: |
+          docker pull ${{ env.WEB_IMAGE }} || true
+      - name: Build images
+        run: |
+          docker build . -t ${{ env.WEB_IMAGE }}
+      - name: Push images
+        run: |
+          docker push ${{ env.WEB_IMAGE }}
 
   deploy:
     name: Deploy to DigitalOcean
     runs-on: ubuntu-latest
-    # TODO oleksandr: uncomment this line to enable CD
-#    needs: build
-    # if: github.ref == 'refs/heads/main'
+    needs: build
+    # TODO oleksandr: # if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout master
         uses: actions/checkout@v1
@@ -45,7 +44,7 @@ jobs:
           echo TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }} >> .env
           echo SWIPY_DJANGO_HOST=${{ secrets.SWIPY_DJANGO_HOST }} >> .env
           echo OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} >> .env
-          echo ALLOWED_USERS=${{ secrets.SECRET_KEY }} >> .env
+          echo ALLOWED_USERS=${{ secrets.ALLOWED_USERS }} >> .env
 
           echo WEB_IMAGE=${{ env.WEB_IMAGE }} >> .env
           echo DOCKER_HUB_USERNAME=${{ secrets.DOCKER_HUB_USERNAME }} >> .env
