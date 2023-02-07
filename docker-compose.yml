@@ -1,5 +1,5 @@
 services:
-  swipy_server:
+  swipy-django:
     build: .
     volumes:
       - .:/code
