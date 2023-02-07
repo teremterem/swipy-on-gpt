@@ -9,13 +9,13 @@ from telegram.ext.filters import User, TEXT
 from gpt_completions import DialogGptCompletionHistory
 from swipy_config import TELEGRAM_TOKEN, ALLOWED_USERS
 
-BOT_NAME = "Swipy"
-# TODO oleksandr: unhardcode the names
+BOT_NAME = "MoonRobot"
+# TODO oleksandr: un-hardcode the user's name
 FOLLOWUP_PROMPT = (
-    "Your name is Swipy and the user's name is Oleksandr. Here is your dialog with Oleksandr. If Oleksandr mentions "
-    "any people, things, places, events etc. you don't know about (or if you don't know any details about mentioned "
-    "people, things, places, events etc. in relation to Oleksandr specifically) then follow up with corresponding "
-    "clarifying questions to Oleksandr.\n\n"
+    f"Your name is {BOT_NAME} and the user's name is Oleksandr. Here is your dialog with Oleksandr. If Oleksandr "
+    f"mentions any people, things, places, events etc. you don't know about (or if you don't know any details about "
+    f"mentioned people, things, places, events etc. in relation to Oleksandr specifically) then follow up with "
+    f"corresponding clarifying questions to Oleksandr.\n\n"
 )
 
 DIALOG = DialogGptCompletionHistory(
@@ -30,7 +30,7 @@ DIALOG = DialogGptCompletionHistory(
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     DIALOG.clear_history()
     # TODO oleksandr: all utterances (even hardcoded ones) should always be visible to GPT-3
-    await update.effective_chat.send_message(text=f"Hey Vsauce, {BOT_NAME} here!")
+    await update.effective_chat.send_message(text="MEMORY WIPED.")
 
 
 async def reply_with_gpt_completion(
