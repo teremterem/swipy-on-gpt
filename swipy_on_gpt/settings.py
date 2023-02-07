@@ -29,6 +29,7 @@ DEBUG = True  # TODO oleksandr: get this from the environment; make False the de
 ALLOWED_HOSTS = [
     SWIPY_DJANGO_HOST,
     "localhost",
+    "swipy_server",  # TODO oleksandr: get rid of this ?
 ]
 
 # Application definition
