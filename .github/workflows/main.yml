@@ -3,7 +3,7 @@ name: Continuous Integration and Delivery
 on: [ push ]
 
 env:
-  WEB_IMAGE: ${{ secrets.DOCKER_HUB_USERNAME }}/swipy-on-gpt
+  WEB_IMAGE: ${{ secrets.DOCKER_HUB_USERNAME }}/swipy-on-gpt:latest
 
 jobs:
 

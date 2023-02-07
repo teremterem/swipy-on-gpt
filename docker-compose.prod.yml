@@ -1,8 +1,15 @@
 services:
   swipy_server:
     image: "${WEB_IMAGE}"
-    # TODO oleksandr: do I need 0.0.0.0 here ?
-    ports:
-      - "0.0.0.0:80:8000"
     env_file:
       - .env
+
+  swipy_nginx:
+    image: nginx:1.22.1
+    ports:
+      # TODO oleksandr: do I need 0.0.0.0 here ?
+      - "0.0.0.0:80:80"
+#    volumes:
+#      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - swipy_server
