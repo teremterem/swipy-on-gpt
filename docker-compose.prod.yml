@@ -9,7 +9,7 @@ services:
     ports:
       # TODO oleksandr: do I need 0.0.0.0 here ?
       - "0.0.0.0:80:80"
-#    volumes:
-#      - ./nginx.conf:/etc/nginx/nginx.conf
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - swipy_server

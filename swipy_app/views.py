@@ -9,6 +9,10 @@ from swipy_bot import application
 
 async def index(request: HttpRequest) -> HttpResponse:  # pylint: disable=unused-argument
     # TODO oleksandr: get rid of this view for security reasons ?
+    return HttpResponse("Hello, cruel world!")
+
+
+async def health_check(request: HttpRequest) -> HttpResponse:  # pylint: disable=unused-argument
     return HttpResponse("Hello, world!")
 
 
