@@ -26,7 +26,10 @@ SECRET_KEY = "django-insecure-doijo=vz9n45$k!5_#dq0iqj88x+-4dp^immn@is6_&q#wjbj6
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True  # TODO oleksandr: get this from the environment; make False the default
 
-ALLOWED_HOSTS = [SWIPY_DJANGO_HOST]
+ALLOWED_HOSTS = [
+    SWIPY_DJANGO_HOST,
+    "localhost",
+]
 
 # Application definition
 
