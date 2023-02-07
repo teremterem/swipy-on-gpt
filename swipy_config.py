@@ -10,6 +10,7 @@ TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 ALLOWED_USERS = os.environ["ALLOWED_USERS"].split(",")
 # read various ways of writing boolean values in configs
 MOCK_GPT = (os.environ.get("MOCK_GPT") or "false").lower() in ("true", "1", "yes", "y")
+DEBUG_MODE = (os.environ.get("DEBUG_MODE") or "false").lower() in ("true", "1", "yes", "y")
 
 SWIPY_DJANGO_HOST = os.environ["SWIPY_DJANGO_HOST"]
 SWIPY_DJANGO_BASE_URL = f"https://{SWIPY_DJANGO_HOST}"
