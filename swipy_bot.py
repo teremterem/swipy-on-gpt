@@ -9,27 +9,28 @@ from telegram.ext.filters import User, TEXT
 from gpt_completions import DialogGptCompletionHistory
 from swipy_config import TELEGRAM_TOKEN, ALLOWED_USERS
 
-BOT_NAME = "Swipy"
-# TODO oleksandr: unhardcode the names
+BOT_NAME = "MoonRobot"
+# TODO oleksandr: un-hardcode the user's name
 FOLLOWUP_PROMPT = (
-    "Your name is Swipy and the user's name is Oleksandr. Here is your dialog with Oleksandr. If Oleksandr mentions "
-    "any people, things, places, events etc. you don't know about (or if you don't know any details about mentioned "
-    "people, things, places, events etc. in relation to Oleksandr specifically) then follow up with corresponding "
-    "clarifying questions to Oleksandr.\n\n"
+    f"Your name is {BOT_NAME} and the user's name is Oleksandr. Here is your dialog with Oleksandr. If Oleksandr "
+    f"mentions any people, things, places, events etc. you don't know about (or if you don't know any details about "
+    f"mentioned people, things, places, events etc. in relation to Oleksandr specifically) then follow up with "
+    f"corresponding clarifying questions to Oleksandr.\n\n"
 )
 
-FOLLOWUP_PROMPT_T1 = DialogGptCompletionHistory(
+DIALOG = DialogGptCompletionHistory(
     bot_name=BOT_NAME,
     experiment_name="FOLLOWUP PROMPT",
     prompt_template=FOLLOWUP_PROMPT + "{}",
-    temperature=1,
+    temperature=0.0,
 )
 
 
 # noinspection PyUnusedLocal
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    DIALOG.clear_history()
     # TODO oleksandr: all utterances (even hardcoded ones) should always be visible to GPT-3
-    await update.effective_chat.send_message(text=f"Hey Vsauce, {BOT_NAME} here!")
+    await update.effective_chat.send_message(text="MEMORY WIPED.")
 
 
 async def reply_with_gpt_completion(
@@ -71,18 +72,15 @@ async def reply_with_gpt_completion(
 
 # noinspection PyUnusedLocal
 async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await reply_with_gpt_completion(update, context, FOLLOWUP_PROMPT_T1)
+    await reply_with_gpt_completion(update, context, DIALOG)
 
 
-def main() -> None:
-    application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-    allowed_users_filter = User(username=ALLOWED_USERS)
+application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+allowed_users_filter = User(username=ALLOWED_USERS)
 
-    application.add_handler(CommandHandler("start", start, filters=allowed_users_filter))
-    application.add_handler(MessageHandler(TEXT, reply_to_user))
-
-    application.run_polling()
-
+application.add_handler(CommandHandler("start", start, filters=allowed_users_filter))
+# TODO oleksandr: add /ping command
+application.add_handler(MessageHandler(TEXT & allowed_users_filter, reply_to_user))
 
 if __name__ == "__main__":
-    main()
+    application.run_polling()

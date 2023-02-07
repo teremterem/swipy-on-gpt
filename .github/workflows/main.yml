@@ -1,0 +1,71 @@
+name: Continuous Integration and Delivery
+
+on: [ push ]
+
+env:
+  WEB_IMAGE: ${{ secrets.DOCKER_HUB_USERNAME }}/swipy-on-gpt:latest
+
+jobs:
+
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v1
+      - name: Set environment variables
+        run: |
+          echo "WEB_IMAGE=$(echo ${{env.WEB_IMAGE}} )" >> $GITHUB_ENV
+      - name: Log in to Docker Hub
+        run: echo ${DOCKER_HUB_TOKEN} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+        env:
+          DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Pull images
+        run: |
+          docker pull ${{ env.WEB_IMAGE }} || true
+      - name: Build images
+        run: |
+          docker build . -t ${{ env.WEB_IMAGE }}
+      - name: Push images
+        run: |
+          docker push ${{ env.WEB_IMAGE }}
+
+  deploy:
+    name: Deploy to DigitalOcean
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v1
+      - name: Add environment variables to .env
+        run: |
+          echo TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }} >> .env
+          echo SWIPY_DJANGO_HOST=${{ secrets.SWIPY_DJANGO_HOST }} >> .env
+          echo OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} >> .env
+          echo ALLOWED_USERS=${{ secrets.ALLOWED_USERS }} >> .env
+
+          echo WEB_IMAGE=${{ env.WEB_IMAGE }} >> .env
+          echo DOCKER_HUB_USERNAME=${{ secrets.DOCKER_HUB_USERNAME }} >> .env
+          echo DOCKER_HUB_TOKEN=${{ secrets.DOCKER_HUB_TOKEN }} >> .env
+      - name: Add the private SSH key to the ssh-agent
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          mkdir -p ~/.ssh
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          ssh-add - <<< "${{ secrets.DIGITAL_OCEAN_SSH_KEY }}"
+      - name: Build and deploy images on DigitalOcean
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          scp -o StrictHostKeyChecking=no -r ./.env ./docker-compose.prod.yml ./nginx.conf root@${{ secrets.DIGITAL_OCEAN_IP_ADDRESS }}:/app
+          ssh -o StrictHostKeyChecking=no root@${{ secrets.DIGITAL_OCEAN_IP_ADDRESS }} << 'ENDSSH'
+            cd /app
+            source .env
+            echo $DOCKER_HUB_TOKEN | docker login -u $DOCKER_HUB_USERNAME --password-stdin
+            docker pull $WEB_IMAGE
+            docker-compose -f docker-compose.prod.yml up -d
+          ENDSSH
