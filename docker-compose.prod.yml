@@ -11,5 +11,6 @@ services:
       - "0.0.0.0:443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./swipy_link-chain.crt:/swipy/swipy_link-chain.crt
     depends_on:
       - swipy-django
