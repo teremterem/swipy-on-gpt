@@ -2,7 +2,7 @@
 import asyncio
 
 from telegram import Update
-from telegram.constants import ParseMode, ChatAction
+from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from telegram.ext.filters import User, TEXT
 
@@ -58,7 +58,7 @@ async def reply_with_gpt_completion(
     # add a button to the message
     await update.effective_chat.send_message(
         text=gpt_completion.completion,
-        parse_mode=ParseMode.MARKDOWN,
+        # parse_mode=ParseMode.MARKDOWN,  # TODO oleksandr: do I need markdown for anything ?
         # reply_markup=InlineKeyboardMarkup(
         #     [
         #         [
