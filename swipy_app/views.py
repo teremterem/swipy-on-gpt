@@ -35,4 +35,4 @@ async def telegram_webhook(request: HttpRequest) -> HttpResponse:
     ).save()
 
     await application.process_update(telegram_update)
-    return HttpResponse("OK")  # TODO oleksandr: first, respond with 200, then process the update asynchronously
+    return HttpResponse("OK")  # TODO oleksandr: first, respond with 200, then process the update asynchronously ?
