@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from functools import wraps
 
+from asgiref.sync import sync_to_async
 from django.http import HttpResponse, HttpRequest
 from telegram import Update
 
@@ -28,11 +29,11 @@ async def telegram_webhook(request: HttpRequest) -> HttpResponse:
     telegram_update_dict = json.loads(request.body)
     telegram_update = Update.de_json(telegram_update_dict, application.bot)
 
-    TelegramUpdate.objects.create(
+    sync_to_async(TelegramUpdate.objects.create)(
         telegram_update_id=telegram_update.update_id,
         arrival_timestamp_ms=arrival_timestamp_ms,
         payload=telegram_update_dict,
-    ).save()
+    )
 
     await application.process_update(telegram_update)
     return HttpResponse("OK")  # TODO oleksandr: first, respond with 200, then process the update asynchronously ?
