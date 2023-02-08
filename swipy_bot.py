@@ -50,7 +50,7 @@ async def reply_with_gpt_completion(
         arrival_timestamp_ms=arrival_timestamp_ms,
         chat_telegram_id=update.effective_chat.id,
         telegram_message_id=update.effective_message.message_id,
-        triggering_update=update.database_model,
+        triggering_update=update._database_model,  # pylint: disable=protected-access
         name=user_name,
         text=update.effective_message.text,
         is_bot=False,

@@ -37,7 +37,7 @@ async def telegram_webhook(request: HttpRequest) -> HttpResponse:
         payload=telegram_update_dict,
     )
     await sync_to_async(tg_update_in_db.save)()
-    telegram_update.database_model = tg_update_in_db
+    telegram_update._database_model = tg_update_in_db  # pylint: disable=protected-access
 
     await application.process_update(telegram_update)
     return HttpResponse("OK")  # TODO oleksandr: first, respond with 200, then process the update asynchronously ?
