@@ -41,7 +41,9 @@ async def reply_with_gpt_completion(
     keep_typing = True
 
     async def keep_typing_task():
-        while keep_typing:
+        for _ in range(10):
+            if not keep_typing:
+                break
             await update.effective_chat.send_chat_action(ChatAction.TYPING)
             await asyncio.sleep(10)
 
