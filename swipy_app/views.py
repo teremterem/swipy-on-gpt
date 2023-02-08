@@ -29,11 +29,13 @@ async def telegram_webhook(request: HttpRequest) -> HttpResponse:
     telegram_update_dict = json.loads(request.body)
     telegram_update = Update.de_json(telegram_update_dict, application.bot)
 
-    sync_to_async(TelegramUpdate.objects.create)(
+    tg_update_in_db = await sync_to_async(TelegramUpdate.objects.create)(
         telegram_update_id=telegram_update.update_id,
+        telegram_chat_id=telegram_update.effective_chat.id if telegram_update.effective_chat else None,
         arrival_timestamp_ms=arrival_timestamp_ms,
         payload=telegram_update_dict,
     )
+    await sync_to_async(tg_update_in_db.save)()
 
     await application.process_update(telegram_update)
     return HttpResponse("OK")  # TODO oleksandr: first, respond with 200, then process the update asynchronously ?
