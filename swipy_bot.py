@@ -27,6 +27,9 @@ DIALOG = DialogGptCompletionHistory(
     temperature=0.0,
 )
 
+# TODO oleksandr: is this a dirty hack ?
+UPDATE_DB_MODELS_VOLATILE_CACHE = {}
+
 
 # noinspection PyUnusedLocal
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -42,26 +45,27 @@ async def reply_with_gpt_completion(
     # TODO oleksandr: when to import this ?
     from swipy_app.models import Utterance
 
+    user_name = update.effective_user.first_name
+    tg_update_in_db = UPDATE_DB_MODELS_VOLATILE_CACHE.pop(id(update))
+
     # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
     arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
-    user_name = update.effective_user.first_name
-
-    tg_update_in_db = await sync_to_async(Utterance.objects.create)(
+    utterance_in_db = await sync_to_async(Utterance.objects.create)(
         arrival_timestamp_ms=arrival_timestamp_ms,
         chat_telegram_id=update.effective_chat.id,
         telegram_message_id=update.effective_message.message_id,
-        triggering_update=update._database_model,  # pylint: disable=protected-access
+        triggering_update=tg_update_in_db,
         name=user_name,
         text=update.effective_message.text,
         is_bot=False,
     )
-    await sync_to_async(tg_update_in_db.save)()
+    await sync_to_async(utterance_in_db.save)()
 
     gpt_completion = history.new_user_utterance(user_name, update.effective_message.text)
 
     keep_typing = True
 
-    async def keep_typing_task():
+    async def _keep_typing_task():
         for _ in range(10):
             if not keep_typing:
                 break
@@ -69,7 +73,7 @@ async def reply_with_gpt_completion(
             await asyncio.sleep(10)
 
     await asyncio.sleep(1)
-    asyncio.get_event_loop().create_task(keep_typing_task())
+    asyncio.get_event_loop().create_task(_keep_typing_task())
 
     # await update.effective_chat.send_message(
     #     text=f"{str(history).upper()}\n\n" f"{gpt_completion.prompt}",
@@ -79,7 +83,7 @@ async def reply_with_gpt_completion(
     keep_typing = False
 
     # add a button to the message
-    await update.effective_chat.send_message(
+    response_msg = await update.effective_chat.send_message(
         text=gpt_completion.completion,
         # parse_mode=ParseMode.MARKDOWN,  # TODO oleksandr: do I need markdown for anything ?
         # reply_markup=InlineKeyboardMarkup(
@@ -91,6 +95,19 @@ async def reply_with_gpt_completion(
         #     ],
         # ),
     )
+
+    # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
+    arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
+    utterance_in_db = await sync_to_async(Utterance.objects.create)(
+        arrival_timestamp_ms=arrival_timestamp_ms,
+        chat_telegram_id=response_msg.chat.id,
+        telegram_message_id=response_msg.message_id,
+        triggering_update=tg_update_in_db,
+        name=gpt_completion.bot_name,
+        text=response_msg.text,
+        is_bot=True,
+    )
+    await sync_to_async(utterance_in_db.save)()
 
 
 # noinspection PyUnusedLocal
