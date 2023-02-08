@@ -1,6 +1,8 @@
 # pylint: disable=unused-argument
 import asyncio
+from datetime import datetime
 
+from asgiref.sync import sync_to_async
 from telegram import Update
 from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
@@ -36,7 +38,26 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def reply_with_gpt_completion(
     update: Update, context: ContextTypes.DEFAULT_TYPE, history: DialogGptCompletionHistory
 ) -> None:
-    gpt_completion = history.new_user_utterance(update.effective_user.first_name, update.effective_message.text)
+    # pylint: disable=import-outside-toplevel
+    # TODO oleksandr: when to import this ?
+    from swipy_app.models import Utterance
+
+    # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
+    arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
+    user_name = update.effective_user.first_name
+
+    tg_update_in_db = await sync_to_async(Utterance.objects.create)(
+        arrival_timestamp_ms=arrival_timestamp_ms,
+        chat_telegram_id=update.effective_chat.id,
+        telegram_message_id=update.effective_message.message_id,
+        triggering_update=update.database_model,
+        name=user_name,
+        text=update.effective_message.text,
+        is_bot=False,
+    )
+    await sync_to_async(tg_update_in_db.save)()
+
+    gpt_completion = history.new_user_utterance(user_name, update.effective_message.text)
 
     keep_typing = True
 

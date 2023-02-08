@@ -24,18 +24,20 @@ def csrf_exempt_async(view_func):
 
 @csrf_exempt_async
 async def telegram_webhook(request: HttpRequest) -> HttpResponse:
+    # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
     arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
 
     telegram_update_dict = json.loads(request.body)
     telegram_update = Update.de_json(telegram_update_dict, application.bot)
 
     tg_update_in_db = await sync_to_async(TelegramUpdate.objects.create)(
-        telegram_update_id=telegram_update.update_id,
-        telegram_chat_id=telegram_update.effective_chat.id if telegram_update.effective_chat else None,
+        update_telegram_id=telegram_update.update_id,
+        chat_telegram_id=telegram_update.effective_chat.id if telegram_update.effective_chat else None,
         arrival_timestamp_ms=arrival_timestamp_ms,
         payload=telegram_update_dict,
     )
     await sync_to_async(tg_update_in_db.save)()
+    telegram_update.database_model = tg_update_in_db
 
     await application.process_update(telegram_update)
     return HttpResponse("OK")  # TODO oleksandr: first, respond with 200, then process the update asynchronously ?
