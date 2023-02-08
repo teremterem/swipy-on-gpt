@@ -1,9 +1,11 @@
 import json
+from datetime import datetime
 from functools import wraps
 
 from django.http import HttpResponse, HttpRequest
 from telegram import Update
 
+from swipy_app.models import TelegramUpdate
 from swipy_bot import application
 
 
@@ -21,6 +23,16 @@ def csrf_exempt_async(view_func):
 
 @csrf_exempt_async
 async def telegram_webhook(request: HttpRequest) -> HttpResponse:
-    telegram_update = Update.de_json(json.loads(request.body), application.bot)
+    arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
+
+    telegram_update_dict = json.loads(request.body)
+    telegram_update = Update.de_json(telegram_update_dict, application.bot)
+
+    TelegramUpdate.objects.create(
+        telegram_update_id=telegram_update.update_id,
+        arrival_timestamp_ms=arrival_timestamp_ms,
+        payload=telegram_update_dict,
+    ).save()
+
     await application.process_update(telegram_update)
-    return HttpResponse("OK")
+    return HttpResponse("OK")  # TODO oleksandr: first, respond with 200, then process the update asynchronously
