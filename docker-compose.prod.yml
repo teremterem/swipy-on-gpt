@@ -1,6 +1,7 @@
 services:
   swipy-django:
     image: "${WEB_IMAGE}"
+    # TODO oleksandr: make sure to externalize sqlite using volumes (while you're still using sqlite)
     env_file:
       - .env
 
