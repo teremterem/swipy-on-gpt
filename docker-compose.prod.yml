@@ -6,6 +6,14 @@ services:
     env_file:
       - .env
 
+  swipy-django-migration:
+    image: "${WEB_IMAGE}"
+    env_file:
+      - .env
+    command: python manage.py migrate --noinput
+    volumes:
+      - ./db.sqlite3:/code/db.sqlite3
+
   swipy-nginx:
     image: nginx:1.22.1
     ports:
