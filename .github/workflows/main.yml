@@ -45,8 +45,8 @@ jobs:
           echo SWIPY_DJANGO_HOST=${{ secrets.SWIPY_DJANGO_HOST }} >> .env
           echo OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} >> .env
 
-          echo ALLOWED_USERS=$ALLOWED_USERS >> .env
-          echo DEBUG_MODE=$DEBUG_MODE >> .env
+          echo ALLOWED_USERS=${{ vars.ALLOWED_USERS }} >> .env
+          echo DEBUG_MODE=${{ vars.DEBUG_MODE }} >> .env
 
           echo WEB_IMAGE=${{ env.WEB_IMAGE }} >> .env
 

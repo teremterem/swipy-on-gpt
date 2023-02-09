@@ -11,6 +11,9 @@ services:
 
   swipy-django-migration:
     image: "${WEB_IMAGE}"
+    volumes:
+      - ./db.sqlite3:/code/db.sqlite3
+      - ./staticfiles:/code/staticfiles
     env_file:
       - .env
     command:
@@ -19,9 +22,6 @@ services:
       - |
         python manage.py migrate --noinput
         python manage.py collectstatic --noinput
-    volumes:
-      - ./db.sqlite3:/code/db.sqlite3
-      - ./staticfiles:/code/staticfiles
 
   swipy-nginx:
     image: nginx:1.22.1
