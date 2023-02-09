@@ -27,7 +27,8 @@ DIALOG = DialogGptCompletionHistory(
     temperature=0.0,
 )
 
-# TODO oleksandr: is this a dirty hack ?
+# TODO oleksandr: is this a dirty hack ? use this instead ?
+#  https://stackoverflow.com/questions/30596484/python-asyncio-context
 UPDATE_DB_MODELS_VOLATILE_CACHE = {}
 
 
@@ -79,7 +80,7 @@ async def reply_with_gpt_completion(
     #     text=f"{str(history).upper()}\n\n" f"{gpt_completion.prompt}",
     #     parse_mode=ParseMode.MARKDOWN,
     # )
-    await gpt_completion.fulfil()
+    await gpt_completion.fulfil(tg_update_in_db)
     keep_typing = False
 
     # add a button to the message
@@ -106,6 +107,7 @@ async def reply_with_gpt_completion(
         name=gpt_completion.bot_name,
         text=response_msg.text,
         is_bot=True,
+        gpt_completion=gpt_completion.gpt_completion_in_db,
     )
     await sync_to_async(utterance_in_db.save)()
 

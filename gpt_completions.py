@@ -1,23 +1,35 @@
 import random
+from datetime import datetime
 from typing import Collection
 
 import openai
+from asgiref.sync import sync_to_async
 
 from swipy_config import MOCK_GPT
 
 
-class GptCompletion:
+class GptCompletionBase:
     def __init__(self, prompt: str, temperature: float, stop_list: Collection[str]):
+        # pylint: disable=import-outside-toplevel
+        from swipy_app.models import GptCompletion  # TODO oleksandr: move this import to the top of the file ?
+
         self.prompt = prompt
         self.temperature = temperature
         self.completion: str | None = None
+        self.gpt_completion_in_db: GptCompletion | None = None
         self.stop_list = stop_list
 
-    async def fulfil(self) -> None:
+    async def fulfil(self, tg_update_in_db) -> None:  # TODO oleksandr: tg_update_in_db: TelegramUpdate
+        # pylint: disable=import-outside-toplevel
+        from swipy_app.models import GptCompletion  # TODO oleksandr: move this import to the top of the file ?
+
         if MOCK_GPT:
             # await asyncio.sleep(12)
             self.completion = f"\n\nhErE gOeS gPt ReSpOnSe  (iT's a mOCK!) {random.randint(0, 1000000)}"
         else:
+            # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
+            request_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
+
             gpt_response = await openai.Completion.acreate(
                 # TODO oleksandr: submit user id from Telegram (or from your database) too
                 prompt=self.prompt,  # TODO oleksandr: save prompt to the database too (and completion as well ?)
@@ -26,11 +38,25 @@ class GptCompletion:
                 max_tokens=512,
                 stop=self.stop_list,
             )
+
+            # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
+            arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
+
             self.completion = gpt_response.choices[0].text
+            self.gpt_completion_in_db = await sync_to_async(GptCompletion.objects.create)(
+                request_timestamp_ms=request_timestamp_ms,
+                arrival_timestamp_ms=arrival_timestamp_ms,
+                triggering_update=tg_update_in_db,
+                chat_telegram_id=tg_update_in_db.chat_telegram_id,
+                prompt=self.prompt,
+                completion=self.completion,
+            )
+            await sync_to_async(self.gpt_completion_in_db.save)()
+
             assert len(gpt_response.choices) == 1, f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
 
 
-class PaddedGptCompletion(GptCompletion):
+class PaddedGptCompletion(GptCompletionBase):
     def __init__(self, prompt_content: str, prompt_template: str, temperature: float, stop_list: Collection[str]):
         prompt = prompt_template.format(prompt_content)
         super().__init__(prompt=prompt, temperature=temperature, stop_list=stop_list)
@@ -83,8 +109,8 @@ class DialogGptCompletion(PaddedGptCompletion):  # pylint: disable=too-many-inst
     def utterance_prefix(self, utterer_name) -> str:
         return f"*{utterer_name}*:"
 
-    async def fulfil(self) -> None:
-        await super().fulfil()
+    async def fulfil(self, tg_update_in_db) -> None:  # TODO oleksandr: tg_update_in_db: TelegramUpdate
+        await super().fulfil(tg_update_in_db)
         self.completion_before_strip = self.completion
         self.completion = self.completion.strip()
 
