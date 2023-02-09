@@ -44,10 +44,12 @@ jobs:
           echo TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }} >> .env
           echo SWIPY_DJANGO_HOST=${{ secrets.SWIPY_DJANGO_HOST }} >> .env
           echo OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} >> .env
-          echo ALLOWED_USERS=${{ secrets.ALLOWED_USERS }} >> .env
-          echo DEBUG_MODE=${{ secrets.DEBUG_MODE }} >> .env
+
+          echo ALLOWED_USERS=${{ env.ALLOWED_USERS }} >> .env
+          echo DEBUG_MODE=${{ env.DEBUG_MODE }} >> .env
 
           echo WEB_IMAGE=${{ env.WEB_IMAGE }} >> .env
+
           echo DOCKER_HUB_USERNAME=${{ secrets.DOCKER_HUB_USERNAME }} >> .env
           echo DOCKER_HUB_TOKEN=${{ secrets.DOCKER_HUB_TOKEN }} >> .env
       - name: Add the private SSH key to the ssh-agent

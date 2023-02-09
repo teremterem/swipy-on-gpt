@@ -3,6 +3,9 @@ services:
     image: "${WEB_IMAGE}"
     volumes:
       - ./db.sqlite3:/code/db.sqlite3
+      - ./staticfiles:/code/staticfiles
+    ports:
+      - "8000:8000"
     env_file:
       - .env
 
@@ -10,9 +13,10 @@ services:
     image: "${WEB_IMAGE}"
     env_file:
       - .env
-    command: python manage.py migrate --noinput
+    command: python manage.py collectstatic --noinput && python manage.py migrate --noinput
     volumes:
       - ./db.sqlite3:/code/db.sqlite3
+      - ./staticfiles:/code/staticfiles
 
   swipy-nginx:
     image: nginx:1.22.1
