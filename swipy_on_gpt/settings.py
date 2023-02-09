@@ -75,6 +75,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "swipy_on_gpt.wsgi.application"
 
+CSRF_TRUSTED_ORIGINS = ["https://swipy.link"]
+
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
