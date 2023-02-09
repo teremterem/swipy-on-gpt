@@ -16,7 +16,12 @@ services:
     image: swipy-django-dev
     env_file:
       - .env
-    command: python manage.py collectstatic --noinput && python manage.py migrate --noinput
+    command:
+      - /bin/sh
+      - -c
+      - |
+        python manage.py migrate --noinput
+        python manage.py collectstatic --noinput
     volumes:
       - ./db.sqlite3:/code/db.sqlite3
       - ./staticfiles:/code/staticfiles
