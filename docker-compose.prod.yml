@@ -7,7 +7,7 @@ services:
     env_file:
       - .env
     depends_on:
-      - swipy-django-migration
+      - swipy-django-migration  # TODO oleksandr: depends_on does not wait for the container to exit
 
   swipy-django-migration:
     image: "${WEB_IMAGE}"
