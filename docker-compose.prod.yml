@@ -1,6 +1,8 @@
 services:
   swipy-django:
     image: "${WEB_IMAGE}"
+    volumes:
+      - ./db.sqlite3:/code/db.sqlite3
     env_file:
       - .env
 

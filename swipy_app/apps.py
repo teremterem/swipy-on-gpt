@@ -9,7 +9,7 @@ from swipy_config import TELEGRAM_TOKEN, SWIPY_DJANGO_BASE_URL
 logger = logging.getLogger(__name__)
 
 
-class SwipyAppConfig(AppConfig):  # pylint: disable=too-few-public-methods
+class SwipyAppConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "swipy_app"
 

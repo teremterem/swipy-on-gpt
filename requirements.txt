@@ -51,7 +51,7 @@ multidict==6.0.4
     # via
     #   aiohttp
     #   yarl
-openai==0.26.4
+openai==0.26.5
     # via -r requirements.in
 python-dotenv==0.21.1
     # via -r requirements.in
@@ -73,6 +73,8 @@ tqdm==4.64.1
 urllib3==1.26.14
     # via requests
 uvicorn==0.20.0
+    # via -r requirements.in
+whitenoise==6.3.0
     # via -r requirements.in
 yarl==1.8.2
     # via aiohttp

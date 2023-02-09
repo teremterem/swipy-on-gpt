@@ -1,4 +1,3 @@
-# pylint: disable=too-few-public-methods
 import random
 from typing import Collection
 
@@ -21,7 +20,7 @@ class GptCompletion:
         else:
             gpt_response = await openai.Completion.acreate(
                 # TODO oleksandr: submit user id from Telegram (or from your database) too
-                prompt=self.prompt,
+                prompt=self.prompt,  # TODO oleksandr: save prompt to the database too (and completion as well ?)
                 engine="text-davinci-003",
                 temperature=self.temperature,
                 max_tokens=512,
