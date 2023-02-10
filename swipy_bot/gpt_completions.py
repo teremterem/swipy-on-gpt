@@ -93,7 +93,7 @@ class DialogGptCompletion(PaddedGptCompletion):  # pylint: disable=too-many-inst
         self.completion_before_strip: str | None = None
 
     def utterance_prefix(self, utterer_name) -> str:
-        return f"*{utterer_name}*:"
+        return f"*{utterer_name}:*"
 
     async def fulfil(self, tg_update_in_db: TelegramUpdate) -> None:
         await super().fulfil(tg_update_in_db)
