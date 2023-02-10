@@ -76,7 +76,7 @@ class DialogGptCompletion(PaddedGptCompletion):  # pylint: disable=too-many-inst
         self.bot_prefix = self.utterance_prefix(self.bot_name)
 
         prompt_parts = []
-        history.build_prompt_content(prompt_parts)
+        history.build_prompt_content(prompt_parts, self)
         prompt_parts.append(self.bot_prefix)
         prompt_content = "\n".join(prompt_parts)
         super().__init__(
