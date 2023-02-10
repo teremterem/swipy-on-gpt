@@ -61,23 +61,22 @@ class PaddedGptCompletion(GptCompletionBase):
 class DialogGptCompletion(PaddedGptCompletion):  # pylint: disable=too-many-instance-attributes
     def __init__(  # pylint: disable=too-many-arguments
         self,
+        history: "DialogGptCompletionHistory",
         user_name: str,
         bot_name: str,
         user_utterance: str,
         prompt_template: str,
         temperature: float,
-        previous_completion: "DialogGptCompletion" = None,
     ):
         self.user_name = user_name
         self.bot_name = bot_name
         self.user_utterance = user_utterance
-        self.previous_completion = previous_completion
 
         self.user_prefix = self.utterance_prefix(self.user_name)
         self.bot_prefix = self.utterance_prefix(self.bot_name)
 
         prompt_parts = []
-        self.build_prompt_content(prompt_parts)
+        history.build_prompt_content(prompt_parts)
         prompt_parts.append(self.bot_prefix)
         prompt_content = "\n".join(prompt_parts)
         super().__init__(
@@ -92,15 +91,6 @@ class DialogGptCompletion(PaddedGptCompletion):  # pylint: disable=too-many-inst
         )
 
         self.completion_before_strip: str | None = None
-
-    def build_prompt_content(self, prompt_parts: list[str]) -> None:
-        if self.previous_completion is not None:
-            self.previous_completion.build_prompt_content(prompt_parts)
-            if self.previous_completion.completion is not None:
-                prompt_parts.append(f"{self.bot_prefix} {self.previous_completion.completion}")
-
-        if self.user_utterance is not None:
-            prompt_parts.append(f"{self.user_prefix} {self.user_utterance}")
 
     def utterance_prefix(self, utterer_name) -> str:
         return f"*{utterer_name}*:"
@@ -122,18 +112,29 @@ class DialogGptCompletionHistory:
 
     def new_user_utterance(self, user_name: str, user_utterance: str) -> DialogGptCompletion:
         gpt_completion = DialogGptCompletion(
+            history=self,
             prompt_template=self.prompt_template,
             user_name=user_name,
             bot_name=self.bot_name,
             user_utterance=user_utterance,
-            previous_completion=self.completions[-1] if self.completions else None,
             temperature=self.temperature,
         )
+
         self.completions.append(gpt_completion)
         return gpt_completion
 
     def clear_history(self) -> None:
         self.completions = []
+
+    def build_prompt_content(self, prompt_parts: list[str], current_completion: DialogGptCompletion) -> None:
+        # TODO oleksandr: reimplement this to use DB
+        for completion in self.completions:
+            if completion.user_utterance is not None:
+                prompt_parts.append(f"{completion.user_prefix} {completion.user_utterance}")
+            if completion.completion is not None:
+                prompt_parts.append(f"{completion.bot_prefix} {completion.completion}")
+        if current_completion.user_utterance is not None:
+            prompt_parts.append(f"{current_completion.user_prefix} {current_completion.user_utterance}")
 
     def __str__(self) -> str:
         return f"{self.experiment_name} T={self.temperature:.1f}"
