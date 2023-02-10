@@ -5,13 +5,13 @@ from typing import Collection
 import openai
 from asgiref.sync import sync_to_async
 
-from swipy_config import MOCK_GPT
+from swipy_app.models import GptCompletion, TelegramUpdate
+from swipy_bot.swipy_config import MOCK_GPT
 
 
 class GptCompletionBase:
     def __init__(self, prompt: str, temperature: float, stop_list: Collection[str]):
         # pylint: disable=import-outside-toplevel
-        from swipy_app.models import GptCompletion  # TODO oleksandr: move this import to the top of the file ?
 
         self.prompt = prompt
         self.temperature = temperature
@@ -19,10 +19,8 @@ class GptCompletionBase:
         self.gpt_completion_in_db: GptCompletion | None = None
         self.stop_list = stop_list
 
-    async def fulfil(self, tg_update_in_db) -> None:  # TODO oleksandr: tg_update_in_db: TelegramUpdate
+    async def fulfil(self, tg_update_in_db: TelegramUpdate) -> None:
         # pylint: disable=import-outside-toplevel
-        from swipy_app.models import GptCompletion  # TODO oleksandr: move this import to the top of the file ?
-
         if MOCK_GPT:
             # await asyncio.sleep(12)
             self.completion = f"\n\nhErE gOeS gPt ReSpOnSe  (iT's a mOCK!) {random.randint(0, 1000000)}"
@@ -109,7 +107,7 @@ class DialogGptCompletion(PaddedGptCompletion):  # pylint: disable=too-many-inst
     def utterance_prefix(self, utterer_name) -> str:
         return f"*{utterer_name}*:"
 
-    async def fulfil(self, tg_update_in_db) -> None:  # TODO oleksandr: tg_update_in_db: TelegramUpdate
+    async def fulfil(self, tg_update_in_db: TelegramUpdate) -> None:
         await super().fulfil(tg_update_in_db)
         self.completion_before_strip = self.completion
         self.completion = self.completion.strip()

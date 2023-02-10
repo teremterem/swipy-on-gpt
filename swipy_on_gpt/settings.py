@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 from pathlib import Path
 
-from swipy_config import SWIPY_DJANGO_HOST, DJANGO_LOG_LEVEL, SWIPY_LOG_LEVEL, DEBUG_MODE
+from swipy_bot.swipy_config import SWIPY_DJANGO_HOST, DJANGO_LOG_LEVEL, SWIPY_LOG_LEVEL, DEBUG_MODE
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent

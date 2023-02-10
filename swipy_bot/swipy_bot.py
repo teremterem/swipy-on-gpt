@@ -8,8 +8,8 @@ from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from telegram.ext.filters import User, TEXT
 
-from gpt_completions import DialogGptCompletionHistory
-from swipy_config import TELEGRAM_TOKEN, ALLOWED_USERS
+from swipy_bot.gpt_completions import DialogGptCompletionHistory
+from swipy_bot.swipy_config import TELEGRAM_TOKEN, ALLOWED_USERS
 
 BOT_NAME = "MoonRobot"
 # TODO oleksandr: un-hardcode the user's name
