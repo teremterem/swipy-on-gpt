@@ -128,6 +128,7 @@ class DialogGptCompletionHistory:
 
     def build_prompt_content(self, prompt_parts: list[str], current_completion: DialogGptCompletion) -> None:
         # TODO oleksandr: reimplement this to use DB
+        # TODO oleksandr: make sure to only read the current user's history
         for completion in self.completions:
             if completion.user_utterance is not None:
                 prompt_parts.append(f"{completion.user_prefix} {completion.user_utterance}")
