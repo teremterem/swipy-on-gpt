@@ -20,14 +20,13 @@ class GptCompletionBase:
         self.stop_list = stop_list
 
     async def fulfil(self, tg_update_in_db: TelegramUpdate) -> None:
-        # pylint: disable=import-outside-toplevel
+        # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
+        request_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
+
         if MOCK_GPT:
             # await asyncio.sleep(12)
             self.completion = f"\n\nhErE gOeS gPt ReSpOnSe  (iT's a mOCK!) {random.randint(0, 1000000)}"
         else:
-            # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
-            request_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
-
             gpt_response = await openai.Completion.acreate(
                 # TODO oleksandr: submit user id from Telegram (or from your database) too
                 prompt=self.prompt,  # TODO oleksandr: save prompt to the database too (and completion as well ?)
@@ -36,22 +35,21 @@ class GptCompletionBase:
                 max_tokens=512,
                 stop=self.stop_list,
             )
-
-            # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
-            arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
-
             self.completion = gpt_response.choices[0].text
-            self.gpt_completion_in_db = await sync_to_async(GptCompletion.objects.create)(
-                request_timestamp_ms=request_timestamp_ms,
-                arrival_timestamp_ms=arrival_timestamp_ms,
-                triggering_update=tg_update_in_db,
-                chat_telegram_id=tg_update_in_db.chat_telegram_id,
-                prompt=self.prompt,
-                completion=self.completion,
-            )
-            await sync_to_async(self.gpt_completion_in_db.save)()
-
             assert len(gpt_response.choices) == 1, f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
+
+        # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
+        arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
+
+        self.gpt_completion_in_db = await sync_to_async(GptCompletion.objects.create)(
+            request_timestamp_ms=request_timestamp_ms,
+            arrival_timestamp_ms=arrival_timestamp_ms,
+            triggering_update=tg_update_in_db,
+            chat_telegram_id=tg_update_in_db.chat_telegram_id,
+            prompt=self.prompt,
+            completion=self.completion,
+        )
+        await sync_to_async(self.gpt_completion_in_db.save)()
 
 
 class PaddedGptCompletion(GptCompletionBase):
