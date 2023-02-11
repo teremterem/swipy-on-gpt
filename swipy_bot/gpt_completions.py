@@ -67,7 +67,7 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
         else:
             gpt_response = await openai.Completion.acreate(
                 # TODO oleksandr: submit user id from Telegram (or from your database) too
-                prompt=self.prompt,  # TODO oleksandr: save prompt to the database too (and completion as well ?)
+                prompt=self.prompt,
                 engine="text-davinci-003",
                 temperature=self.temperature,
                 max_tokens=512,

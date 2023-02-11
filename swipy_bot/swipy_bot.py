@@ -118,7 +118,7 @@ application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 allowed_users_filter = User(username=ALLOWED_USERS)
 
 application.add_handler(CommandHandler("start", start, filters=allowed_users_filter))
-# TODO oleksandr: add /ping command
+# TODO oleksandr: add /ping command ? what for ? to check if the server is alive ?
 application.add_handler(MessageHandler(TEXT & allowed_users_filter, reply_to_user))
 
 if __name__ == "__main__":

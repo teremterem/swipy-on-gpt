@@ -29,7 +29,7 @@ DEBUG = DEBUG_MODE
 ALLOWED_HOSTS = [
     SWIPY_DJANGO_HOST,
     "localhost",
-    "swipy-django",  # TODO oleksandr: get rid of this ?
+    "swipy-django",
 ]
 
 # Application definition
