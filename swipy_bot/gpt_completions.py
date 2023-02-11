@@ -5,8 +5,8 @@ from typing import Collection
 import openai
 from asgiref.sync import sync_to_async
 
-from swipy_app.models import GptCompletion, TelegramUpdate
-from swipy_bot.swipy_config import MOCK_GPT
+from swipy_app.models import GptCompletion, TelegramUpdate, Utterance
+from swipy_bot.swipy_config import MOCK_GPT, MAX_CONVERSATION_LENGTH
 
 
 class GptCompletionBase:
@@ -67,16 +67,17 @@ class DialogGptCompletion(PaddedGptCompletion):  # pylint: disable=too-many-inst
         user_utterance: str,
         prompt_template: str,
         temperature: float,
+        chat_telegram_id: int,
     ):
         self.user_name = user_name
         self.bot_name = bot_name
         self.user_utterance = user_utterance
 
-        self.user_prefix = self.utterance_prefix(self.user_name)
-        self.bot_prefix = self.utterance_prefix(self.bot_name)
+        self.user_prefix = utterance_prefix(self.user_name)
+        self.bot_prefix = utterance_prefix(self.bot_name)
 
         prompt_parts = []
-        history.build_prompt_content(prompt_parts, self)
+        history.build_prompt_content(prompt_parts, chat_telegram_id)
         prompt_parts.append(self.bot_prefix)
         prompt_content = "\n".join(prompt_parts)
         super().__init__(
@@ -91,9 +92,6 @@ class DialogGptCompletion(PaddedGptCompletion):  # pylint: disable=too-many-inst
         )
 
         self.completion_before_strip: str | None = None
-
-    def utterance_prefix(self, utterer_name) -> str:
-        return f"*{utterer_name}:*"
 
     async def fulfil(self, tg_update_in_db: TelegramUpdate) -> None:
         await super().fulfil(tg_update_in_db)
@@ -110,7 +108,7 @@ class DialogGptCompletionHistory:
 
         self.completions: list[DialogGptCompletion] = []
 
-    def new_user_utterance(self, user_name: str, user_utterance: str) -> DialogGptCompletion:
+    def new_user_utterance(self, user_name: str, user_utterance: str, chat_telegram_id: int) -> DialogGptCompletion:
         gpt_completion = DialogGptCompletion(
             history=self,
             prompt_template=self.prompt_template,
@@ -118,6 +116,7 @@ class DialogGptCompletionHistory:
             bot_name=self.bot_name,
             user_utterance=user_utterance,
             temperature=self.temperature,
+            chat_telegram_id=chat_telegram_id,
         )
 
         self.completions.append(gpt_completion)
@@ -126,16 +125,15 @@ class DialogGptCompletionHistory:
     def clear_history(self) -> None:
         self.completions = []
 
-    def build_prompt_content(self, prompt_parts: list[str], current_completion: DialogGptCompletion) -> None:
-        # TODO oleksandr: reimplement this to use DB
-        # TODO oleksandr: make sure to only read the current user's history
-        for completion in self.completions:
-            if completion.user_utterance is not None:
-                prompt_parts.append(f"{completion.user_prefix} {completion.user_utterance}")
-            if completion.completion is not None:
-                prompt_parts.append(f"{completion.bot_prefix} {completion.completion}")
-        if current_completion.user_utterance is not None:
-            prompt_parts.append(f"{current_completion.user_prefix} {current_completion.user_utterance}")
+    def build_prompt_content(self, prompt_parts: list[str], chat_telegram_id: int) -> None:
+        utterances = Utterance.objects.filter(chat_telegram_id=chat_telegram_id).order_by("-arrival_timestamp_ms")
+        utterances = utterances[:MAX_CONVERSATION_LENGTH]
+        for utterance in utterances:
+            prompt_parts.append(f"{utterance_prefix(utterance.name)} {utterance.text}")
 
     def __str__(self) -> str:
         return f"{self.experiment_name} T={self.temperature:.1f}"
+
+
+def utterance_prefix(utterer_name) -> str:
+    return f"*{utterer_name}:*"
