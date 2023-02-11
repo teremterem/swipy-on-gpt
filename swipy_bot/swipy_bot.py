@@ -13,18 +13,17 @@ from swipy_bot.gpt_completions import DialogGptCompletionHistory
 from swipy_bot.swipy_config import TELEGRAM_TOKEN, ALLOWED_USERS
 
 BOT_NAME = "Swipy"  # TODO oleksandr: read from getMe()
-# TODO oleksandr: un-hardcode the user's name
-FOLLOWUP_PROMPT = (
-    f"Your name is {BOT_NAME} and the user's name is Oleksandr. Here is your dialog with Oleksandr. If Oleksandr "
-    f"mentions any people, things, places, events etc. you don't know about (or if you don't know any details about "
-    f"mentioned people, things, places, events etc. in relation to Oleksandr specifically) then follow up with "
-    f"corresponding clarifying questions to Oleksandr.\n\n"
-)
 
+FOLLOWUP_PROMPT = (
+    f"Your name is {BOT_NAME} and the user's name is {{USER}}. Here is your dialog with {{USER}}. If {{USER}} "
+    f"mentions any people, things, places, events etc. you don't know about (or if you don't know any details about "
+    f"mentioned people, things, places, events etc. in relation to {{USER}} specifically) then follow up with "
+    f"corresponding clarifying questions to {{USER}}.\n\n{{DIALOG}}"
+)
 DIALOG = DialogGptCompletionHistory(
     bot_name=BOT_NAME,
     experiment_name="FOLLOWUP PROMPT",
-    prompt_template=FOLLOWUP_PROMPT + "{}",
+    prompt_template=FOLLOWUP_PROMPT,
     temperature=0.0,
 )
 

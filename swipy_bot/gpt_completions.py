@@ -53,7 +53,7 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
         prompt_parts.append(self.bot_prefix)
 
         prompt_content = "\n".join(prompt_parts)
-        self.prompt = self.prompt_template.format(prompt_content)
+        self.prompt = self.prompt_template.format(DIALOG=prompt_content, USER=self.user_name)
 
     async def fulfil(self, tg_update_in_db: TelegramUpdate) -> None:
         await self.build_prompt()
