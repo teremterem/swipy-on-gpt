@@ -8,6 +8,7 @@ from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from telegram.ext.filters import User, TEXT
 
+from swipy_app.models import Utterance
 from swipy_bot.gpt_completions import DialogGptCompletionHistory
 from swipy_bot.swipy_config import TELEGRAM_TOKEN, ALLOWED_USERS
 
@@ -42,10 +43,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def reply_with_gpt_completion(
     update: Update, context: ContextTypes.DEFAULT_TYPE, history: DialogGptCompletionHistory
 ) -> None:
-    # pylint: disable=import-outside-toplevel
-    # TODO oleksandr: when to import this ?
-    from swipy_app.models import Utterance
-
     user_name = update.effective_user.first_name
     tg_update_in_db = UPDATE_DB_MODELS_VOLATILE_CACHE.pop(id(update))
 
