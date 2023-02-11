@@ -34,7 +34,7 @@ UPDATE_DB_MODELS_VOLATILE_CACHE = {}
 
 # noinspection PyUnusedLocal
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    DIALOG.clear_history()
+    await DIALOG.clear_history()
     # TODO oleksandr: all utterances (even hardcoded ones) should always be visible to GPT-3
     await update.effective_chat.send_message(text="MEMORY WIPED.")
 
@@ -61,6 +61,8 @@ async def reply_with_gpt_completion(
         is_bot=False,
     )
     await sync_to_async(utterance_in_db.save)()
+    # commit the transaction
+    await sync_to_async(utterance_in_db.refresh_from_db)()  # TODO oleksandr: is this how you commit a transaction ?
 
     gpt_completion = history.new_user_utterance(user_name, update.effective_message.text, update.effective_chat.id)
 
@@ -85,7 +87,7 @@ async def reply_with_gpt_completion(
 
     # add a button to the message
     response_msg = await update.effective_chat.send_message(
-        text=gpt_completion.completion,
+        text=gpt_completion.completion.strip(),  # TODO oleksandr: minor: is stripping necessary ?
         # parse_mode=ParseMode.MARKDOWN,  # TODO oleksandr: do I need markdown for anything ?
         # reply_markup=InlineKeyboardMarkup(
         #     [

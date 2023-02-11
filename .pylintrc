@@ -158,8 +158,7 @@ disable=raw-checker-failed,
         use-symbolic-message-instead,
         import-error,
         fixme,
-        missing-docstring,
-        too-few-public-methods,
+        missing-docstring
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

@@ -1,6 +1,5 @@
 import random
 from datetime import datetime
-from typing import Collection
 
 import openai
 from asgiref.sync import sync_to_async
@@ -9,17 +8,56 @@ from swipy_app.models import GptCompletion, TelegramUpdate, Utterance
 from swipy_bot.swipy_config import MOCK_GPT, MAX_CONVERSATION_LENGTH
 
 
-class GptCompletionBase:
-    def __init__(self, prompt: str, temperature: float, stop_list: Collection[str]):
-        # pylint: disable=import-outside-toplevel
+class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        user_name: str,
+        bot_name: str,
+        user_utterance: str,
+        prompt_template: str,
+        temperature: float,
+        chat_telegram_id: int,
+    ):
+        self.user_name = user_name
+        self.bot_name = bot_name
+        self.user_utterance = user_utterance
 
-        self.prompt = prompt
+        self.user_prefix = self.utterance_prefix(self.user_name)
+        self.bot_prefix = self.utterance_prefix(self.bot_name)
+
+        self.prompt_template = prompt_template
+        self.chat_telegram_id = chat_telegram_id
         self.temperature = temperature
-        self.completion: str | None = None
         self.gpt_completion_in_db: GptCompletion | None = None
-        self.stop_list = stop_list
+        self.stop_list = [
+            # "\n",  # TODO oleksandr: enable this if it's the very first exchange ?
+            self.user_prefix,
+            # self.bot_prefix,
+        ]
+
+        self.completion: str | None = None
+        self.prompt: str | None = None
+
+    def utterance_prefix(self, utterer_name) -> str:
+        return f"*{utterer_name}:*"
+
+    async def build_prompt(self) -> None:
+        prompt_parts = []
+
+        utterances = Utterance.objects.filter(chat_telegram_id=self.chat_telegram_id).order_by("-arrival_timestamp_ms")
+        utterances = utterances[:MAX_CONVERSATION_LENGTH]
+        utterances = await sync_to_async(list)(utterances)
+        for utterance in utterances:
+            prompt_parts.append(f"{self.utterance_prefix(utterance.name)} {utterance.text}")
+
+        prompt_parts.append(self.bot_prefix)
+
+        prompt_content = "\n".join(prompt_parts)
+        self.prompt = self.prompt_template.format(prompt_content)
 
     async def fulfil(self, tg_update_in_db: TelegramUpdate) -> None:
+        await self.build_prompt()
+
         # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
         request_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
 
@@ -52,53 +90,6 @@ class GptCompletionBase:
         await sync_to_async(self.gpt_completion_in_db.save)()
 
 
-class PaddedGptCompletion(GptCompletionBase):
-    def __init__(self, prompt_content: str, prompt_template: str, temperature: float, stop_list: Collection[str]):
-        prompt = prompt_template.format(prompt_content)
-        super().__init__(prompt=prompt, temperature=temperature, stop_list=stop_list)
-
-
-class DialogGptCompletion(PaddedGptCompletion):  # pylint: disable=too-many-instance-attributes
-    def __init__(  # pylint: disable=too-many-arguments
-        self,
-        history: "DialogGptCompletionHistory",
-        user_name: str,
-        bot_name: str,
-        user_utterance: str,
-        prompt_template: str,
-        temperature: float,
-        chat_telegram_id: int,
-    ):
-        self.user_name = user_name
-        self.bot_name = bot_name
-        self.user_utterance = user_utterance
-
-        self.user_prefix = utterance_prefix(self.user_name)
-        self.bot_prefix = utterance_prefix(self.bot_name)
-
-        prompt_parts = []
-        history.build_prompt_content(prompt_parts, chat_telegram_id)
-        prompt_parts.append(self.bot_prefix)
-        prompt_content = "\n".join(prompt_parts)
-        super().__init__(
-            prompt_template=prompt_template,
-            prompt_content=prompt_content,
-            temperature=temperature,
-            stop_list=[
-                # "\n",  # TODO oleksandr: enable this if it's the very first exchange ?
-                self.user_prefix,
-                # self.bot_prefix,
-            ],
-        )
-
-        self.completion_before_strip: str | None = None
-
-    async def fulfil(self, tg_update_in_db: TelegramUpdate) -> None:
-        await super().fulfil(tg_update_in_db)
-        self.completion_before_strip = self.completion
-        self.completion = self.completion.strip()
-
-
 class DialogGptCompletionHistory:
     def __init__(self, bot_name: str, experiment_name, prompt_template: str = "{}", temperature: float = 1):
         self.bot_name = bot_name
@@ -106,11 +97,8 @@ class DialogGptCompletionHistory:
         self.prompt_template = prompt_template
         self.temperature = temperature
 
-        self.completions: list[DialogGptCompletion] = []
-
     def new_user_utterance(self, user_name: str, user_utterance: str, chat_telegram_id: int) -> DialogGptCompletion:
         gpt_completion = DialogGptCompletion(
-            history=self,
             prompt_template=self.prompt_template,
             user_name=user_name,
             bot_name=self.bot_name,
@@ -118,22 +106,11 @@ class DialogGptCompletionHistory:
             temperature=self.temperature,
             chat_telegram_id=chat_telegram_id,
         )
-
-        self.completions.append(gpt_completion)
         return gpt_completion
 
-    def clear_history(self) -> None:
-        self.completions = []
-
-    def build_prompt_content(self, prompt_parts: list[str], chat_telegram_id: int) -> None:
-        utterances = Utterance.objects.filter(chat_telegram_id=chat_telegram_id).order_by("-arrival_timestamp_ms")
-        utterances = utterances[:MAX_CONVERSATION_LENGTH]
-        for utterance in utterances:
-            prompt_parts.append(f"{utterance_prefix(utterance.name)} {utterance.text}")
+    async def clear_history(self) -> None:
+        # TODO oleksandr: implement this
+        pass
 
     def __str__(self) -> str:
         return f"{self.experiment_name} T={self.temperature:.1f}"
-
-
-def utterance_prefix(utterer_name) -> str:
-    return f"*{utterer_name}:*"
