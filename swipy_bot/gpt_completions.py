@@ -46,7 +46,7 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
 
         utterances = Utterance.objects.filter(chat_telegram_id=self.chat_telegram_id).order_by("-arrival_timestamp_ms")
         utterances = utterances[:MAX_CONVERSATION_LENGTH]
-        utterances = await sync_to_async(list)(utterances)
+        utterances = await sync_to_async(reversed)(utterances)
         for utterance in utterances:
             prompt_parts.append(f"{self.utterance_prefix(utterance.name)} {utterance.text}")
 
