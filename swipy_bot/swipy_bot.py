@@ -11,7 +11,7 @@ from telegram.ext.filters import User, TEXT
 from swipy_bot.gpt_completions import DialogGptCompletionHistory
 from swipy_bot.swipy_config import TELEGRAM_TOKEN, ALLOWED_USERS
 
-BOT_NAME = "MoonRobot"
+BOT_NAME = "Swipy"  # TODO oleksandr: read from getMe()
 # TODO oleksandr: un-hardcode the user's name
 FOLLOWUP_PROMPT = (
     f"Your name is {BOT_NAME} and the user's name is Oleksandr. Here is your dialog with Oleksandr. If Oleksandr "
