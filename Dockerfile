@@ -4,9 +4,6 @@
 FROM python:3.11
 
 # TODO oleksandr: do we need this ?
-ENV PYTHONDONTWRITEBYTECODE=1
-
-# TODO oleksandr: do we need this ?
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /code

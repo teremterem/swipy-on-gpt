@@ -8,10 +8,11 @@ from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from telegram.ext.filters import User, TEXT
 
-from gpt_completions import DialogGptCompletionHistory
-from swipy_config import TELEGRAM_TOKEN, ALLOWED_USERS
+from swipy_app.models import Utterance
+from swipy_bot.gpt_completions import DialogGptCompletionHistory
+from swipy_bot.swipy_config import TELEGRAM_TOKEN, ALLOWED_USERS
 
-BOT_NAME = "MoonRobot"
+BOT_NAME = "Swipy"  # TODO oleksandr: read from getMe()
 # TODO oleksandr: un-hardcode the user's name
 FOLLOWUP_PROMPT = (
     f"Your name is {BOT_NAME} and the user's name is Oleksandr. Here is your dialog with Oleksandr. If Oleksandr "
@@ -34,7 +35,7 @@ UPDATE_DB_MODELS_VOLATILE_CACHE = {}
 
 # noinspection PyUnusedLocal
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    DIALOG.clear_history()
+    await DIALOG.clear_history()
     # TODO oleksandr: all utterances (even hardcoded ones) should always be visible to GPT-3
     await update.effective_chat.send_message(text="MEMORY WIPED.")
 
@@ -42,10 +43,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def reply_with_gpt_completion(
     update: Update, context: ContextTypes.DEFAULT_TYPE, history: DialogGptCompletionHistory
 ) -> None:
-    # pylint: disable=import-outside-toplevel
-    # TODO oleksandr: when to import this ?
-    from swipy_app.models import Utterance
-
     user_name = update.effective_user.first_name
     tg_update_in_db = UPDATE_DB_MODELS_VOLATILE_CACHE.pop(id(update))
 
@@ -62,7 +59,7 @@ async def reply_with_gpt_completion(
     )
     await sync_to_async(utterance_in_db.save)()
 
-    gpt_completion = history.new_user_utterance(user_name, update.effective_message.text)
+    gpt_completion = history.new_user_utterance(user_name, update.effective_message.text, update.effective_chat.id)
 
     keep_typing = True
 
@@ -85,7 +82,7 @@ async def reply_with_gpt_completion(
 
     # add a button to the message
     response_msg = await update.effective_chat.send_message(
-        text=gpt_completion.completion,
+        text=gpt_completion.completion.strip(),  # TODO oleksandr: minor: is stripping necessary ?
         # parse_mode=ParseMode.MARKDOWN,  # TODO oleksandr: do I need markdown for anything ?
         # reply_markup=InlineKeyboardMarkup(
         #     [
@@ -121,7 +118,7 @@ application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 allowed_users_filter = User(username=ALLOWED_USERS)
 
 application.add_handler(CommandHandler("start", start, filters=allowed_users_filter))
-# TODO oleksandr: add /ping command
+# TODO oleksandr: add /ping command ? what for ? to check if the server is alive ?
 application.add_handler(MessageHandler(TEXT & allowed_users_filter, reply_to_user))
 
 if __name__ == "__main__":
