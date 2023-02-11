@@ -58,8 +58,6 @@ async def reply_with_gpt_completion(
         is_bot=False,
     )
     await sync_to_async(utterance_in_db.save)()
-    # commit the transaction
-    await sync_to_async(utterance_in_db.refresh_from_db)()  # TODO oleksandr: is this how you commit a transaction ?
 
     gpt_completion = history.new_user_utterance(user_name, update.effective_message.text, update.effective_chat.id)
 

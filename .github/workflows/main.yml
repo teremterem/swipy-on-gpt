@@ -47,7 +47,7 @@ jobs:
 
           echo DEBUG_MODE=${{ vars.DEBUG_MODE }} >> .env
           echo ALLOWED_USERS=${{ vars.ALLOWED_USERS }} >> .env
-          echo ALLOWED_USERS=${{ vars.MAX_CONVERSATION_LENGTH }} >> .env
+          echo MAX_CONVERSATION_LENGTH=${{ vars.MAX_CONVERSATION_LENGTH }} >> .env
 
           echo WEB_IMAGE=${{ env.WEB_IMAGE }} >> .env
 
