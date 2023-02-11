@@ -18,7 +18,7 @@ DEBUG_MODE = (os.environ.get("DEBUG_MODE") or "false").lower() in ("true", "1", 
 
 MOCK_GPT = (os.environ.get("MOCK_GPT") or "false").lower() in ("true", "1", "yes", "y")
 ALLOWED_USERS = os.environ["ALLOWED_USERS"].split(",")
-MAX_CONVERSATION_LENGTH = int(os.environ.get("MAX_CONVERSATION_LENGTH") or 50)
+MAX_CONVERSATION_LENGTH = int(os.environ.get("MAX_CONVERSATION_LENGTH") or 70)
 
 # TODO oleksandr: do we need this line or what we have in django settings is enough ?
 # logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
