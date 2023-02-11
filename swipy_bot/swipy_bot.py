@@ -8,7 +8,7 @@ from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from telegram.ext.filters import User, TEXT
 
-from swipy_app.models import Utterance
+from swipy_app.models import Utterance, TelegramUpdate
 from swipy_bot.gpt_completions import DialogGptCompletionHistory
 from swipy_bot.swipy_config import TELEGRAM_TOKEN, ALLOWED_USERS
 
@@ -29,22 +29,10 @@ DIALOG = DialogGptCompletionHistory(
 
 # TODO oleksandr: is this a dirty hack ? use this instead ?
 #  https://stackoverflow.com/questions/30596484/python-asyncio-context
-UPDATE_DB_MODELS_VOLATILE_CACHE = {}
+UPDATE_DB_MODELS_VOLATILE_CACHE: dict[int, TelegramUpdate] = {}
 
 
-# noinspection PyUnusedLocal
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await DIALOG.clear_history()
-    # TODO oleksandr: all utterances (even hardcoded ones) should always be visible to GPT-3
-    await update.effective_chat.send_message(text="MEMORY WIPED.")
-
-
-async def reply_with_gpt_completion(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, history: DialogGptCompletionHistory
-) -> None:
-    user_name = update.effective_user.first_name
-    tg_update_in_db = UPDATE_DB_MODELS_VOLATILE_CACHE.pop(id(update))
-
+async def save_user_message_to_db(update: Update, tg_update_in_db: TelegramUpdate, user_name: str) -> None:
     # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
     arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
     utterance_in_db = await sync_to_async(Utterance.objects.create)(
@@ -57,6 +45,19 @@ async def reply_with_gpt_completion(
         is_bot=False,
     )
     await sync_to_async(utterance_in_db.save)()
+
+
+async def reply_with_gpt_completion(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, history: DialogGptCompletionHistory
+) -> None:
+    user_name = update.effective_user.first_name
+    tg_update_in_db = UPDATE_DB_MODELS_VOLATILE_CACHE.pop(id(update))
+
+    await save_user_message_to_db(
+        update=update,
+        tg_update_in_db=tg_update_in_db,
+        user_name=user_name,
+    )
 
     gpt_completion = history.new_user_utterance(user_name, update.effective_message.text, update.effective_chat.id)
 
@@ -116,7 +117,7 @@ async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 allowed_users_filter = User(username=ALLOWED_USERS)
 
-application.add_handler(CommandHandler("start", start, filters=allowed_users_filter))
+application.add_handler(CommandHandler("start", reply_to_user, filters=allowed_users_filter))
 # TODO oleksandr: add /ping command ? what for ? to check if the server is alive ?
 application.add_handler(MessageHandler(TEXT & allowed_users_filter, reply_to_user))
 
