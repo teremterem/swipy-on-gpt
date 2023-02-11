@@ -46,8 +46,16 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
 
         utterances = Utterance.objects.filter(chat_telegram_id=self.chat_telegram_id).order_by("-arrival_timestamp_ms")
         utterances = utterances[:MAX_CONVERSATION_LENGTH]
-        utterances = await sync_to_async(reversed)(utterances)
-        for utterance in utterances:
+        utterances = await sync_to_async(list)(utterances)
+
+        # if the user sent /start at some point then don't include any utterances before that into the context
+        # ("/start" means "Reset the dialog")
+        for idx, utterance in enumerate(utterances):
+            if utterance.text == "/start" and utterance.is_bot is False:
+                utterances = utterances[:idx]
+                break
+
+        for utterance in reversed(utterances):
             prompt_parts.append(f"{self.utterance_prefix(utterance.name)} {utterance.text}")
 
         prompt_parts.append(self.bot_prefix)
