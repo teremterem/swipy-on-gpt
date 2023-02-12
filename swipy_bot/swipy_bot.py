@@ -6,11 +6,11 @@ from asgiref.sync import sync_to_async
 from telegram import Update
 from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
-from telegram.ext.filters import User, TEXT
+from telegram.ext.filters import TEXT
 
 from swipy_app.models import Utterance, TelegramUpdate
 from swipy_bot.gpt_completions import DialogGptCompletionHistory
-from swipy_bot.swipy_config import TELEGRAM_TOKEN, ALLOWED_USERS
+from swipy_bot.swipy_config import TELEGRAM_TOKEN
 
 BOT_NAME = "Swipy"  # TODO oleksandr: read from getMe()
 
@@ -115,11 +115,13 @@ async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
 
 application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-allowed_users_filter = User(username=ALLOWED_USERS)
 
-application.add_handler(CommandHandler("start", reply_to_user, filters=allowed_users_filter))
+# TODO oleksandr: get rid of this completely:
+#  allowed_users_filter = User(username=ALLOWED_USERS)
+
+application.add_handler(CommandHandler("start", reply_to_user))  # TODO oleksandr: filters=allowed_users_filter
 # TODO oleksandr: add /ping command ? what for ? to check if the server is alive ?
-application.add_handler(MessageHandler(TEXT & allowed_users_filter, reply_to_user))
+application.add_handler(MessageHandler(TEXT, reply_to_user))  # TODO oleksandr: TEXT & allowed_users_filter
 
 if __name__ == "__main__":
     application.run_polling()
