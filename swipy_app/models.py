@@ -1,3 +1,4 @@
+# pylint: disable=too-few-public-methods
 from django.db import models
 
 
@@ -18,6 +19,7 @@ class GptCompletion(models.Model):
 
     prompt = models.TextField()
     completion = models.TextField()
+    temperature = models.FloatField(null=True)
 
 
 class Utterance(models.Model):
