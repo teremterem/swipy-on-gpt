@@ -41,7 +41,7 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
     def utterance_prefix(self, utterer_name) -> str:
         return f"*{utterer_name}:*"
 
-    async def build_prompt(self) -> None:
+    async def build_prompt(self) -> bool:
         prompt_parts = []
 
         utterances = Utterance.objects.filter(chat_telegram_id=self.chat_telegram_id).order_by("-arrival_timestamp_ms")
@@ -55,6 +55,8 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
                 utterances = utterances[:idx]
                 break
 
+        has_history = len(utterances) > 0
+
         for utterance in reversed(utterances):
             prompt_parts.append(f"{self.utterance_prefix(utterance.name)} {utterance.text}")
 
@@ -63,8 +65,12 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
         prompt_content = "\n".join(prompt_parts)
         self.prompt = self.prompt_template.format(DIALOG=prompt_content, USER=self.user_name)
 
+        return has_history
+
     async def fulfil(self, tg_update_in_db: TelegramUpdate) -> None:
-        await self.build_prompt()
+        has_history = await self.build_prompt()
+        # temperature 1 should make conversation starters more "natural" (hopefully)
+        temperature = self.temperature if has_history else 1.0  # TODO oleksandr: are you sure ?
 
         # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
         request_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
@@ -77,7 +83,7 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
                 # TODO oleksandr: submit user id from Telegram (or from your database) too
                 prompt=self.prompt,
                 engine="text-davinci-003",
-                temperature=self.temperature,
+                temperature=temperature,
                 max_tokens=512,
                 stop=self.stop_list,
             )
@@ -94,6 +100,7 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
             chat_telegram_id=tg_update_in_db.chat_telegram_id,
             prompt=self.prompt,
             completion=self.completion,
+            temperature=temperature,
         )
         await sync_to_async(self.gpt_completion_in_db.save)()
 

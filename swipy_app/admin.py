@@ -44,6 +44,7 @@ class GptCompletionAdmin(admin.ModelAdmin):
         "arrival_time",
         "prompt_pre",
         "completion_pre",
+        "temperature",
         "triggering_update",
         "request_timestamp_ms",
         "arrival_timestamp_ms",
