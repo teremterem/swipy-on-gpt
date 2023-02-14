@@ -1,7 +1,7 @@
 import asyncio
 import random
 from datetime import datetime
-
+import traceback
 import openai
 from asgiref.sync import sync_to_async
 
@@ -85,20 +85,30 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
         )
         await sync_to_async(self.gpt_completion_in_db.save)()
 
-        if MOCK_GPT:
-            await asyncio.sleep(30)
-            self.completion = f"\n\nhErE gOeS gPt ReSpOnSe  (iT's a mOCK!) {random.randint(0, 1000000)}"
-        else:
-            gpt_response = await openai.Completion.acreate(
-                # TODO oleksandr: submit user id from Telegram (or from your database) too
-                prompt=self.prompt,
-                engine="text-davinci-003",
-                temperature=temperature,
-                max_tokens=512,
-                stop=self.stop_list,
-            )
-            self.completion = gpt_response.choices[0].text
-            assert len(gpt_response.choices) == 1, f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
+        try:
+            if MOCK_GPT:
+                await asyncio.sleep(3)
+                self.completion = f"\n\nhErE gOeS gPt ReSpOnSe  (iT's a mOCK!) {random.randint(0, 1000000)}"
+            else:
+                gpt_response = await openai.Completion.acreate(
+                    # TODO oleksandr: submit user id from Telegram (or from your database) too
+                    prompt=self.prompt,
+                    engine="text-davinci-003",
+                    temperature=temperature,
+                    max_tokens=512,
+                    stop=self.stop_list,
+                )
+                self.completion = gpt_response.choices[0].text
+                assert (
+                    len(gpt_response.choices) == 1
+                ), f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
+        except Exception:
+            # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
+            arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
+            self.gpt_completion_in_db.arrival_timestamp_ms = arrival_timestamp_ms
+            self.gpt_completion_in_db.completion = f"=== ERROR ===\n{traceback.format_exc()}"
+            await sync_to_async(self.gpt_completion_in_db.save)()
+            raise
 
         # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
         arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
