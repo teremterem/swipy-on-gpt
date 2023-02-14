@@ -1,3 +1,4 @@
+import asyncio
 import random
 from datetime import datetime
 
@@ -76,7 +77,7 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
         request_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
 
         if MOCK_GPT:
-            # await asyncio.sleep(12)
+            await asyncio.sleep(12)
             self.completion = f"\n\nhErE gOeS gPt ReSpOnSe  (iT's a mOCK!) {random.randint(0, 1000000)}"
         else:
             gpt_response = await openai.Completion.acreate(

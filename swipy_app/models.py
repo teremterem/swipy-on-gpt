@@ -12,13 +12,13 @@ class TelegramUpdate(models.Model):
 
 class GptCompletion(models.Model):
     request_timestamp_ms = models.BigIntegerField()
-    arrival_timestamp_ms = models.BigIntegerField()
+    arrival_timestamp_ms = models.BigIntegerField(null=True)
     # TODO oleksandr: processing time ?
     triggering_update = models.ForeignKey(TelegramUpdate, on_delete=models.CASCADE, null=True)
     chat_telegram_id = models.BigIntegerField(null=True)
 
-    prompt = models.TextField()
-    completion = models.TextField()
+    prompt = models.TextField(null=True, blank=True)
+    completion = models.TextField(null=True, blank=True)
     temperature = models.FloatField(null=True)
 
 
