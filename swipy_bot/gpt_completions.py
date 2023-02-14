@@ -87,7 +87,7 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
 
         try:
             if MOCK_GPT:
-                await asyncio.sleep(3)
+                await asyncio.sleep(2)
                 self.completion = f"\n\nhErE gOeS gPt ReSpOnSe  (iT's a mOCK!) {random.randint(0, 1000000)}"
             else:
                 gpt_response = await openai.Completion.acreate(
