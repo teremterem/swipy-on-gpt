@@ -35,9 +35,9 @@ class TelegramUpdateAdmin(admin.ModelAdmin):
 
 
 class GptCompletionAdmin(admin.ModelAdmin):
-    ordering = ["-arrival_timestamp_ms"]
+    ordering = ["-request_timestamp_ms"]
     list_filter = ["chat_telegram_id"]
-    list_display = ["id", "arrival_time", "completion"]
+    list_display = ["id", "request_time", "arrival_time", "completion"]
     list_display_links = list_display
     fields = [
         "request_time",
@@ -75,6 +75,8 @@ class GptCompletionAdmin(admin.ModelAdmin):
     @admin.display(description="Arrival time")
     def arrival_time(self, obj):
         # TODO oleksandr: get rid of duplicate code
+        if obj.arrival_timestamp_ms is None:
+            return "N/A"
         return datetime.fromtimestamp(obj.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
