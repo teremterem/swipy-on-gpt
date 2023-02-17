@@ -5,7 +5,7 @@ from django.db import migrations
 
 def set_is_end_of_conv(apps, schema_editor):
     Utterance = apps.get_model("swipy_app", "Utterance")
-    Utterance.objects.filter(text="/start", is_bot=True).update(is_end_of_conv=True)
+    Utterance.objects.filter(text="/start", is_bot=False).update(is_end_of_conv=True)
 
 
 class Migration(migrations.Migration):
