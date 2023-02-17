@@ -31,4 +31,5 @@ class Utterance(models.Model):
     name = models.TextField()
     text = models.TextField()
     is_bot = models.BooleanField()
+    is_end_of_conv = models.BooleanField(default=False)
     gpt_completion = models.ForeignKey(GptCompletion, on_delete=models.CASCADE, null=True)
