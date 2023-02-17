@@ -92,12 +92,21 @@ class UtteranceAdmin(admin.ModelAdmin):
         "name",
         "text",
         "is_bot",
-        "is_end_of_conf",
+        "is_end_of_conv",
         "gpt_completion",
         "triggering_update",
     ]
-    # pylint: disable=protected-access
-    readonly_fields = [field.name for field in Utterance._meta.fields if field.name != "is_end_of_conf"]
+    readonly_fields = [
+        "chat_telegram_id",
+        "telegram_message_id",
+        "arrival_time",
+        "name",
+        "text",
+        "is_bot",
+        # "is_end_of_conv",
+        "gpt_completion",
+        "triggering_update",
+    ]
 
     def has_add_permission(self, request):
         return False
