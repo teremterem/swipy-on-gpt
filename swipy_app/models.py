@@ -40,6 +40,9 @@ class Utterance(models.Model):
     name = models.TextField()
     text = models.TextField()
     is_bot = models.BooleanField()
+
+    # TODO oleksandr: get rid of this field when conversations are fully implemented
     is_end_of_conv = models.BooleanField(default=False)
+
     gpt_completion = models.ForeignKey(GptCompletion, on_delete=models.CASCADE, null=True)
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, null=True)

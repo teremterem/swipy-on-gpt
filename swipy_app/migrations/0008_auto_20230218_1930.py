@@ -3,9 +3,43 @@
 from django.db import migrations
 
 
+def populate_conversations(apps, schema_editor):
+    Utterance = apps.get_model("swipy_app", "Utterance")
+    Conversation = apps.get_model("swipy_app", "Conversation")
+
+    for chat_telegram_id in Utterance.objects.values_list("chat_telegram_id", flat=True).distinct():
+        current_conversation = None
+
+        def _rotate_conversation():
+            nonlocal current_conversation
+            if current_conversation is not None:
+                current_conversation.save()
+            current_conversation = Conversation.objects.create(
+                chat_telegram_id=utterance.chat_telegram_id,
+                last_update_timestamp_ms=utterance.arrival_timestamp_ms,
+            )
+            current_conversation.save()
+
+        for utterance in Utterance.objects.filter(chat_telegram_id=chat_telegram_id).order_by("arrival_timestamp_ms"):
+            if (utterance.is_end_of_conv and utterance.text == "/start") or current_conversation is None:
+                _rotate_conversation()
+
+            utterance.conversation = current_conversation
+            utterance.save()
+            current_conversation.last_update_timestamp_ms = utterance.arrival_timestamp_ms
+
+            if utterance.is_end_of_conv and utterance.text != "/start":
+                _rotate_conversation()
+
+        if current_conversation is not None:
+            current_conversation.save()
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ("swipy_app", "0007_conversation_utterance_conversation"),
     ]
 
-    operations = []
+    operations = [
+        migrations.RunPython(populate_conversations, migrations.RunPython.noop),
+    ]

@@ -105,7 +105,7 @@ class ConversationAdmin(admin.ModelAdmin):
 class UtteranceAdmin(admin.ModelAdmin):
     ordering = ["-arrival_timestamp_ms"]
     list_filter = ["chat_telegram_id"]
-    list_display = ["id", "arrival_time", "name", "text", "is_end_of_conv"]
+    list_display = ["id", "arrival_time", "name", "text", "is_end_of_conv", "conversation"]
     list_display_links = list_display
     fields = [
         "chat_telegram_id",
