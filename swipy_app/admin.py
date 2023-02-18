@@ -5,7 +5,7 @@ from pprint import pformat
 from django.contrib import admin
 from django.utils.html import format_html
 
-from swipy_app.models import TelegramUpdate, Utterance, GptCompletion
+from swipy_app.models import TelegramUpdate, Utterance, GptCompletion, Conversation
 
 
 class TelegramUpdateAdmin(admin.ModelAdmin):
@@ -149,4 +149,5 @@ class UtteranceAdmin(admin.ModelAdmin):
 
 admin.site.register(TelegramUpdate, TelegramUpdateAdmin)
 admin.site.register(GptCompletion, GptCompletionAdmin)
+admin.site.register(Conversation, ConversationAdmin)
 admin.site.register(Utterance, UtteranceAdmin)
