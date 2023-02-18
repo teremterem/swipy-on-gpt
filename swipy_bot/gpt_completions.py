@@ -1,7 +1,8 @@
 import asyncio
 import random
-from datetime import datetime
 import traceback
+from datetime import datetime
+
 import openai
 from asgiref.sync import sync_to_async
 
@@ -49,10 +50,10 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
         utterances = utterances[:MAX_CONVERSATION_LENGTH]
         utterances = await sync_to_async(list)(utterances)
 
-        # if the user sent /start at some point then don't include any utterances before that into the context
-        # ("/start" means "Reset the dialog")
         for idx, utterance in enumerate(utterances):
-            if utterance.text == "/start" and utterance.is_bot is False:
+            if utterance.is_end_of_conv:
+                # if the user sent /start ("Reset the dialog") at some point (or the conversation was restarted some
+                # other way) then don't include any utterances before that into the context
                 utterances = utterances[:idx]
                 break
 
@@ -87,7 +88,7 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
 
         try:
             if MOCK_GPT:
-                await asyncio.sleep(2)
+                await asyncio.sleep(1)
                 self.completion = f"\n\nhErE gOeS gPt ReSpOnSe  (iT's a mOCK!) {random.randint(0, 1000000)}"
             else:
                 gpt_response = await openai.Completion.acreate(

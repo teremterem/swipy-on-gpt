@@ -43,6 +43,7 @@ async def save_user_message_to_db(update: Update, tg_update_in_db: TelegramUpdat
         name=user_name,
         text=update.effective_message.text,
         is_bot=False,
+        is_end_of_conv=update.effective_message.text == "/start",
     )
     await sync_to_async(utterance_in_db.save)()
 

@@ -83,7 +83,7 @@ class GptCompletionAdmin(admin.ModelAdmin):
 class UtteranceAdmin(admin.ModelAdmin):
     ordering = ["-arrival_timestamp_ms"]
     list_filter = ["chat_telegram_id"]
-    list_display = ["id", "arrival_time", "name", "text"]
+    list_display = ["id", "arrival_time", "name", "text", "is_end_of_conv"]
     list_display_links = list_display
     fields = [
         "chat_telegram_id",
@@ -92,6 +92,18 @@ class UtteranceAdmin(admin.ModelAdmin):
         "name",
         "text",
         "is_bot",
+        "is_end_of_conv",
+        "gpt_completion",
+        "triggering_update",
+    ]
+    readonly_fields = [
+        "chat_telegram_id",
+        "telegram_message_id",
+        "arrival_time",
+        "name",
+        "text",
+        "is_bot",
+        # "is_end_of_conv",
         "gpt_completion",
         "triggering_update",
     ]
@@ -102,8 +114,8 @@ class UtteranceAdmin(admin.ModelAdmin):
     # def has_delete_permission(self, request, obj=None):
     #     return False
 
-    def has_change_permission(self, request, obj=None):
-        return False
+    # def has_change_permission(self, request, obj=None):
+    #     return False
 
     @admin.display(description="Arrival time")
     def arrival_time(self, obj):
