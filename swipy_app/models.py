@@ -22,6 +22,15 @@ class GptCompletion(models.Model):
     temperature = models.FloatField(null=True)
 
 
+# TODO oleksandr: create user object
+
+
+class Conversation(models.Model):
+    # TODO oleksandr: make sure these objects are created by the bot
+    chat_telegram_id = models.BigIntegerField()
+    last_update_timestamp_ms = models.BigIntegerField()
+
+
 class Utterance(models.Model):
     arrival_timestamp_ms = models.BigIntegerField()
     chat_telegram_id = models.BigIntegerField()
@@ -33,3 +42,4 @@ class Utterance(models.Model):
     is_bot = models.BooleanField()
     is_end_of_conv = models.BooleanField(default=False)
     gpt_completion = models.ForeignKey(GptCompletion, on_delete=models.CASCADE, null=True)
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, null=True)

@@ -80,6 +80,28 @@ class GptCompletionAdmin(admin.ModelAdmin):
         return datetime.fromtimestamp(obj.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
+class ConversationAdmin(admin.ModelAdmin):
+    ordering = ["-last_update_timestamp_ms"]
+    list_filter = ["chat_telegram_id"]
+    list_display = ["id", "chat_telegram_id", "last_update_time"]
+    list_display_links = list_display
+    fields = ["id", "chat_telegram_id", "last_update_time", "utterances"]
+
+    def has_add_permission(self, request):
+        return False
+
+    # def has_delete_permission(self, request, obj=None):
+    #     return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description="Last update time")
+    def last_update_time(self, obj):
+        # TODO oleksandr: get rid of duplicate code
+        return datetime.fromtimestamp(obj.last_update_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+
+
 class UtteranceAdmin(admin.ModelAdmin):
     ordering = ["-arrival_timestamp_ms"]
     list_filter = ["chat_telegram_id"]
@@ -95,6 +117,7 @@ class UtteranceAdmin(admin.ModelAdmin):
         "is_end_of_conv",
         "gpt_completion",
         "triggering_update",
+        "conversation",
     ]
     readonly_fields = [
         "chat_telegram_id",
@@ -106,6 +129,7 @@ class UtteranceAdmin(admin.ModelAdmin):
         # "is_end_of_conv",
         "gpt_completion",
         "triggering_update",
+        "conversation",
     ]
 
     def has_add_permission(self, request):
