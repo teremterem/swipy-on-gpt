@@ -1,4 +1,4 @@
-# pylint: disable=unused-argument
+# pylint: disable=unused-argument,too-few-public-methods
 from datetime import datetime
 from pprint import pformat
 
@@ -80,12 +80,24 @@ class GptCompletionAdmin(admin.ModelAdmin):
         return datetime.fromtimestamp(obj.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
+class UtteranceInline(admin.TabularInline):
+    # TODO oleksandr: make read-only
+    model = Utterance
+    ordering = ["arrival_timestamp_ms"]
+    fields = ["name", "text"]
+    can_delete = False
+    can_add = False
+    can_edit = False
+    show_change_link = True
+
+
 class ConversationAdmin(admin.ModelAdmin):
+    inlines = [UtteranceInline]
     ordering = ["-last_update_timestamp_ms"]
     list_filter = ["chat_telegram_id"]
     list_display = ["id", "chat_telegram_id", "last_update_time"]
     list_display_links = list_display
-    fields = ["id", "chat_telegram_id", "last_update_time", "utterances"]
+    fields = ["id", "chat_telegram_id", "last_update_time"]
 
     def has_add_permission(self, request):
         return False
