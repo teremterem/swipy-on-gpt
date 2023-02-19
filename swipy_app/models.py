@@ -51,9 +51,9 @@ class Utterance(models.Model):
 
 class SwipyUser(models.Model):
     # TODO oleksandr: shouldn't it be user_telegram_id plus chat_telegram_id ?
-    chat_telegram_id = models.BigIntegerField(db_index=True)
-    first_name = models.TextField()
-    full_name = models.TextField()
+    chat_telegram_id = models.BigIntegerField(unique=True)
+    first_name = models.TextField(null=True, blank=True)
+    full_name = models.TextField(null=True, blank=True)
     current_conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, null=True)
 
     def __str__(self):

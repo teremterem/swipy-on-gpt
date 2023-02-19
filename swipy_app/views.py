@@ -3,7 +3,6 @@ import json
 from datetime import datetime
 from functools import wraps
 
-from asgiref.sync import sync_to_async
 from django.http import HttpResponse, HttpRequest
 from telegram import Update
 
@@ -35,15 +34,27 @@ async def telegram_webhook(request: HttpRequest) -> HttpResponse:
         # TODO oleksandr: shouldn't it be telegram_user_id + telegram_chat_id ?
         swipy_user = None
         if telegram_update.effective_chat:
-            swipy_user = SwipyUser.objects.get(chat_telegram_id=telegram_update.effective_chat.id).first()
+            swipy_user = await SwipyUser.objects.filter(chat_telegram_id=telegram_update.effective_chat.id).afirst()
 
-        tg_update_in_db = await sync_to_async(TelegramUpdate.objects.create)(
+            if not swipy_user:
+                first_name = None
+                full_name = None
+                if telegram_update.effective_user:
+                    first_name = telegram_update.effective_user.first_name
+                    full_name = telegram_update.effective_user.full_name
+
+                swipy_user = await SwipyUser.objects.acreate(
+                    chat_telegram_id=telegram_update.effective_chat.id,
+                    first_name=first_name,
+                    full_name=full_name,
+                )
+
+        tg_update_in_db = await TelegramUpdate.objects.acreate(
             update_telegram_id=telegram_update.update_id,
             swipy_user=swipy_user,
             arrival_timestamp_ms=arrival_timestamp_ms,
             payload=telegram_update_dict,
         )
-        await sync_to_async(tg_update_in_db.save)()
         UPDATE_DB_MODELS_VOLATILE_CACHE[id(telegram_update)] = tg_update_in_db
 
         await application.process_update(telegram_update)
