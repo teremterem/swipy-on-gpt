@@ -31,7 +31,12 @@ DIALOG = DialogGptCompletionHistory(
 UPDATE_DB_MODELS_VOLATILE_CACHE: dict[int, TelegramUpdate] = {}
 
 
-async def save_user_message_to_db(update: Update, tg_update_in_db: TelegramUpdate, user_name: str) -> None:
+async def reply_with_gpt_completion(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, history: DialogGptCompletionHistory
+) -> None:
+    user_name = update.effective_user.first_name  # TODO oleksandr: update db user info upon every tg update ?
+    tg_update_in_db = UPDATE_DB_MODELS_VOLATILE_CACHE.pop(id(update))
+
     # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
     arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
     await Utterance.objects.acreate(
@@ -44,19 +49,6 @@ async def save_user_message_to_db(update: Update, tg_update_in_db: TelegramUpdat
         text=update.effective_message.text,
         is_bot=False,
         is_end_of_conv=update.effective_message.text == "/start",
-    )
-
-
-async def reply_with_gpt_completion(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, history: DialogGptCompletionHistory
-) -> None:
-    user_name = update.effective_user.first_name
-    tg_update_in_db = UPDATE_DB_MODELS_VOLATILE_CACHE.pop(id(update))
-
-    await save_user_message_to_db(
-        update=update,
-        tg_update_in_db=tg_update_in_db,
-        user_name=user_name,
     )
 
     gpt_completion = history.new_user_utterance(user_name, update.effective_message.text)
@@ -93,6 +85,7 @@ async def reply_with_gpt_completion(
     await Utterance.objects.acreate(
         arrival_timestamp_ms=arrival_timestamp_ms,
         swipy_user=tg_update_in_db.swipy_user,
+        conversation=await tg_update_in_db.swipy_user.get_current_conversation(),
         telegram_message_id=response_msg.message_id,
         triggering_update=tg_update_in_db,
         name=gpt_completion.bot_name,
