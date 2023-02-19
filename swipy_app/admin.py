@@ -151,6 +151,7 @@ class ConversationInline(admin.TabularInline):
     model = Conversation
     ordering = ["-last_update_timestamp_ms"]
     fields = ["id", "last_update_timestamp_ms"]
+    readonly_fields = ["id", "last_update_timestamp_ms"]
     can_delete = False
     can_add = False
     can_edit = False

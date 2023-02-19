@@ -54,7 +54,7 @@ class SwipyUser(models.Model):
     chat_telegram_id = models.BigIntegerField(unique=True)
     first_name = models.TextField(null=True, blank=True)
     full_name = models.TextField(null=True, blank=True)
-    current_conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, null=True)
+    current_conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self) -> str:
         return str(self.full_name)
