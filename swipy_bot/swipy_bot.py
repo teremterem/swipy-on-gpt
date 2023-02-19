@@ -92,7 +92,7 @@ async def reply_with_gpt_completion(
     arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
     await Utterance.objects.acreate(
         arrival_timestamp_ms=arrival_timestamp_ms,
-        chat_telegram_id=response_msg.chat.id,
+        swipy_user=tg_update_in_db.swipy_user,
         telegram_message_id=response_msg.message_id,
         triggering_update=tg_update_in_db,
         name=gpt_completion.bot_name,
