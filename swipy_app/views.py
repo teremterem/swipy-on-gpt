@@ -34,7 +34,12 @@ async def telegram_webhook(request: HttpRequest) -> HttpResponse:
         # TODO oleksandr: shouldn't it be telegram_user_id + telegram_chat_id ?
         swipy_user = None
         if telegram_update.effective_chat:
-            swipy_user = await SwipyUser.objects.filter(chat_telegram_id=telegram_update.effective_chat.id).afirst()
+            # TODO oleksandr: is select_related("current_conversation") only way to handle lazy properties in async ?
+            swipy_user = (
+                await SwipyUser.objects.filter(chat_telegram_id=telegram_update.effective_chat.id)
+                .select_related("current_conversation")
+                .afirst()
+            )
 
             if not swipy_user:
                 first_name = None
