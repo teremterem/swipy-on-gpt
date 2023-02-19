@@ -54,4 +54,4 @@ class SwipyUser(models.Model):
     current_conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, null=True)
 
     def __str__(self):
-        return f"{self.full_name} - {self.chat_telegram_id}"
+        return str(self.full_name)
