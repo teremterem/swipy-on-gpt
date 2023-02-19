@@ -4,6 +4,7 @@ import traceback
 from datetime import datetime
 
 import openai
+from asgiref.sync import sync_to_async
 
 from swipy_app.models import GptCompletion, TelegramUpdate, Utterance
 from swipy_bot.swipy_config import MOCK_GPT, MAX_CONVERSATION_LENGTH
@@ -45,10 +46,9 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
     async def build_prompt(self) -> bool:
         prompt_parts = []
 
-        utterances = Utterance.objects.afilter(chat_telegram_id=self.chat_telegram_id).order_by(
-            "-arrival_timestamp_ms"
-        )
-        utterances = await utterances[:MAX_CONVERSATION_LENGTH]
+        utterances = Utterance.objects.filter(chat_telegram_id=self.chat_telegram_id).order_by("-arrival_timestamp_ms")
+        utterances = utterances[:MAX_CONVERSATION_LENGTH]
+        utterances = await sync_to_async(list)(utterances)
 
         for idx, utterance in enumerate(utterances):
             if utterance.is_end_of_conv:
