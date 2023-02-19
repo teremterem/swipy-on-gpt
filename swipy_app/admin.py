@@ -5,7 +5,7 @@ from pprint import pformat
 from django.contrib import admin
 from django.utils.html import format_html
 
-from swipy_app.models import TelegramUpdate, Utterance, GptCompletion, Conversation
+from swipy_app.models import TelegramUpdate, Utterance, GptCompletion, Conversation, SwipyUser
 
 
 class TelegramUpdateAdmin(admin.ModelAdmin):
@@ -159,7 +159,23 @@ class UtteranceAdmin(admin.ModelAdmin):
         return datetime.fromtimestamp(obj.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
+class SwipyUserAdmin(admin.ModelAdmin):
+    ordering = ["full_name", "chat_telegram_id"]
+    list_display = ["id", "full_name", "chat_telegram_id", "current_conversation"]
+    list_display_links = ["id", "full_name", "chat_telegram_id"]
+
+    def has_add_permission(self, request):
+        return False
+
+    # def has_delete_permission(self, request, obj=None):
+    #     return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
 admin.site.register(TelegramUpdate, TelegramUpdateAdmin)
 admin.site.register(GptCompletion, GptCompletionAdmin)
 admin.site.register(Conversation, ConversationAdmin)
 admin.site.register(Utterance, UtteranceAdmin)
+admin.site.register(SwipyUser, SwipyUserAdmin)

@@ -60,6 +60,7 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
         has_history = len(utterances) > 0
 
         for utterance in reversed(utterances):
+            # TODO oleksandr: use users and bots current names, not the ones they had at the time of the utterance
             prompt_parts.append(f"{self.utterance_prefix(utterance.name)} {utterance.text}")
 
         prompt_parts.append(self.bot_prefix)

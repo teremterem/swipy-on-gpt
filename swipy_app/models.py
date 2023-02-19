@@ -46,3 +46,13 @@ class Utterance(models.Model):
 
     gpt_completion = models.ForeignKey(GptCompletion, on_delete=models.CASCADE, null=True)
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, null=True)
+
+
+class SwipyUser(models.Model):
+    chat_telegram_id = models.BigIntegerField()
+    first_name = models.TextField()
+    full_name = models.TextField()
+    current_conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, null=True)
+
+    def __str__(self):
+        return f"{self.full_name} - {self.chat_telegram_id}"
