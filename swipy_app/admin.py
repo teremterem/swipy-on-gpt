@@ -86,8 +86,8 @@ class UtteranceInline(admin.TabularInline):
     ordering = ["arrival_timestamp_ms"]
     fields = ["name", "text"]
     can_delete = False
-    can_add = False
-    can_edit = False
+    can_add = False  # TODO oleksandr: are you sure this property exists ?
+    can_edit = False  # TODO oleksandr: are you sure this property exists ?
     show_change_link = True
 
 
@@ -153,8 +153,8 @@ class ConversationInline(admin.TabularInline):
     fields = ["id", "last_update_timestamp_ms"]
     readonly_fields = ["id", "last_update_timestamp_ms"]
     can_delete = False
-    can_add = False
-    can_edit = False
+    can_add = False  # TODO oleksandr: are you sure this property exists ?
+    can_edit = False  # TODO oleksandr: are you sure this property exists ?
     show_change_link = True
 
 
