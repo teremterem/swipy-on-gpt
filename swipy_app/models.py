@@ -26,8 +26,7 @@ class GptCompletion(models.Model):
 
 
 class Conversation(models.Model):
-    # TODO oleksandr: make sure these objects are created by the bot
-    chat_telegram_id = models.BigIntegerField()
+    swipy_user = models.ForeignKey("SwipyUser", on_delete=models.CASCADE, null=True)
     last_update_timestamp_ms = models.BigIntegerField()
 
 

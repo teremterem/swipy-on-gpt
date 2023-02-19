@@ -94,10 +94,10 @@ class UtteranceInline(admin.TabularInline):
 class ConversationAdmin(admin.ModelAdmin):
     inlines = [UtteranceInline]
     ordering = ["-last_update_timestamp_ms"]
-    list_filter = ["chat_telegram_id"]
-    list_display = ["id", "chat_telegram_id", "last_update_time"]
+    list_filter = ["swipy_user"]
+    list_display = ["id", "swipy_user", "last_update_time"]
     list_display_links = list_display
-    fields = ["id", "chat_telegram_id", "last_update_time"]
+    fields = ["id", "swipy_user", "last_update_time"]
 
     def has_add_permission(self, request):
         return False
@@ -159,7 +159,24 @@ class UtteranceAdmin(admin.ModelAdmin):
         return datetime.fromtimestamp(obj.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
+class ConversationInline(admin.TabularInline):
+    # TODO oleksandr: make read-only
+    model = Conversation
+    ordering = ["-last_update_timestamp_ms"]
+    fields = ["id", "last_update_time"]
+    can_delete = False
+    can_add = False
+    can_edit = False
+    show_change_link = True
+
+    @admin.display(description="Arrival time")
+    def last_update_time(self, obj):
+        # TODO oleksandr: get rid of duplicate code
+        return datetime.fromtimestamp(obj.last_update_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+
+
 class SwipyUserAdmin(admin.ModelAdmin):
+    inlines = [ConversationInline]
     ordering = ["full_name", "chat_telegram_id"]
     list_display = ["id", "full_name", "chat_telegram_id", "current_conversation"]
     list_display_links = ["id", "full_name", "chat_telegram_id"]
