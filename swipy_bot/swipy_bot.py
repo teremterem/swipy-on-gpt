@@ -59,7 +59,7 @@ async def reply_with_gpt_completion(
         user_name=user_name,
     )
 
-    gpt_completion = history.new_user_utterance(user_name, update.effective_message.text, update.effective_chat.id)
+    gpt_completion = history.new_user_utterance(user_name, update.effective_message.text)
 
     keep_typing = True
 

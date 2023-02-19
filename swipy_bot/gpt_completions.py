@@ -18,7 +18,6 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
         user_utterance: str,
         prompt_template: str,
         temperature: float,
-        chat_telegram_id: int,
     ):
         self.user_name = user_name
         self.bot_name = bot_name
@@ -28,7 +27,6 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
         self.bot_prefix = self.utterance_prefix(self.bot_name)
 
         self.prompt_template = prompt_template
-        self.chat_telegram_id = chat_telegram_id
         self.temperature = temperature
         self.gpt_completion_in_db: GptCompletion | None = None
         self.stop_list = [
@@ -43,10 +41,12 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
     def utterance_prefix(self, utterer_name) -> str:
         return f"*{utterer_name}:*"
 
-    async def build_prompt(self) -> bool:
+    async def build_prompt(self, tg_update_in_db: TelegramUpdate) -> bool:
         prompt_parts = []
 
-        utterances = Utterance.objects.filter(chat_telegram_id=self.chat_telegram_id).order_by("-arrival_timestamp_ms")
+        utterances = Utterance.objects.filter(
+            conversation=await tg_update_in_db.swipy_user.get_current_conversation()
+        ).order_by("-arrival_timestamp_ms")
         utterances = utterances[:MAX_CONVERSATION_LENGTH]
         utterances = await sync_to_async(list)(utterances)
 
@@ -71,7 +71,7 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
         return has_history
 
     async def fulfil(self, tg_update_in_db: TelegramUpdate) -> None:
-        has_history = await self.build_prompt()
+        has_history = await self.build_prompt(tg_update_in_db)
         # temperature 1 should make conversation starters more "natural" (hopefully)
         temperature = self.temperature if has_history else 1.0  # TODO oleksandr: are you sure ?
 
@@ -81,7 +81,7 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
         self.gpt_completion_in_db = await GptCompletion.objects.acreate(
             request_timestamp_ms=request_timestamp_ms,
             triggering_update=tg_update_in_db,
-            chat_telegram_id=tg_update_in_db.chat_telegram_id,
+            swipy_user=tg_update_in_db.swipy_user,
             prompt=self.prompt,
             temperature=temperature,
         )
@@ -125,14 +125,13 @@ class DialogGptCompletionHistory:
         self.prompt_template = prompt_template
         self.temperature = temperature
 
-    def new_user_utterance(self, user_name: str, user_utterance: str, chat_telegram_id: int) -> DialogGptCompletion:
+    def new_user_utterance(self, user_name: str, user_utterance: str) -> DialogGptCompletion:
         gpt_completion = DialogGptCompletion(
             prompt_template=self.prompt_template,
             user_name=user_name,
             bot_name=self.bot_name,
             user_utterance=user_utterance,
             temperature=self.temperature,
-            chat_telegram_id=chat_telegram_id,
         )
         return gpt_completion
 
