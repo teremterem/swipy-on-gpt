@@ -4,7 +4,6 @@ import traceback
 from datetime import datetime
 
 import openai
-from asgiref.sync import sync_to_async
 
 from swipy_app.models import GptCompletion, TelegramUpdate, Utterance
 from swipy_bot.swipy_config import MOCK_GPT, MAX_CONVERSATION_LENGTH
@@ -46,9 +45,10 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
     async def build_prompt(self) -> bool:
         prompt_parts = []
 
-        utterances = Utterance.objects.filter(chat_telegram_id=self.chat_telegram_id).order_by("-arrival_timestamp_ms")
-        utterances = utterances[:MAX_CONVERSATION_LENGTH]
-        utterances = await sync_to_async(list)(utterances)
+        utterances = Utterance.objects.afilter(chat_telegram_id=self.chat_telegram_id).order_by(
+            "-arrival_timestamp_ms"
+        )
+        utterances = await utterances[:MAX_CONVERSATION_LENGTH]
 
         for idx, utterance in enumerate(utterances):
             if utterance.is_end_of_conv:
@@ -78,14 +78,13 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
         # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
         request_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
 
-        self.gpt_completion_in_db = await sync_to_async(GptCompletion.objects.create)(
+        self.gpt_completion_in_db = await GptCompletion.objects.acreate(
             request_timestamp_ms=request_timestamp_ms,
             triggering_update=tg_update_in_db,
             chat_telegram_id=tg_update_in_db.chat_telegram_id,
             prompt=self.prompt,
             temperature=temperature,
         )
-        await sync_to_async(self.gpt_completion_in_db.save)()
 
         try:
             if MOCK_GPT:
@@ -109,14 +108,14 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
             arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
             self.gpt_completion_in_db.arrival_timestamp_ms = arrival_timestamp_ms
             self.gpt_completion_in_db.completion = f"===== ERROR =====\n\n{traceback.format_exc()}"
-            await sync_to_async(self.gpt_completion_in_db.save)()
+            await self.gpt_completion_in_db.asave()
             raise
 
         # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
         arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
         self.gpt_completion_in_db.arrival_timestamp_ms = arrival_timestamp_ms
         self.gpt_completion_in_db.completion = self.completion
-        await sync_to_async(self.gpt_completion_in_db.save)()
+        await self.gpt_completion_in_db.asave()
 
 
 class DialogGptCompletionHistory:
