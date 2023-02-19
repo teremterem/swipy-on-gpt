@@ -108,14 +108,14 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
             arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
             self.gpt_completion_in_db.arrival_timestamp_ms = arrival_timestamp_ms
             self.gpt_completion_in_db.completion = f"===== ERROR =====\n\n{traceback.format_exc()}"
-            await self.gpt_completion_in_db.asave()
+            await sync_to_async(self.gpt_completion_in_db.save)()
             raise
 
         # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
         arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
         self.gpt_completion_in_db.arrival_timestamp_ms = arrival_timestamp_ms
         self.gpt_completion_in_db.completion = self.completion
-        await self.gpt_completion_in_db.asave()
+        await sync_to_async(self.gpt_completion_in_db.save)()
 
 
 class DialogGptCompletionHistory:
