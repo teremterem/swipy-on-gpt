@@ -1,4 +1,7 @@
 # pylint: disable=too-few-public-methods
+from datetime import datetime
+
+from asgiref.sync import sync_to_async
 from django.db import models
 
 
@@ -56,5 +59,18 @@ class SwipyUser(models.Model):
     full_name = models.TextField(null=True, blank=True)
     current_conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, null=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.full_name)
+
+    async def get_current_conversation(self) -> Conversation:
+        """
+        Returns the current conversation for this user, creating it if it doesn't exist yet.
+        """
+        if not self.current_conversation:
+            self.current_conversation = await Conversation.objects.acreate(
+                swipy_user=self,
+                # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
+                last_update_timestamp_ms=int(datetime.utcnow().timestamp() * 1000),
+            )
+            await sync_to_async(self.save)(update_fields=["current_conversation"])
+        return self.current_conversation
