@@ -12,7 +12,7 @@ def populate_users(apps, schema_editor):
         last_utterance = (
             Utterance.objects.filter(chat_telegram_id=chat_telegram_id).order_by("-arrival_timestamp_ms").first()
         )
-        telegram_update = Update.de_json(last_utterance.triggering_update.payload)
+        telegram_update = Update.de_json(last_utterance.triggering_update.payload, bot=None)
         user = SwipyUser.objects.create(
             chat_telegram_id=chat_telegram_id,
             first_name=telegram_update.effective_user.first_name,
