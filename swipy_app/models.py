@@ -4,7 +4,7 @@ from django.db import models
 
 class TelegramUpdate(models.Model):
     arrival_timestamp_ms = models.BigIntegerField()
-    chat_telegram_id = models.BigIntegerField(null=True)
+    swipy_user = models.ForeignKey("SwipyUser", on_delete=models.CASCADE, null=True)
     update_telegram_id = models.BigIntegerField()
 
     payload = models.JSONField()
@@ -15,14 +15,11 @@ class GptCompletion(models.Model):
     arrival_timestamp_ms = models.BigIntegerField(null=True)
     # TODO oleksandr: processing time ?
     triggering_update = models.ForeignKey(TelegramUpdate, on_delete=models.CASCADE, null=True)
-    chat_telegram_id = models.BigIntegerField(null=True)
+    swipy_user = models.ForeignKey("SwipyUser", on_delete=models.CASCADE, null=True)
 
     prompt = models.TextField(null=True, blank=True)
     completion = models.TextField(null=True, blank=True)
     temperature = models.FloatField(null=True)
-
-
-# TODO oleksandr: create user object
 
 
 class Conversation(models.Model):
@@ -32,7 +29,7 @@ class Conversation(models.Model):
 
 class Utterance(models.Model):
     arrival_timestamp_ms = models.BigIntegerField()
-    chat_telegram_id = models.BigIntegerField()
+    swipy_user = models.ForeignKey("SwipyUser", on_delete=models.CASCADE, null=True)
     telegram_message_id = models.BigIntegerField()
     triggering_update = models.ForeignKey(TelegramUpdate, on_delete=models.CASCADE, null=True)
 
@@ -48,6 +45,7 @@ class Utterance(models.Model):
 
 
 class SwipyUser(models.Model):
+    # TODO oleksandr: shouldn't it be user_telegram_id plus chat_telegram_id ?
     chat_telegram_id = models.BigIntegerField()
     first_name = models.TextField()
     full_name = models.TextField()

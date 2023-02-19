@@ -10,10 +10,10 @@ from swipy_app.models import TelegramUpdate, Utterance, GptCompletion, Conversat
 
 class TelegramUpdateAdmin(admin.ModelAdmin):
     ordering = ["-arrival_timestamp_ms"]
-    list_filter = ["chat_telegram_id"]
-    list_display = ["id", "arrival_time", "pretty_payload", "chat_telegram_id"]
-    list_display_links = list_display
-    fields = ["chat_telegram_id", "update_telegram_id", "arrival_time", "pretty_payload", "arrival_timestamp_ms"]
+    list_filter = ["swipy_user"]
+    list_display = ["id", "arrival_time", "pretty_payload", "swipy_user"]
+    list_display_links = ["id", "arrival_time"]
+    fields = ["swipy_user", "update_telegram_id", "arrival_time", "pretty_payload", "arrival_timestamp_ms"]
 
     def has_add_permission(self, request):
         return False
@@ -36,7 +36,7 @@ class TelegramUpdateAdmin(admin.ModelAdmin):
 
 class GptCompletionAdmin(admin.ModelAdmin):
     ordering = ["-request_timestamp_ms"]
-    list_filter = ["chat_telegram_id"]
+    list_filter = ["swipy_user"]
     list_display = ["id", "request_time", "arrival_time", "completion"]
     list_display_links = list_display
     fields = [
@@ -116,11 +116,11 @@ class ConversationAdmin(admin.ModelAdmin):
 
 class UtteranceAdmin(admin.ModelAdmin):
     ordering = ["-arrival_timestamp_ms"]
-    list_filter = ["chat_telegram_id"]
+    list_filter = ["swipy_user"]
     list_display = ["id", "arrival_time", "name", "text", "is_end_of_conv", "conversation"]
     list_display_links = list_display
     fields = [
-        "chat_telegram_id",
+        "swipy_user",
         "telegram_message_id",
         "arrival_time",
         "name",
@@ -132,7 +132,7 @@ class UtteranceAdmin(admin.ModelAdmin):
         "conversation",
     ]
     readonly_fields = [
-        "chat_telegram_id",
+        "swipy_user",
         "telegram_message_id",
         "arrival_time",
         "name",
