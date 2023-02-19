@@ -2,6 +2,7 @@
 import asyncio
 from datetime import datetime
 
+from asgiref.sync import sync_to_async
 from telegram import Update
 from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
@@ -37,6 +38,11 @@ async def reply_with_gpt_completion(
     user_name = update.effective_user.first_name  # TODO oleksandr: update db user info upon every tg update ?
     tg_update_in_db = UPDATE_DB_MODELS_VOLATILE_CACHE.pop(id(update))
 
+    if update.effective_message.text == "/start":
+        # start a new conversation
+        tg_update_in_db.swipy_user.current_conversation = None
+        await sync_to_async(tg_update_in_db.swipy_user.save)(update_fields=["current_conversation"])
+
     # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
     arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
     await Utterance.objects.acreate(
@@ -48,8 +54,8 @@ async def reply_with_gpt_completion(
         name=user_name,
         text=update.effective_message.text,
         is_bot=False,
-        is_end_of_conv=update.effective_message.text == "/start",
     )
+    # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation
 
     gpt_completion = history.new_user_utterance(user_name, update.effective_message.text)
 
@@ -93,6 +99,7 @@ async def reply_with_gpt_completion(
         is_bot=True,
         gpt_completion=gpt_completion.gpt_completion_in_db,
     )
+    # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation
 
 
 # noinspection PyUnusedLocal

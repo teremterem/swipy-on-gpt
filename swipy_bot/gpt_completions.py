@@ -47,19 +47,16 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
         utterances = Utterance.objects.filter(
             conversation=await tg_update_in_db.swipy_user.get_current_conversation()
         ).order_by("-arrival_timestamp_ms")
+        # TODO oleksandr: replace MAX_CONVERSATION_LENGTH with a more sophisticated logic
         utterances = utterances[:MAX_CONVERSATION_LENGTH]
         utterances = await sync_to_async(list)(utterances)
-
-        for idx, utterance in enumerate(utterances):
-            if utterance.is_end_of_conv:
-                # if the user sent /start ("Reset the dialog") at some point (or the conversation was restarted some
-                # other way) then don't include any utterances before that into the context
-                utterances = utterances[:idx]
-                break
 
         has_history = len(utterances) > 0
 
         for utterance in reversed(utterances):
+            if not utterance.is_bot and utterance.text == "/start":
+                # don't include /start in the prompt
+                continue
             # TODO oleksandr: use users and bots current names, not the ones they had at the time of the utterance
             prompt_parts.append(f"{self.utterance_prefix(utterance.name)} {utterance.text}")
 

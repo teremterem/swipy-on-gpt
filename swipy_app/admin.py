@@ -117,7 +117,7 @@ class ConversationAdmin(admin.ModelAdmin):
 class UtteranceAdmin(admin.ModelAdmin):
     ordering = ["-arrival_timestamp_ms"]
     list_filter = ["swipy_user"]
-    list_display = ["id", "arrival_time", "name", "text", "is_end_of_conv", "conversation"]
+    list_display = ["id", "arrival_time", "name", "text", "conversation"]
     list_display_links = list_display
     fields = [
         "swipy_user",
@@ -126,19 +126,6 @@ class UtteranceAdmin(admin.ModelAdmin):
         "name",
         "text",
         "is_bot",
-        "is_end_of_conv",
-        "gpt_completion",
-        "triggering_update",
-        "conversation",
-    ]
-    readonly_fields = [
-        "swipy_user",
-        "telegram_message_id",
-        "arrival_time",
-        "name",
-        "text",
-        "is_bot",
-        # "is_end_of_conv",
         "gpt_completion",
         "triggering_update",
         "conversation",
@@ -150,8 +137,8 @@ class UtteranceAdmin(admin.ModelAdmin):
     # def has_delete_permission(self, request, obj=None):
     #     return False
 
-    # def has_change_permission(self, request, obj=None):
-    #     return False
+    def has_change_permission(self, request, obj=None):
+        return False
 
     @admin.display(description="Arrival time")
     def arrival_time(self, obj):
@@ -175,6 +162,18 @@ class SwipyUserAdmin(admin.ModelAdmin):
     ordering = ["full_name", "chat_telegram_id"]
     list_display = ["id", "full_name", "chat_telegram_id", "current_conversation"]
     list_display_links = ["id", "full_name", "chat_telegram_id"]
+    fields = [
+        "first_name",
+        "full_name",
+        "chat_telegram_id",
+        "current_conversation",
+    ]
+    readonly_fields = [
+        "first_name",
+        "full_name",
+        "chat_telegram_id",
+        # "current_conversation",
+    ]
 
     def has_add_permission(self, request):
         return False
@@ -182,8 +181,8 @@ class SwipyUserAdmin(admin.ModelAdmin):
     # def has_delete_permission(self, request, obj=None):
     #     return False
 
-    def has_change_permission(self, request, obj=None):
-        return False
+    # def has_change_permission(self, request, obj=None):
+    #     return False
 
 
 admin.site.register(TelegramUpdate, TelegramUpdateAdmin)
