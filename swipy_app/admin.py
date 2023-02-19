@@ -163,16 +163,11 @@ class ConversationInline(admin.TabularInline):
     # TODO oleksandr: make read-only
     model = Conversation
     ordering = ["-last_update_timestamp_ms"]
-    fields = ["id", "last_update_time"]
+    fields = ["id", "last_update_timestamp_ms"]
     can_delete = False
     can_add = False
     can_edit = False
     show_change_link = True
-
-    @admin.display(description="Arrival time")
-    def last_update_time(self, obj):
-        # TODO oleksandr: get rid of duplicate code
-        return datetime.fromtimestamp(obj.last_update_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
 class SwipyUserAdmin(admin.ModelAdmin):
