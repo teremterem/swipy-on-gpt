@@ -36,7 +36,7 @@ async def save_user_message_to_db(update: Update, tg_update_in_db: TelegramUpdat
     arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
     await Utterance.objects.acreate(
         arrival_timestamp_ms=arrival_timestamp_ms,
-        chat_telegram_id=update.effective_chat.id,
+        swipy_user=tg_update_in_db.swipy_user,
         telegram_message_id=update.effective_message.message_id,
         triggering_update=tg_update_in_db,
         name=user_name,
