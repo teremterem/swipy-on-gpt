@@ -13,8 +13,8 @@ def populate_users(apps, schema_editor):
         )
         user = SwipyUser.objects.create(
             chat_telegram_id=chat_telegram_id,
-            first_name=last_utterance.telegram_update.effective_user.first_name,
-            full_name=last_utterance.telegram_update.effective_user.full_name,
+            first_name=last_utterance.triggering_update.effective_user.first_name,
+            full_name=last_utterance.triggering_update.effective_user.full_name,
             current_conversation=last_utterance.conversation,
         )
         user.save()
