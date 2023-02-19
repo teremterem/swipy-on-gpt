@@ -4,7 +4,7 @@ from django.db import models
 
 class TelegramUpdate(models.Model):
     arrival_timestamp_ms = models.BigIntegerField()
-    swipy_user = models.ForeignKey("SwipyUser", on_delete=models.CASCADE)
+    swipy_user = models.ForeignKey("SwipyUser", on_delete=models.CASCADE, null=True)
     update_telegram_id = models.BigIntegerField()
 
     payload = models.JSONField()

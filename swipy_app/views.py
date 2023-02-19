@@ -7,7 +7,7 @@ from asgiref.sync import sync_to_async
 from django.http import HttpResponse, HttpRequest
 from telegram import Update
 
-from swipy_app.models import TelegramUpdate
+from swipy_app.models import TelegramUpdate, SwipyUser
 from swipy_bot.swipy_bot import application, UPDATE_DB_MODELS_VOLATILE_CACHE
 
 
@@ -32,9 +32,14 @@ async def telegram_webhook(request: HttpRequest) -> HttpResponse:
         telegram_update_dict = json.loads(request.body)
         telegram_update = Update.de_json(telegram_update_dict, application.bot)
 
+        # TODO oleksandr: shouldn't it be telegram_user_id + telegram_chat_id ?
+        swipy_user = None
+        if telegram_update.effective_chat:
+            swipy_user = SwipyUser.objects.get(chat_telegram_id=telegram_update.effective_chat.id).first()
+
         tg_update_in_db = await sync_to_async(TelegramUpdate.objects.create)(
             update_telegram_id=telegram_update.update_id,
-            chat_telegram_id=telegram_update.effective_chat.id if telegram_update.effective_chat else None,
+            swipy_user=swipy_user,
             arrival_timestamp_ms=arrival_timestamp_ms,
             payload=telegram_update_dict,
         )
