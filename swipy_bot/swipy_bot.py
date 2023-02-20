@@ -32,35 +32,32 @@ DIALOG = DialogGptCompletionHistory(
 UPDATE_DB_MODELS_VOLATILE_CACHE: dict[int, TelegramUpdate] = {}
 
 
-async def save_user_message_to_db(update: Update, tg_update_in_db: TelegramUpdate, user_name: str) -> None:
+async def reply_with_gpt_completion(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, history: DialogGptCompletionHistory
+) -> None:
+    user_name = update.effective_user.first_name  # TODO oleksandr: update db user info upon every tg update ?
+    tg_update_in_db = UPDATE_DB_MODELS_VOLATILE_CACHE.pop(id(update))
+
+    if update.effective_message.text == "/start":
+        # start a new conversation
+        tg_update_in_db.swipy_user.current_conversation = None
+        await sync_to_async(tg_update_in_db.swipy_user.save)(update_fields=["current_conversation"])
+
     # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
     arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
-    utterance_in_db = await sync_to_async(Utterance.objects.create)(
+    await Utterance.objects.acreate(
         arrival_timestamp_ms=arrival_timestamp_ms,
-        chat_telegram_id=update.effective_chat.id,
+        swipy_user=tg_update_in_db.swipy_user,
+        conversation=await tg_update_in_db.swipy_user.get_current_conversation(),
         telegram_message_id=update.effective_message.message_id,
         triggering_update=tg_update_in_db,
         name=user_name,
         text=update.effective_message.text,
         is_bot=False,
-        is_end_of_conv=update.effective_message.text == "/start",
     )
-    await sync_to_async(utterance_in_db.save)()
+    # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation
 
-
-async def reply_with_gpt_completion(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, history: DialogGptCompletionHistory
-) -> None:
-    user_name = update.effective_user.first_name
-    tg_update_in_db = UPDATE_DB_MODELS_VOLATILE_CACHE.pop(id(update))
-
-    await save_user_message_to_db(
-        update=update,
-        tg_update_in_db=tg_update_in_db,
-        user_name=user_name,
-    )
-
-    gpt_completion = history.new_user_utterance(user_name, update.effective_message.text, update.effective_chat.id)
+    gpt_completion = history.new_user_utterance(user_name, update.effective_message.text)
 
     keep_typing = True
 
@@ -74,17 +71,11 @@ async def reply_with_gpt_completion(
     await asyncio.sleep(1)
     asyncio.get_event_loop().create_task(_keep_typing_task())
 
-    # await update.effective_chat.send_message(
-    #     text=f"{str(history).upper()}\n\n" f"{gpt_completion.prompt}",
-    #     parse_mode=ParseMode.MARKDOWN,
-    # )
     await gpt_completion.fulfil(tg_update_in_db)
     keep_typing = False
 
-    # add a button to the message
     response_msg = await update.effective_chat.send_message(
         text=gpt_completion.completion.strip(),  # TODO oleksandr: minor: is stripping necessary ?
-        # parse_mode=ParseMode.MARKDOWN,  # TODO oleksandr: do I need markdown for anything ?
         # reply_markup=InlineKeyboardMarkup(
         #     [
         #         [
@@ -97,9 +88,10 @@ async def reply_with_gpt_completion(
 
     # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
     arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
-    utterance_in_db = await sync_to_async(Utterance.objects.create)(
+    await Utterance.objects.acreate(
         arrival_timestamp_ms=arrival_timestamp_ms,
-        chat_telegram_id=response_msg.chat.id,
+        swipy_user=tg_update_in_db.swipy_user,
+        conversation=await tg_update_in_db.swipy_user.get_current_conversation(),
         telegram_message_id=response_msg.message_id,
         triggering_update=tg_update_in_db,
         name=gpt_completion.bot_name,
@@ -107,7 +99,7 @@ async def reply_with_gpt_completion(
         is_bot=True,
         gpt_completion=gpt_completion.gpt_completion_in_db,
     )
-    await sync_to_async(utterance_in_db.save)()
+    # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation
 
 
 # noinspection PyUnusedLocal
@@ -121,7 +113,6 @@ application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 #  allowed_users_filter = User(username=ALLOWED_USERS)
 
 application.add_handler(CommandHandler("start", reply_to_user))  # TODO oleksandr: filters=allowed_users_filter
-# TODO oleksandr: add /ping command ? what for ? to check if the server is alive ?
 application.add_handler(MessageHandler(TEXT, reply_to_user))  # TODO oleksandr: TEXT & allowed_users_filter
 
 if __name__ == "__main__":

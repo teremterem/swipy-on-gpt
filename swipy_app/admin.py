@@ -1,19 +1,19 @@
-# pylint: disable=unused-argument
+# pylint: disable=unused-argument,too-few-public-methods
 from datetime import datetime
 from pprint import pformat
 
 from django.contrib import admin
 from django.utils.html import format_html
 
-from swipy_app.models import TelegramUpdate, Utterance, GptCompletion
+from swipy_app.models import TelegramUpdate, Utterance, GptCompletion, Conversation, SwipyUser
 
 
 class TelegramUpdateAdmin(admin.ModelAdmin):
     ordering = ["-arrival_timestamp_ms"]
-    list_filter = ["chat_telegram_id"]
-    list_display = ["id", "arrival_time", "pretty_payload", "chat_telegram_id"]
-    list_display_links = list_display
-    fields = ["chat_telegram_id", "update_telegram_id", "arrival_time", "pretty_payload", "arrival_timestamp_ms"]
+    list_filter = ["swipy_user"]
+    list_display = ["id", "arrival_time", "pretty_payload", "swipy_user"]
+    list_display_links = ["id", "arrival_time"]
+    fields = ["swipy_user", "update_telegram_id", "arrival_time", "pretty_payload", "arrival_timestamp_ms"]
 
     def has_add_permission(self, request):
         return False
@@ -36,7 +36,7 @@ class TelegramUpdateAdmin(admin.ModelAdmin):
 
 class GptCompletionAdmin(admin.ModelAdmin):
     ordering = ["-request_timestamp_ms"]
-    list_filter = ["chat_telegram_id"]
+    list_filter = ["swipy_user"]
     list_display = ["id", "request_time", "arrival_time", "completion"]
     list_display_links = list_display
     fields = [
@@ -80,32 +80,100 @@ class GptCompletionAdmin(admin.ModelAdmin):
         return datetime.fromtimestamp(obj.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
+class UtteranceInline(admin.TabularInline):
+    # TODO oleksandr: make read-only
+    model = Utterance
+    ordering = ["arrival_timestamp_ms"]
+    fields = ["name", "text"]
+    can_delete = False
+    can_add = False  # TODO oleksandr: are you sure this property exists ?
+    can_edit = False  # TODO oleksandr: are you sure this property exists ?
+    show_change_link = True
+
+
+class ConversationAdmin(admin.ModelAdmin):
+    inlines = [UtteranceInline]
+    ordering = ["-last_update_timestamp_ms"]
+    list_filter = ["swipy_user"]
+    list_display = ["id", "swipy_user", "last_update_time"]
+    list_display_links = list_display
+    fields = ["id", "swipy_user", "last_update_time"]
+
+    def has_add_permission(self, request):
+        return False
+
+    # def has_delete_permission(self, request, obj=None):
+    #     return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description="Last update time")
+    def last_update_time(self, obj):
+        # TODO oleksandr: get rid of duplicate code
+        return datetime.fromtimestamp(obj.last_update_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+
+
 class UtteranceAdmin(admin.ModelAdmin):
     ordering = ["-arrival_timestamp_ms"]
-    list_filter = ["chat_telegram_id"]
-    list_display = ["id", "arrival_time", "name", "text", "is_end_of_conv"]
+    list_filter = ["swipy_user"]
+    list_display = ["id", "arrival_time", "name", "text", "conversation"]
     list_display_links = list_display
     fields = [
-        "chat_telegram_id",
+        "swipy_user",
         "telegram_message_id",
         "arrival_time",
         "name",
         "text",
         "is_bot",
-        "is_end_of_conv",
         "gpt_completion",
         "triggering_update",
+        "conversation",
+    ]
+
+    def has_add_permission(self, request):
+        return False
+
+    # def has_delete_permission(self, request, obj=None):
+    #     return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description="Arrival time")
+    def arrival_time(self, obj):
+        # TODO oleksandr: get rid of duplicate code
+        return datetime.fromtimestamp(obj.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+
+
+class ConversationInline(admin.TabularInline):
+    # TODO oleksandr: make read-only
+    model = Conversation
+    ordering = ["-last_update_timestamp_ms"]
+    fields = ["id", "last_update_timestamp_ms"]
+    readonly_fields = ["id", "last_update_timestamp_ms"]
+    can_delete = False
+    can_add = False  # TODO oleksandr: are you sure this property exists ?
+    can_edit = False  # TODO oleksandr: are you sure this property exists ?
+    show_change_link = True
+
+
+class SwipyUserAdmin(admin.ModelAdmin):
+    inlines = [ConversationInline]
+    ordering = ["full_name", "chat_telegram_id"]
+    list_display = ["id", "full_name", "chat_telegram_id", "current_conversation"]
+    list_display_links = ["id", "full_name", "chat_telegram_id"]
+    fields = [
+        "first_name",
+        "full_name",
+        "chat_telegram_id",
+        "current_conversation",
     ]
     readonly_fields = [
+        "first_name",
+        "full_name",
         "chat_telegram_id",
-        "telegram_message_id",
-        "arrival_time",
-        "name",
-        "text",
-        "is_bot",
-        # "is_end_of_conv",
-        "gpt_completion",
-        "triggering_update",
+        # "current_conversation",
     ]
 
     def has_add_permission(self, request):
@@ -117,12 +185,9 @@ class UtteranceAdmin(admin.ModelAdmin):
     # def has_change_permission(self, request, obj=None):
     #     return False
 
-    @admin.display(description="Arrival time")
-    def arrival_time(self, obj):
-        # TODO oleksandr: get rid of duplicate code
-        return datetime.fromtimestamp(obj.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
-
 
 admin.site.register(TelegramUpdate, TelegramUpdateAdmin)
 admin.site.register(GptCompletion, GptCompletionAdmin)
+admin.site.register(Conversation, ConversationAdmin)
 admin.site.register(Utterance, UtteranceAdmin)
+admin.site.register(SwipyUser, SwipyUserAdmin)
