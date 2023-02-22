@@ -15,13 +15,11 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
         self,
         user_name: str,
         bot_name: str,
-        user_utterance: str,
         prompt_template: str,
         temperature: float,
     ):
         self.user_name = user_name
         self.bot_name = bot_name
-        self.user_utterance = user_utterance
 
         self.user_prefix = self.utterance_prefix(self.user_name)
         self.bot_prefix = self.utterance_prefix(self.bot_name)
@@ -115,25 +113,22 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
 
 
 class DialogGptCompletionHistory:
+    # TODO oleksandr: rename this class
     def __init__(self, bot_name: str, experiment_name, prompt_template: str = "{}", temperature: float = 1):
         self.bot_name = bot_name
         self.experiment_name = experiment_name
         self.prompt_template = prompt_template
         self.temperature = temperature
 
-    def new_user_utterance(self, user_name: str, user_utterance: str) -> DialogGptCompletion:
+    def new_user_utterance(self, user_name: str) -> DialogGptCompletion:
+        # TODO oleksandr: rename this method
         gpt_completion = DialogGptCompletion(
             prompt_template=self.prompt_template,
             user_name=user_name,
             bot_name=self.bot_name,
-            user_utterance=user_utterance,
             temperature=self.temperature,
         )
         return gpt_completion
-
-    async def clear_history(self) -> None:
-        # TODO oleksandr: implement this
-        pass
 
     def __str__(self) -> str:
         return f"{self.experiment_name} T={self.temperature:.1f}"

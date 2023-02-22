@@ -57,7 +57,7 @@ async def reply_with_gpt_completion(
     )
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation
 
-    gpt_completion = history.new_user_utterance(user_name, update.effective_message.text)
+    gpt_completion = history.new_user_utterance(user_name)
 
     keep_typing = True
 
