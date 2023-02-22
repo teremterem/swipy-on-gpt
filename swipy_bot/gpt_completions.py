@@ -39,7 +39,7 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
     def utterance_prefix(self, utterer_name) -> str:
         return f"*{utterer_name}:*"
 
-    async def build_prompt(self, conversation_id: int) -> bool:
+    async def build_prompt(self, conversation_id: int, append_bot_name_at_the_end: bool = True) -> bool:
         prompt_parts = []
 
         utterances = Utterance.objects.filter(conversation_id=conversation_id).order_by("-arrival_timestamp_ms")
@@ -56,10 +56,11 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
             # TODO oleksandr: use users and bots current names, not the ones they had at the time of the utterance
             prompt_parts.append(f"{self.utterance_prefix(utterance.name)} {utterance.text}")
 
-        prompt_parts.append(self.bot_prefix)
+        if append_bot_name_at_the_end:
+            prompt_parts.append(self.bot_prefix)
 
         prompt_content = "\n".join(prompt_parts)
-        self.prompt = self.prompt_template.format(DIALOG=prompt_content, USER=self.user_name)
+        self.prompt = self.prompt_template.format(DIALOG=prompt_content, USER=self.user_name, BOT=self.bot_name)
 
         return has_history
 
