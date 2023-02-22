@@ -41,12 +41,10 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
     def utterance_prefix(self, utterer_name) -> str:
         return f"*{utterer_name}:*"
 
-    async def build_prompt(self, tg_update_in_db: TelegramUpdate) -> bool:
+    async def build_prompt(self, conversation_id: int) -> bool:
         prompt_parts = []
 
-        utterances = Utterance.objects.filter(
-            conversation=await tg_update_in_db.swipy_user.get_current_conversation()
-        ).order_by("-arrival_timestamp_ms")
+        utterances = Utterance.objects.filter(conversation_id=conversation_id).order_by("-arrival_timestamp_ms")
         # TODO oleksandr: replace MAX_CONVERSATION_LENGTH with a more sophisticated logic
         utterances = utterances[:MAX_CONVERSATION_LENGTH]
         utterances = await sync_to_async(list)(utterances)
@@ -68,7 +66,8 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
         return has_history
 
     async def fulfil(self, tg_update_in_db: TelegramUpdate) -> None:
-        has_history = await self.build_prompt(tg_update_in_db)
+        # TODO oleksandr: support get_current_conversation_id() that doesn't fetch conversation if it exists
+        has_history = await self.build_prompt(await tg_update_in_db.swipy_user.get_current_conversation().pk)
         # temperature 1 should make conversation starters more "natural" (hopefully)
         temperature = self.temperature if has_history else 1.0  # TODO oleksandr: are you sure ?
 
