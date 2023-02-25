@@ -66,7 +66,7 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
 
     async def fulfil(self, tg_update_in_db: TelegramUpdate) -> None:
         # TODO oleksandr: support get_current_conversation_id() that doesn't fetch conversation if it exists
-        has_history = await self.build_prompt(await tg_update_in_db.swipy_user.get_current_conversation().pk)
+        has_history = await self.build_prompt((await tg_update_in_db.swipy_user.get_current_conversation()).pk)
         # temperature 1 should make conversation starters more "natural" (hopefully)
         temperature = self.temperature if has_history else 1.0  # TODO oleksandr: are you sure ?
 
