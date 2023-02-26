@@ -71,3 +71,44 @@ class SwipyUser(models.Model):
             )
             await sync_to_async(self.save)(update_fields=["current_conversation"])
         return self.current_conversation
+
+    async def get_current_conversation_id(self) -> int:
+        """
+        Returns the id of the current conversation for this user, creating the conversations if it doesn't exist yet.
+        """
+        if not self.current_conversation_id:
+            return (await self.get_current_conversation()).pk
+        return self.current_conversation_id
+
+    async def detach_current_conversation(self) -> None:
+        """
+        Detaches the current conversation from this user.
+        """
+        print()
+        print()
+        print()
+        print()
+        print()
+        print()
+        print(self.current_conversation_id)
+        print()
+        print()
+        print()
+        print()
+        print()
+        print()
+        self.current_conversation = None
+        await sync_to_async(self.save)(update_fields=["current_conversation"])
+        print()
+        print()
+        print()
+        print()
+        print()
+        print()
+        print(self.current_conversation_id)
+        print()
+        print()
+        print()
+        print()
+        print()
+        print()

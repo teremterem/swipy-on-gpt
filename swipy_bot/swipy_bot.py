@@ -2,7 +2,6 @@
 import asyncio
 from datetime import datetime
 
-from asgiref.sync import sync_to_async
 from telegram import Update
 from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
@@ -16,7 +15,7 @@ BOT_NAME = "Swipy"  # TODO oleksandr: read from getMe()
 
 FOLLOWUP_PROMPT = (
     "Your name is {BOT} and the user's name is {USER}. Here is your dialog with {USER}. If {USER} "
-    "mentions any people, things, places, events etc. you don't know about (or if you don't know any details about "
+    "mentions any people, things, places, events etc. you don't know about (or if you don't know details about "
     "mentioned people, things, places, events etc. in relation to {USER} specifically) then follow up with "
     "corresponding clarifying questions to {USER}.\n\n{DIALOG}"
 )
@@ -40,8 +39,7 @@ async def reply_with_gpt_completion(
 
     if update.effective_message.text == "/start":
         # start a new conversation
-        tg_update_in_db.swipy_user.current_conversation = None
-        await sync_to_async(tg_update_in_db.swipy_user.save)(update_fields=["current_conversation"])
+        await tg_update_in_db.swipy_user.detach_current_conversation()
 
     # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
     arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
@@ -107,13 +105,11 @@ async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     await reply_with_gpt_completion(update, context, DIALOG)
 
 
+# TODO oleksandr: rename to telegram_application ?
 application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
-# TODO oleksandr: get rid of this completely:
-#  allowed_users_filter = User(username=ALLOWED_USERS)
-
-application.add_handler(CommandHandler("start", reply_to_user))  # TODO oleksandr: filters=allowed_users_filter
-application.add_handler(MessageHandler(TEXT, reply_to_user))  # TODO oleksandr: TEXT & allowed_users_filter
+application.add_handler(CommandHandler("start", reply_to_user))
+application.add_handler(MessageHandler(TEXT, reply_to_user))
 
 if __name__ == "__main__":
     application.run_polling()

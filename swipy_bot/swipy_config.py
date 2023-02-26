@@ -17,7 +17,6 @@ SWIPY_LOG_LEVEL = os.environ.get("SWIPY_LOG_LEVEL") or "INFO"
 DEBUG_MODE = (os.environ.get("DEBUG_MODE") or "false").lower() in ("true", "1", "yes", "y")
 
 MOCK_GPT = (os.environ.get("MOCK_GPT") or "false").lower() in ("true", "1", "yes", "y")
-ALLOWED_USERS = os.environ["ALLOWED_USERS"].split(",")
 MAX_CONVERSATION_LENGTH = int(os.environ.get("MAX_CONVERSATION_LENGTH") or 40)
 
 # TODO oleksandr: do we need this line or what we have in django settings is enough ?
