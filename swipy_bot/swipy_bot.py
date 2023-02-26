@@ -53,7 +53,7 @@ async def reply_with_gpt_completion(
     )
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation
 
-    gpt_completion = completion_factory.new_user_utterance(user_name)
+    gpt_completion = completion_factory.new_completion(user_name)
 
     keep_typing = True
 
