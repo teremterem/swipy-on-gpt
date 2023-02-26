@@ -84,31 +84,6 @@ class SwipyUser(models.Model):
         """
         Detaches the current conversation from this user.
         """
-        print()
-        print()
-        print()
-        print()
-        print()
-        print()
-        print(self.current_conversation_id)
-        print()
-        print()
-        print()
-        print()
-        print()
-        print()
         self.current_conversation = None
         await sync_to_async(self.save)(update_fields=["current_conversation"])
-        print()
-        print()
-        print()
-        print()
-        print()
-        print()
-        print(self.current_conversation_id)
-        print()
-        print()
-        print()
-        print()
-        print()
-        print()
+        # self.current_conversation_id is assigned with None automatically, no need to do it explicitly
