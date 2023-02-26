@@ -115,14 +115,14 @@ class DialogGptCompletion:
         await sync_to_async(self.gpt_completion_in_db.save)(update_fields=["arrival_timestamp_ms", "completion"])
 
 
-class DialogGptCompletionFactory:  # TODO oleksandr: extend from GptCompletionSettings ?
+class DialogGptCompletionFactory:  # TODO oleksandr: extend from GptCompletionSettings (a frozen dataclass)
     def __init__(
         self,
         bot_name: str,
         prompt_template: str = "{DIALOG}",
         engine: str = "text-davinci-003",
         max_tokens: int = 512,  # OpenAI's default is 16
-        temperature: float = 2.0,  # Possible range - from 0.0 to 2.0 TODO oleksandr: OpenAI's default is 1
+        temperature: float = 1.0,  # Possible range - from 0.0 to 2.0
         top_p: float = 1.0,  # Possible range - from 0.0 to 1.0
         frequency_penalty: float = 0.0,  # Possible range - from -2.0 to 2.0
         presence_penalty: float = 0.0,  # Possible range - from -2.0 to 2.0

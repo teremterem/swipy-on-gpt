@@ -90,7 +90,7 @@ async def reply_with_gpt_completion(
         conversation=await tg_update_in_db.swipy_user.get_current_conversation(),
         telegram_message_id=response_msg.message_id,
         triggering_update=tg_update_in_db,
-        name=gpt_completion.bot_name,
+        name=gpt_completion.settings.bot_name,
         text=response_msg.text,
         is_bot=True,
         gpt_completion=gpt_completion.gpt_completion_in_db,
