@@ -22,7 +22,13 @@ class GptCompletion(models.Model):
 
     prompt = models.TextField(null=True, blank=True)
     completion = models.TextField(null=True, blank=True)
+
+    engine = models.TextField()
+    max_tokens = models.IntegerField()
     temperature = models.FloatField(null=True)
+    top_p = models.FloatField()
+    frequency_penalty = models.FloatField()
+    presence_penalty = models.FloatField()
 
 
 class Conversation(models.Model):
