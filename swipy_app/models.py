@@ -22,7 +22,13 @@ class GptCompletion(models.Model):
 
     prompt = models.TextField(null=True, blank=True)
     completion = models.TextField(null=True, blank=True)
+
+    engine = models.TextField()
+    max_tokens = models.IntegerField()
     temperature = models.FloatField(null=True)
+    top_p = models.FloatField()
+    frequency_penalty = models.FloatField()
+    presence_penalty = models.FloatField()
 
 
 class Conversation(models.Model):
@@ -71,3 +77,19 @@ class SwipyUser(models.Model):
             )
             await sync_to_async(self.save)(update_fields=["current_conversation"])
         return self.current_conversation
+
+    async def get_current_conversation_id(self) -> int:
+        """
+        Returns the id of the current conversation for this user, creating the conversations if it doesn't exist yet.
+        """
+        if not self.current_conversation_id:
+            return (await self.get_current_conversation()).pk
+        return self.current_conversation_id
+
+    async def detach_current_conversation(self) -> None:
+        """
+        Detaches the current conversation from this user.
+        """
+        self.current_conversation = None
+        await sync_to_async(self.save)(update_fields=["current_conversation"])
+        # self.current_conversation_id is assigned with None automatically, no need to do it explicitly

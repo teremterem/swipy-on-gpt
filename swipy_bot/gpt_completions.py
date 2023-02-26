@@ -1,3 +1,4 @@
+# pylint: disable=too-many-instance-attributes,too-few-public-methods,too-many-arguments
 import asyncio
 import random
 import traceback
@@ -10,24 +11,18 @@ from swipy_app.models import GptCompletion, TelegramUpdate, Utterance
 from swipy_bot.swipy_config import MOCK_GPT, MAX_CONVERSATION_LENGTH
 
 
-class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
-    def __init__(  # pylint: disable=too-many-arguments
+class DialogGptCompletion:
+    def __init__(
         self,
+        settings: "DialogGptCompletionFactory",
         user_name: str,
-        bot_name: str,
-        user_utterance: str,
-        prompt_template: str,
-        temperature: float,
     ):
+        self.settings = settings
         self.user_name = user_name
-        self.bot_name = bot_name
-        self.user_utterance = user_utterance
 
         self.user_prefix = self.utterance_prefix(self.user_name)
-        self.bot_prefix = self.utterance_prefix(self.bot_name)
+        self.bot_prefix = self.utterance_prefix(self.settings.bot_name)
 
-        self.prompt_template = prompt_template
-        self.temperature = temperature
         self.gpt_completion_in_db: GptCompletion | None = None
         self.stop_list = [
             # "\n",  # TODO oleksandr: enable this if it's the very first exchange ?
@@ -41,17 +36,13 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
     def utterance_prefix(self, utterer_name) -> str:
         return f"*{utterer_name}:*"
 
-    async def build_prompt(self, tg_update_in_db: TelegramUpdate) -> bool:
+    async def build_prompt(self, conversation_id: int, append_bot_name_at_the_end: bool = True) -> None:
         prompt_parts = []
 
-        utterances = Utterance.objects.filter(
-            conversation=await tg_update_in_db.swipy_user.get_current_conversation()
-        ).order_by("-arrival_timestamp_ms")
+        utterances = Utterance.objects.filter(conversation_id=conversation_id).order_by("-arrival_timestamp_ms")
         # TODO oleksandr: replace MAX_CONVERSATION_LENGTH with a more sophisticated logic
         utterances = utterances[:MAX_CONVERSATION_LENGTH]
         utterances = await sync_to_async(list)(utterances)
-
-        has_history = len(utterances) > 0
 
         for utterance in reversed(utterances):
             if not utterance.is_bot and utterance.text == "/start":
@@ -60,17 +51,18 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
             # TODO oleksandr: use users and bots current names, not the ones they had at the time of the utterance
             prompt_parts.append(f"{self.utterance_prefix(utterance.name)} {utterance.text}")
 
-        prompt_parts.append(self.bot_prefix)
+        if append_bot_name_at_the_end:
+            prompt_parts.append(self.bot_prefix)
 
         prompt_content = "\n".join(prompt_parts)
-        self.prompt = self.prompt_template.format(DIALOG=prompt_content, USER=self.user_name)
-
-        return has_history
+        self.prompt = self.settings.prompt_template.format(
+            DIALOG=prompt_content,
+            USER=self.user_name,
+            BOT=self.settings.bot_name,
+        )
 
     async def fulfil(self, tg_update_in_db: TelegramUpdate) -> None:
-        has_history = await self.build_prompt(tg_update_in_db)
-        # temperature 1 should make conversation starters more "natural" (hopefully)
-        temperature = self.temperature if has_history else 1.0  # TODO oleksandr: are you sure ?
+        await self.build_prompt(await tg_update_in_db.swipy_user.get_current_conversation_id())
 
         # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
         request_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
@@ -80,21 +72,29 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
             triggering_update=tg_update_in_db,
             swipy_user=tg_update_in_db.swipy_user,
             prompt=self.prompt,
-            temperature=temperature,
+            engine=self.settings.engine,
+            max_tokens=self.settings.max_tokens,
+            temperature=self.settings.temperature,
+            top_p=self.settings.top_p,
+            frequency_penalty=self.settings.frequency_penalty,
+            presence_penalty=self.settings.presence_penalty,
         )
 
         try:
             if MOCK_GPT:
                 await asyncio.sleep(1)
-                self.completion = f"\n\nhErE gOeS gPt ReSpOnSe  (iT's a mOCK!) {random.randint(0, 1000000)}"
+                self.completion = f"\n\nHERE GOES GPT RESPONSE (IT'S A MOCK!) {random.randint(0, 10000)}"
             else:
                 gpt_response = await openai.Completion.acreate(
                     # TODO oleksandr: submit user id from Telegram (or from your database) too
-                    prompt=self.prompt,
-                    engine="text-davinci-003",
-                    temperature=temperature,
-                    max_tokens=512,
+                    prompt=self.gpt_completion_in_db.prompt,
                     stop=self.stop_list,
+                    engine=self.gpt_completion_in_db.engine,
+                    max_tokens=self.gpt_completion_in_db.max_tokens,
+                    temperature=self.gpt_completion_in_db.temperature,
+                    top_p=self.gpt_completion_in_db.top_p,
+                    frequency_penalty=self.gpt_completion_in_db.frequency_penalty,
+                    presence_penalty=self.gpt_completion_in_db.presence_penalty,
                 )
                 self.completion = gpt_response.choices[0].text
                 assert (
@@ -115,26 +115,31 @@ class DialogGptCompletion:  # pylint: disable=too-many-instance-attributes
         await sync_to_async(self.gpt_completion_in_db.save)(update_fields=["arrival_timestamp_ms", "completion"])
 
 
-class DialogGptCompletionHistory:
-    def __init__(self, bot_name: str, experiment_name, prompt_template: str = "{}", temperature: float = 1):
+class DialogGptCompletionFactory:  # TODO oleksandr: extend from GptCompletionSettings (a frozen dataclass)
+    def __init__(
+        self,
+        bot_name: str,
+        prompt_template: str = "{DIALOG}",
+        engine: str = "text-davinci-003",
+        max_tokens: int = 512,  # OpenAI's default is 16
+        temperature: float = 1.0,  # Possible range - from 0.0 to 2.0
+        top_p: float = 1.0,  # Possible range - from 0.0 to 1.0
+        frequency_penalty: float = 0.0,  # Possible range - from -2.0 to 2.0
+        presence_penalty: float = 0.0,  # Possible range - from -2.0 to 2.0
+    ):
         self.bot_name = bot_name
-        self.experiment_name = experiment_name
         self.prompt_template = prompt_template
-        self.temperature = temperature
 
-    def new_user_utterance(self, user_name: str, user_utterance: str) -> DialogGptCompletion:
+        self.engine = engine
+        self.max_tokens = max_tokens
+        self.temperature = temperature
+        self.top_p = top_p
+        self.frequency_penalty = frequency_penalty
+        self.presence_penalty = presence_penalty
+
+    def new_completion(self, user_name: str) -> DialogGptCompletion:
         gpt_completion = DialogGptCompletion(
-            prompt_template=self.prompt_template,
+            settings=self,
             user_name=user_name,
-            bot_name=self.bot_name,
-            user_utterance=user_utterance,
-            temperature=self.temperature,
         )
         return gpt_completion
-
-    async def clear_history(self) -> None:
-        # TODO oleksandr: implement this
-        pass
-
-    def __str__(self) -> str:
-        return f"{self.experiment_name} T={self.temperature:.1f}"
