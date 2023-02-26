@@ -8,7 +8,7 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Messa
 from telegram.ext.filters import TEXT
 
 from swipy_app.models import Utterance, TelegramUpdate
-from swipy_bot.gpt_completions import DialogGptCompletionHistory
+from swipy_bot.gpt_completions import DialogGptCompletionFactory
 from swipy_bot.swipy_config import TELEGRAM_TOKEN
 
 BOT_NAME = "Swipy"  # TODO oleksandr: read from getMe()
@@ -19,11 +19,9 @@ FOLLOWUP_PROMPT = (
     "mentioned people, things, places, events etc. in relation to {USER} specifically) then follow up with "
     "corresponding clarifying questions to {USER}.\n\n{DIALOG}"
 )
-DIALOG = DialogGptCompletionHistory(
+DIALOG = DialogGptCompletionFactory(
     bot_name=BOT_NAME,
-    experiment_name="FOLLOWUP PROMPT",
     prompt_template=FOLLOWUP_PROMPT,
-    temperature=0.0,
 )
 
 # TODO oleksandr: is this a dirty hack ? use this instead ?
@@ -32,7 +30,7 @@ UPDATE_DB_MODELS_VOLATILE_CACHE: dict[int, TelegramUpdate] = {}
 
 
 async def reply_with_gpt_completion(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, history: DialogGptCompletionHistory
+    update: Update, context: ContextTypes.DEFAULT_TYPE, completion_factory: DialogGptCompletionFactory
 ) -> None:
     user_name = update.effective_user.first_name  # TODO oleksandr: update db user info upon every tg update ?
     tg_update_in_db = UPDATE_DB_MODELS_VOLATILE_CACHE.pop(id(update))
@@ -55,7 +53,7 @@ async def reply_with_gpt_completion(
     )
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation
 
-    gpt_completion = history.new_user_utterance(user_name)
+    gpt_completion = completion_factory.new_user_utterance(user_name)
 
     keep_typing = True
 
