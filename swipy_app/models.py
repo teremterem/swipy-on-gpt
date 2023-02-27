@@ -16,7 +16,6 @@ class TelegramUpdate(models.Model):
 class GptCompletion(models.Model):
     request_timestamp_ms = models.BigIntegerField()
     arrival_timestamp_ms = models.BigIntegerField(null=True)
-    # TODO oleksandr: processing time ?
     triggering_update = models.ForeignKey(TelegramUpdate, on_delete=models.CASCADE, null=True)
     swipy_user = models.ForeignKey("SwipyUser", on_delete=models.CASCADE)
     alternative_to_utterance = models.ForeignKey("Utterance", on_delete=models.CASCADE, null=True)

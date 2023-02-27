@@ -2,6 +2,7 @@
 import asyncio
 import random
 import traceback
+from dataclasses import dataclass
 from datetime import datetime
 
 import openai
@@ -61,7 +62,7 @@ class DialogGptCompletion:
             prompt_parts.append(self.bot_prefix)
 
         prompt_content = "\n".join(prompt_parts)
-        self.prompt = self.settings.prompt_template.format(
+        self.prompt = self.settings.prompt_settings.prompt_template.format(
             DIALOG=prompt_content,
             USER=self.user_first_name,
             BOT=self.settings.bot_name,
@@ -78,6 +79,7 @@ class DialogGptCompletion:
             triggering_update=tg_update_in_db,
             swipy_user_id=self.swipy_user.pk,
             prompt=self.prompt,
+            prompt_name=self.settings.prompt_settings.prompt_name,
             engine=self.settings.engine,
             max_tokens=self.settings.max_tokens,
             temperature=self.settings.temperature,
@@ -121,11 +123,17 @@ class DialogGptCompletion:
         await sync_to_async(self.gpt_completion_in_db.save)(update_fields=["arrival_timestamp_ms", "completion"])
 
 
+@dataclass(frozen=True)
+class PromptSettings:
+    prompt_name: str
+    prompt_template: str
+
+
 class DialogGptCompletionFactory:  # TODO oleksandr: extend from GptCompletionSettings (a frozen dataclass)
     def __init__(
         self,
         bot_name: str,
-        prompt_template: str = "{DIALOG}",
+        prompt_settings: PromptSettings,
         append_bot_name_at_the_end: bool = True,
         engine: str = "text-davinci-003",
         max_tokens: int = 512,  # OpenAI's default is 16
@@ -135,7 +143,8 @@ class DialogGptCompletionFactory:  # TODO oleksandr: extend from GptCompletionSe
         presence_penalty: float = 0.0,  # Possible range - from -2.0 to 2.0
     ):
         self.bot_name = bot_name
-        self.prompt_template = prompt_template
+        self.prompt_settings = prompt_settings
+
         self.append_bot_name_at_the_end = append_bot_name_at_the_end
 
         self.engine = engine
