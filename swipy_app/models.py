@@ -19,10 +19,12 @@ class GptCompletion(models.Model):
     # TODO oleksandr: processing time ?
     triggering_update = models.ForeignKey(TelegramUpdate, on_delete=models.CASCADE, null=True)
     swipy_user = models.ForeignKey("SwipyUser", on_delete=models.CASCADE)
+    alternative_to_utterance = models.ForeignKey("Utterance", on_delete=models.CASCADE, null=True)
 
     prompt = models.TextField(null=True, blank=True)
     completion = models.TextField(null=True, blank=True)
 
+    prompt_name = models.TextField()
     engine = models.TextField()
     max_tokens = models.IntegerField()
     temperature = models.FloatField(null=True)
