@@ -52,7 +52,7 @@ class DialogGptCompletion:
         utterances = await sync_to_async(list)(utterances)
 
         for utterance in reversed(utterances):
-            if stop_before_utterance and utterance.id == stop_before_utterance.id:
+            if stop_before_utterance and utterance.id == stop_before_utterance.pk:
                 break
 
             if not utterance.is_bot and utterance.text == "/start":
