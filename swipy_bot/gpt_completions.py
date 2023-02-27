@@ -66,11 +66,11 @@ class DialogGptCompletion:
             prompt_parts.append(f"{utterance_prefix} {utterance.text}")
 
         if self.settings.append_bot_name_at_the_end:
-            if stop_before_utterance and stop_before_utterance.is_bot:
-                prompt_parts.append(self.bot_prefix)
-            else:
+            if stop_before_utterance and not stop_before_utterance.is_bot:
                 # we are trying to mimic the user, not the bot
                 prompt_parts.append(self.user_prefix)
+            else:
+                prompt_parts.append(self.bot_prefix)
 
         prompt_content = "\n".join(prompt_parts)
         self.prompt = self.settings.prompt_settings.prompt_template.format(
