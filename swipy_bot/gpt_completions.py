@@ -67,8 +67,8 @@ class DialogGptCompletion:
             BOT=self.settings.bot_name,
         )
 
-    async def fulfil(self, tg_update_in_db: TelegramUpdate | None) -> None:
-        await self.build_prompt(await tg_update_in_db.swipy_user.get_current_conversation_id())
+    async def fulfil(self, conversation_id: int, tg_update_in_db: TelegramUpdate | None = None) -> None:
+        await self.build_prompt(conversation_id)
 
         # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
         request_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)

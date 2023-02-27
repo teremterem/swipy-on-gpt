@@ -11,15 +11,14 @@ from swipy_app.models import Utterance, TelegramUpdate
 from swipy_bot.gpt_completions import DialogGptCompletionFactory
 from swipy_bot.swipy_config import TELEGRAM_TOKEN, BOT_NAME
 
-FOLLOWUP_PROMPT = (
-    "Your name is {BOT} and the user's name is {USER}. Here is your dialog with {USER}. If {USER} "
-    "mentions any people, things, places, events etc. you don't know about (or if you don't know details about "
-    "mentioned people, things, places, events etc. in relation to {USER} specifically) then follow up with "
-    "corresponding clarifying questions to {USER}.\n\n{DIALOG}"
-)
 DIALOG = DialogGptCompletionFactory(
     bot_name=BOT_NAME,
-    prompt_template=FOLLOWUP_PROMPT,
+    prompt_template=(
+        "Your name is {BOT} and the user's name is {USER}. Here is your dialog with {USER}. If {USER} "
+        "mentions any people, things, places, events etc. you don't know about (or if you don't know details about "
+        "mentioned people, things, places, events etc. in relation to {USER} specifically) then follow up with "
+        "corresponding clarifying questions to {USER}.\n\n{DIALOG}"
+    ),
 )
 
 # TODO oleksandr: is this a dirty hack ? use this instead ?
@@ -37,12 +36,14 @@ async def reply_with_gpt_completion(
         # start a new conversation
         await tg_update_in_db.swipy_user.detach_current_conversation()
 
+    conversation_id = await tg_update_in_db.swipy_user.get_current_conversation_id()
+
     # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
     arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
     await Utterance.objects.acreate(
         arrival_timestamp_ms=arrival_timestamp_ms,
         swipy_user=tg_update_in_db.swipy_user,
-        conversation=await tg_update_in_db.swipy_user.get_current_conversation(),
+        conversation_id=conversation_id,
         telegram_message_id=update.effective_message.message_id,
         triggering_update=tg_update_in_db,
         name=user_name,
@@ -65,7 +66,7 @@ async def reply_with_gpt_completion(
     await asyncio.sleep(1)
     asyncio.get_event_loop().create_task(_keep_typing_task())
 
-    await gpt_completion.fulfil(tg_update_in_db)
+    await gpt_completion.fulfil(conversation_id=conversation_id, tg_update_in_db=tg_update_in_db)
     keep_typing = False
 
     response_msg = await update.effective_chat.send_message(
@@ -85,7 +86,7 @@ async def reply_with_gpt_completion(
     await Utterance.objects.acreate(
         arrival_timestamp_ms=arrival_timestamp_ms,
         swipy_user=tg_update_in_db.swipy_user,
-        conversation=await tg_update_in_db.swipy_user.get_current_conversation(),
+        conversation_id=conversation_id,
         telegram_message_id=response_msg.message_id,
         triggering_update=tg_update_in_db,
         name=gpt_completion.settings.bot_name,
