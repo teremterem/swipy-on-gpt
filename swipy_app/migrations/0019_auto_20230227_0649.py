@@ -3,6 +3,8 @@ from asgiref.sync import async_to_sync
 from django.db import migrations
 
 # TODO oleksandr: this might be a bad idea - implementation might change over time
+# noinspection PyUnresolvedReferences
+from swipy_app.models import SwipyUser  # keep it
 from swipy_bot.gpt_completions import DialogGptCompletionFactory
 from swipy_bot.swipy_config import BOT_NAME
 

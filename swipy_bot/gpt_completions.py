@@ -76,7 +76,7 @@ class DialogGptCompletion:
         self.gpt_completion_in_db = await GptCompletion.objects.acreate(
             request_timestamp_ms=request_timestamp_ms,
             triggering_update=tg_update_in_db,
-            swipy_user=self.swipy_user,
+            swipy_user_id=self.swipy_user.pk,
             prompt=self.prompt,
             engine=self.settings.engine,
             max_tokens=self.settings.max_tokens,
