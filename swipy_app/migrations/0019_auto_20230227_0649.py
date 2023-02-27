@@ -32,14 +32,14 @@ def summarize_conversations(apps, schema_editor):
 
     for conversation in Conversation.objects.all():
         summary_completion = async_to_sync(summarizer.new_completion(conversation.swipy_user).fulfil)(
-            convesation_id=conversation.pk,
+            conversation_id=conversation.pk,
             tg_update_in_db=None,
         )
         conversation.summary = summary_completion.completion.strip()
         conversation.save(update_fields=["summary"])
 
         title_completion = async_to_sync(titler.new_completion(conversation.swipy_user).fulfil)(
-            convesation_id=conversation.pk,
+            conversation_id=conversation.pk,
             tg_update_in_db=None,
         )
         conversation.title = title_completion.completion.strip()
