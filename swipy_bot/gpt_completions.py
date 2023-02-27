@@ -48,8 +48,12 @@ class DialogGptCompletion:
             if not utterance.is_bot and utterance.text == "/start":
                 # don't include /start in the prompt
                 continue
-            # TODO oleksandr: use users and bots current names, not the ones they had at the time of the utterance
-            prompt_parts.append(f"{self.utterance_prefix(utterance.name)} {utterance.text}")
+
+            if utterance.is_bot:
+                utterance_prefix = self.bot_prefix
+            else:
+                utterance_prefix = self.user_prefix
+            prompt_parts.append(f"{utterance_prefix} {utterance.text}")
 
         if append_bot_name_at_the_end:
             prompt_parts.append(self.bot_prefix)

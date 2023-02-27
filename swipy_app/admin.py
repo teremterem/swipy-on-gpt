@@ -100,9 +100,9 @@ class ConversationAdmin(admin.ModelAdmin):
     inlines = [UtteranceInline]
     ordering = ["-last_update_timestamp_ms"]
     list_filter = ["swipy_user"]
-    list_display = ["id", "swipy_user", "last_update_time"]
+    list_display = ["id", "title", "swipy_user", "last_update_time"]
     list_display_links = list_display
-    fields = ["id", "swipy_user", "last_update_time"]
+    fields = ["id", "title", "swipy_user", "last_update_time", "summary"]
 
     def has_add_permission(self, request):
         return False
@@ -155,8 +155,8 @@ class ConversationInline(admin.TabularInline):
     # TODO oleksandr: make read-only
     model = Conversation
     ordering = ["-last_update_timestamp_ms"]
-    fields = ["id", "last_update_timestamp_ms"]
-    readonly_fields = ["id", "last_update_timestamp_ms"]
+    fields = ["id", "title", "last_update_timestamp_ms"]
+    readonly_fields = ["id", "title", "last_update_timestamp_ms"]
     can_delete = False
     can_add = False  # TODO oleksandr: are you sure this property exists ?
     can_edit = False  # TODO oleksandr: are you sure this property exists ?
