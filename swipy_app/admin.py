@@ -4,6 +4,7 @@ from pprint import pformat
 
 from django.contrib import admin
 from django.utils.html import format_html
+from django_object_actions import DjangoObjectActions, action
 
 from swipy_app.models import TelegramUpdate, Utterance, GptCompletion, Conversation, SwipyUser
 
@@ -122,7 +123,7 @@ class ConversationAdmin(admin.ModelAdmin):
         return datetime.fromtimestamp(obj.last_update_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
-class UtteranceAdmin(admin.ModelAdmin):
+class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
     ordering = ["-arrival_timestamp_ms"]
     list_filter = ["swipy_user"]
     list_display = ["id", "arrival_time", "name", "text", "conversation"]
@@ -138,7 +139,7 @@ class UtteranceAdmin(admin.ModelAdmin):
         "triggering_update",
         "conversation",
     ]
-    actions = ["generate_alternatives"]
+    change_actions = ["generate_alternatives"]
 
     def has_add_permission(self, request):
         return False
@@ -154,8 +155,8 @@ class UtteranceAdmin(admin.ModelAdmin):
         # TODO oleksandr: get rid of duplicate code
         return datetime.fromtimestamp(obj.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
-    @admin.action(description="Generate alternatives")
-    def generate_alternatives(self, request, queryset):
+    @action(label="Generate alternatives")
+    def generate_alternatives(self, request, obj):
         print()
         print()
         print()
