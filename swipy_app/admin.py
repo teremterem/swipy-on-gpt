@@ -2,11 +2,13 @@
 from datetime import datetime
 from pprint import pformat
 
+from asgiref.sync import async_to_sync
 from django.contrib import admin
 from django.utils.html import format_html
 from django_object_actions import DjangoObjectActions, action
 
 from swipy_app.models import TelegramUpdate, Utterance, GptCompletion, Conversation, SwipyUser
+from swipy_bot.swipy_bot import ALTERNATIVE_DIALOGS
 
 
 class TelegramUpdateAdmin(admin.ModelAdmin):
@@ -157,17 +159,12 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
 
     @action(label="Generate alternatives")
     def generate_alternatives(self, request, obj):
-        print()
-        print()
-        print()
-        print()
-        print()
-        print("YOYOYOYOYOYOYOYOYOYOYO")
-        print()
-        print()
-        print()
-        print()
-        print()
+        for completer in ALTERNATIVE_DIALOGS:
+            completion = completer.new_completion(obj.swipy_user)
+            async_to_sync(completion.fulfil)(
+                conversation_id=obj.conversation_id,
+                stop_before_utterance=obj,
+            )
 
 
 class ConversationInline(admin.TabularInline):
