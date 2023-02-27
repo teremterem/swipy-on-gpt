@@ -9,9 +9,7 @@ from telegram.ext.filters import TEXT
 
 from swipy_app.models import Utterance, TelegramUpdate
 from swipy_bot.gpt_completions import DialogGptCompletionFactory
-from swipy_bot.swipy_config import TELEGRAM_TOKEN
-
-BOT_NAME = "Swipy"  # TODO oleksandr: read from getMe()
+from swipy_bot.swipy_config import TELEGRAM_TOKEN, BOT_NAME
 
 FOLLOWUP_PROMPT = (
     "Your name is {BOT} and the user's name is {USER}. Here is your dialog with {USER}. If {USER} "
@@ -53,7 +51,7 @@ async def reply_with_gpt_completion(
     )
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation
 
-    gpt_completion = completion_factory.new_completion(user_name)
+    gpt_completion = completion_factory.new_completion(tg_update_in_db.swipy_user)
 
     keep_typing = True
 

@@ -7,7 +7,7 @@ from datetime import datetime
 import openai
 from asgiref.sync import sync_to_async
 
-from swipy_app.models import GptCompletion, TelegramUpdate, Utterance
+from swipy_app.models import GptCompletion, TelegramUpdate, Utterance, SwipyUser
 from swipy_bot.swipy_config import MOCK_GPT, MAX_CONVERSATION_LENGTH
 
 
@@ -15,15 +15,17 @@ class DialogGptCompletion:
     def __init__(
         self,
         settings: "DialogGptCompletionFactory",
-        user_name: str,
+        swipy_user: SwipyUser,
     ):
         self.settings = settings
-        self.user_name = user_name
+        self.swipy_user = swipy_user
 
-        self.user_prefix = self.utterance_prefix(self.user_name)
+        self.user_first_name = self.swipy_user.first_name
+        self.user_prefix = self.utterance_prefix(self.user_first_name)
         self.bot_prefix = self.utterance_prefix(self.settings.bot_name)
 
         self.gpt_completion_in_db: GptCompletion | None = None
+        # TODO oleksandr: there are times when you don't need this stop list, for ex. when you're summarizing
         self.stop_list = [
             # "\n",  # TODO oleksandr: enable this if it's the very first exchange ?
             self.user_prefix,
@@ -36,7 +38,7 @@ class DialogGptCompletion:
     def utterance_prefix(self, utterer_name) -> str:
         return f"*{utterer_name}:*"
 
-    async def build_prompt(self, conversation_id: int, append_bot_name_at_the_end: bool = True) -> None:
+    async def build_prompt(self, conversation_id: int) -> None:
         prompt_parts = []
 
         utterances = Utterance.objects.filter(conversation_id=conversation_id).order_by("-arrival_timestamp_ms")
@@ -55,17 +57,17 @@ class DialogGptCompletion:
                 utterance_prefix = self.user_prefix
             prompt_parts.append(f"{utterance_prefix} {utterance.text}")
 
-        if append_bot_name_at_the_end:
+        if self.settings.append_bot_name_at_the_end:
             prompt_parts.append(self.bot_prefix)
 
         prompt_content = "\n".join(prompt_parts)
         self.prompt = self.settings.prompt_template.format(
             DIALOG=prompt_content,
-            USER=self.user_name,
+            USER=self.user_first_name,
             BOT=self.settings.bot_name,
         )
 
-    async def fulfil(self, tg_update_in_db: TelegramUpdate) -> None:
+    async def fulfil(self, tg_update_in_db: TelegramUpdate | None) -> None:
         await self.build_prompt(await tg_update_in_db.swipy_user.get_current_conversation_id())
 
         # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
@@ -74,7 +76,7 @@ class DialogGptCompletion:
         self.gpt_completion_in_db = await GptCompletion.objects.acreate(
             request_timestamp_ms=request_timestamp_ms,
             triggering_update=tg_update_in_db,
-            swipy_user=tg_update_in_db.swipy_user,
+            swipy_user=self.swipy_user,
             prompt=self.prompt,
             engine=self.settings.engine,
             max_tokens=self.settings.max_tokens,
@@ -124,6 +126,7 @@ class DialogGptCompletionFactory:  # TODO oleksandr: extend from GptCompletionSe
         self,
         bot_name: str,
         prompt_template: str = "{DIALOG}",
+        append_bot_name_at_the_end: bool = True,
         engine: str = "text-davinci-003",
         max_tokens: int = 512,  # OpenAI's default is 16
         temperature: float = 1.0,  # Possible range - from 0.0 to 2.0
@@ -133,6 +136,7 @@ class DialogGptCompletionFactory:  # TODO oleksandr: extend from GptCompletionSe
     ):
         self.bot_name = bot_name
         self.prompt_template = prompt_template
+        self.append_bot_name_at_the_end = append_bot_name_at_the_end
 
         self.engine = engine
         self.max_tokens = max_tokens
@@ -141,9 +145,9 @@ class DialogGptCompletionFactory:  # TODO oleksandr: extend from GptCompletionSe
         self.frequency_penalty = frequency_penalty
         self.presence_penalty = presence_penalty
 
-    def new_completion(self, user_name: str) -> DialogGptCompletion:
+    def new_completion(self, swipy_user: SwipyUser) -> DialogGptCompletion:
         gpt_completion = DialogGptCompletion(
             settings=self,
-            user_name=user_name,
+            swipy_user=swipy_user,
         )
         return gpt_completion
