@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+BOT_NAME = "Swipy"  # TODO oleksandr: read from getMe()
+
 openai.api_key = os.environ["OPENAI_API_KEY"]
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 # read various ways of writing boolean values in configs

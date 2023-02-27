@@ -35,6 +35,12 @@ class Conversation(models.Model):
     swipy_user = models.ForeignKey("SwipyUser", on_delete=models.CASCADE)
     last_update_timestamp_ms = models.BigIntegerField()
 
+    title = models.TextField(null=True, blank=True)
+    summary = models.TextField(null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f"{self.id} - {self.title}"
+
 
 class Utterance(models.Model):
     class Meta:
