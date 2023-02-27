@@ -97,8 +97,6 @@ class UtteranceInline(admin.TabularInline):
     ordering = ["arrival_timestamp_ms"]
     fields = ["name", "text"]
     can_delete = False
-    can_add = False  # TODO oleksandr: are you sure this property exists ?
-    can_edit = False  # TODO oleksandr: are you sure this property exists ?
     show_change_link = True
 
 
@@ -125,7 +123,17 @@ class ConversationAdmin(admin.ModelAdmin):
         return datetime.fromtimestamp(obj.last_update_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
+class AlternativeCompletionInline(admin.TabularInline):
+    model = GptCompletion
+    # TODO oleksandr: add more fields to both lists
+    ordering = ["prompt_name", "temperature", "request_timestamp_ms"]
+    fields = ["completion", "prompt_name", "temperature"]
+    can_delete = False
+    show_change_link = True
+
+
 class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
+    inlines = [AlternativeCompletionInline]
     ordering = ["-arrival_timestamp_ms"]
     list_filter = ["swipy_user"]
     list_display = ["id", "arrival_time", "name", "text", "conversation"]
@@ -174,8 +182,6 @@ class ConversationInline(admin.TabularInline):
     fields = ["id", "title", "last_update_timestamp_ms"]
     readonly_fields = ["id", "title", "last_update_timestamp_ms"]
     can_delete = False
-    can_add = False  # TODO oleksandr: are you sure this property exists ?
-    can_edit = False  # TODO oleksandr: are you sure this property exists ?
     show_change_link = True
 
 

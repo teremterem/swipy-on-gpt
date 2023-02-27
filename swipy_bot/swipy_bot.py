@@ -25,16 +25,16 @@ DIALOG = DialogGptCompletionFactory(
     prompt_settings=ASK_EVERYTHING_PROMPT,
 )
 ALTERNATIVE_DIALOGS = [
-    DIALOG,
-    DialogGptCompletionFactory(
-        bot_name=BOT_NAME,
-        prompt_settings=ASK_EVERYTHING_PROMPT,
-        temperature=0.0,
-    ),
+    DIALOG,  # temperature=1.0 (default)
     DialogGptCompletionFactory(
         bot_name=BOT_NAME,
         prompt_settings=ASK_EVERYTHING_PROMPT,
         temperature=0.5,
+    ),
+    DialogGptCompletionFactory(
+        bot_name=BOT_NAME,
+        prompt_settings=ASK_EVERYTHING_PROMPT,
+        temperature=0.0,
     ),
 ]
 
