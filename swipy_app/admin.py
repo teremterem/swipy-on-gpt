@@ -138,6 +138,7 @@ class UtteranceAdmin(admin.ModelAdmin):
         "triggering_update",
         "conversation",
     ]
+    actions = ["generate_alternatives"]
 
     def has_add_permission(self, request):
         return False
@@ -152,6 +153,20 @@ class UtteranceAdmin(admin.ModelAdmin):
     def arrival_time(self, obj):
         # TODO oleksandr: get rid of duplicate code
         return datetime.fromtimestamp(obj.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+
+    @admin.action(description="Generate alternatives")
+    def generate_alternatives(self, request, queryset):
+        print()
+        print()
+        print()
+        print()
+        print()
+        print("YOYOYOYOYOYOYOYOYOYOYO")
+        print()
+        print()
+        print()
+        print()
+        print()
 
 
 class ConversationInline(admin.TabularInline):

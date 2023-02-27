@@ -1,6 +1,7 @@
 -c requirements.txt
 black==23.1.0
-jupyterlab==3.6.0
-pip-tools
-pre-commit==3.0.3
-pylint==2.16.1
+jupyterlab==3.6.1
+pip-tools==6.12.2
+pre-commit==3.1.0
+pylint==2.16.2
+ypy-websocket==0.8.2  # pinning a dependency of jupyterlab to avoid y-py version conflict

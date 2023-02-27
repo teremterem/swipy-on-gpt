@@ -24,6 +24,19 @@ DIALOG = DialogGptCompletionFactory(
     bot_name=BOT_NAME,
     prompt_settings=ASK_EVERYTHING_PROMPT,
 )
+ALTERNATIVE_DIALOGS = [
+    DIALOG,
+    DialogGptCompletionFactory(
+        bot_name=BOT_NAME,
+        prompt_settings=ASK_EVERYTHING_PROMPT,
+        temperature=0.0,
+    ),
+    DialogGptCompletionFactory(
+        bot_name=BOT_NAME,
+        prompt_settings=ASK_EVERYTHING_PROMPT,
+        temperature=0.5,
+    ),
+]
 
 # TODO oleksandr: is this a dirty hack ? use this instead ?
 #  https://stackoverflow.com/questions/30596484/python-asyncio-context
