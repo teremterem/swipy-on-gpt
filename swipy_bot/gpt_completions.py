@@ -30,7 +30,7 @@ class DialogGptCompletion:
         self.stop_list = [
             # "\n",  # TODO oleksandr: enable this if it's the very first exchange ?
             self.user_prefix,
-            # self.bot_prefix,
+            self.bot_prefix,
         ]
 
         self.completion: str | None = None
@@ -39,7 +39,11 @@ class DialogGptCompletion:
     def utterance_prefix(self, utterer_name) -> str:
         return f"*{utterer_name}:*"
 
-    async def build_prompt(self, conversation_id: int) -> None:
+    async def build_prompt(
+        self,
+        conversation_id: int,
+        stop_before_utterance: Utterance | None = None,
+    ) -> None:
         prompt_parts = []
 
         utterances = Utterance.objects.filter(conversation_id=conversation_id).order_by("-arrival_timestamp_ms")
@@ -48,6 +52,9 @@ class DialogGptCompletion:
         utterances = await sync_to_async(list)(utterances)
 
         for utterance in reversed(utterances):
+            if stop_before_utterance and utterance.id == stop_before_utterance.id:
+                break
+
             if not utterance.is_bot and utterance.text == "/start":
                 # don't include /start in the prompt
                 continue
@@ -59,7 +66,11 @@ class DialogGptCompletion:
             prompt_parts.append(f"{utterance_prefix} {utterance.text}")
 
         if self.settings.append_bot_name_at_the_end:
-            prompt_parts.append(self.bot_prefix)
+            if stop_before_utterance and stop_before_utterance.is_bot:
+                prompt_parts.append(self.bot_prefix)
+            else:
+                # we are trying to mimic the user, not the bot
+                prompt_parts.append(self.user_prefix)
 
         prompt_content = "\n".join(prompt_parts)
         self.prompt = self.settings.prompt_settings.prompt_template.format(
@@ -68,8 +79,16 @@ class DialogGptCompletion:
             BOT=self.settings.bot_name,
         )
 
-    async def fulfil(self, conversation_id: int, tg_update_in_db: TelegramUpdate | None = None) -> None:
-        await self.build_prompt(conversation_id)
+    async def fulfil(
+        self,
+        conversation_id: int,
+        tg_update_in_db: TelegramUpdate | None = None,
+        stop_before_utterance: Utterance | None = None,
+    ) -> None:
+        await self.build_prompt(
+            conversation_id=conversation_id,
+            stop_before_utterance=stop_before_utterance,
+        )
 
         # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
         request_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
@@ -78,6 +97,7 @@ class DialogGptCompletion:
             request_timestamp_ms=request_timestamp_ms,
             triggering_update=tg_update_in_db,
             swipy_user_id=self.swipy_user.pk,
+            alternative_to_utterance=stop_before_utterance,
             prompt=self.prompt,
             prompt_name=self.settings.prompt_settings.prompt_name,
             engine=self.settings.engine,
