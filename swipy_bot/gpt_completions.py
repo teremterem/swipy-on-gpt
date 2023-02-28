@@ -37,12 +37,12 @@ class DialogGptCompletion:
     def __init__(
         self,
         settings: GptCompletionSettings,
-        swipy_user: SwipyUser,
         bot_name: str,
+        swipy_user: SwipyUser,
     ):
         self.settings = settings
-        self.swipy_user = swipy_user
         self.bot_name = bot_name
+        self.swipy_user = swipy_user
 
         self.user_first_name = self.swipy_user.first_name
         self.user_prefix = self.utterance_prefix(self.user_first_name)
@@ -169,16 +169,16 @@ class DialogGptCompletion:
 class DialogGptCompletionFactory:  # TODO oleksandr: extend from GptCompletionSettings (a frozen dataclass)
     def __init__(
         self,
+        settings: GptCompletionSettings,
         bot_name: str,
-        gpt_completion_settings: GptCompletionSettings,
     ):
+        self.settings = settings
         self.bot_name = bot_name
-        self.gpt_completion_settings = gpt_completion_settings
 
     def new_completion(self, swipy_user: SwipyUser) -> DialogGptCompletion:
         gpt_completion = DialogGptCompletion(
-            settings=self.gpt_completion_settings,
-            swipy_user=swipy_user,
+            settings=self.settings,
             bot_name=self.bot_name,
+            swipy_user=swipy_user,
         )
         return gpt_completion
