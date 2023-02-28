@@ -126,7 +126,7 @@ class ConversationAdmin(admin.ModelAdmin):
 class AlternativeCompletionInline(admin.TabularInline):
     model = GptCompletion
     # TODO oleksandr: add more fields to both lists
-    ordering = ["prompt_name", "temperature", "request_timestamp_ms"]
+    ordering = ["temperature", "prompt_name", "request_timestamp_ms"]
     fields = ["completion", "prompt_name", "temperature"]
     can_delete = False
     show_change_link = True
