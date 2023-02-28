@@ -9,10 +9,10 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Messa
 from telegram.ext.filters import TEXT
 
 from swipy_app.models import Utterance, TelegramUpdate
-from swipy_bot.gpt_completions import DialogGptCompletionFactory, PromptSettings
+from swipy_bot.gpt_completions import DialogGptCompletionFactory, GptPromptSettings, GptCompletionSettings
 from swipy_bot.swipy_config import TELEGRAM_TOKEN, BOT_NAME
 
-ASK_EVERYTHING_PROMPT = PromptSettings(
+ASK_EVERYTHING_PROMPT = GptPromptSettings(
     prompt_name="ask-everything-0.2",
     prompt_template=(
         "Your name is {BOT} and the user's name is {USER}. Here is your dialog with {USER}. If {USER} "
@@ -22,20 +22,26 @@ ASK_EVERYTHING_PROMPT = PromptSettings(
     ),
 )
 DIALOG = DialogGptCompletionFactory(
+    settings=GptCompletionSettings(
+        prompt_settings=ASK_EVERYTHING_PROMPT,
+    ),
     bot_name=BOT_NAME,
-    prompt_settings=ASK_EVERYTHING_PROMPT,
 )
 ALTERNATIVE_DIALOGS = [
     DIALOG,  # temperature=1.0 (default)
     DialogGptCompletionFactory(
+        settings=GptCompletionSettings(
+            prompt_settings=ASK_EVERYTHING_PROMPT,
+            temperature=0.5,
+        ),
         bot_name=BOT_NAME,
-        prompt_settings=ASK_EVERYTHING_PROMPT,
-        temperature=0.5,
     ),
     DialogGptCompletionFactory(
+        settings=GptCompletionSettings(
+            prompt_settings=ASK_EVERYTHING_PROMPT,
+            temperature=0.0,
+        ),
         bot_name=BOT_NAME,
-        prompt_settings=ASK_EVERYTHING_PROMPT,
-        temperature=0.0,
     ),
 ]
 
