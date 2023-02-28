@@ -173,6 +173,8 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
                 conversation_id=obj.conversation_id,
                 stop_before_utterance=obj,
             )
+            completion.gpt_completion_in_db.alternative_to_utterance = obj
+            completion.gpt_completion_in_db.save(update_fields=["alternative_to_utterance"])
 
 
 class ConversationInline(admin.TabularInline):

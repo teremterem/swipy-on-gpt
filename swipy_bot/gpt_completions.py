@@ -121,7 +121,6 @@ class DialogGptCompletion:
             request_timestamp_ms=request_timestamp_ms,
             triggering_update=tg_update_in_db,
             swipy_user_id=self.swipy_user.pk,
-            alternative_to_utterance=stop_before_utterance,
             prompt=self.prompt,
             prompt_name=self.settings.prompt_settings.prompt_name,
             engine=self.settings.engine,
