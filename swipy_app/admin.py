@@ -205,7 +205,7 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
                 frequency_penalty=completer.settings.frequency_penalty,
                 presence_penalty=completer.settings.presence_penalty,
             )
-            missing_count = 3 if completer.settings.temperature else 2
+            missing_count = 2 if completer.settings.temperature else 1
             missing_count -= existing_alternatives.get(key, 0)
             for _ in range(missing_count):
                 completion = completer.new_completion(utterance.swipy_user)
