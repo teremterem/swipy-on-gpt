@@ -193,7 +193,7 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
                 frequency_penalty=existing_alternative.frequency_penalty,
                 presence_penalty=existing_alternative.presence_penalty,
             )
-            existing_alternatives[key] += existing_alternatives.get(key, 0) + 1
+            existing_alternatives[key] = existing_alternatives.get(key, 0) + 1
 
         for completer in ALTERNATIVE_DIALOGS:
             key = _CompletionSettingsTuple(
