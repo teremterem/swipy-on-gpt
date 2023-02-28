@@ -13,12 +13,16 @@ from swipy_bot.gpt_completions import DialogGptCompletionFactory, GptPromptSetti
 from swipy_bot.swipy_config import TELEGRAM_TOKEN, BOT_NAME
 
 ASK_EVERYTHING_PROMPT = GptPromptSettings(
-    prompt_name="ask-everything-0.2",
+    prompt_name="ask-everything-0.3",
     prompt_template=(
-        "Your name is {BOT} and the user's name is {USER}. Here is your dialog with {USER}. If {USER} "
+        "Your name is {BOT} and the user's name is {USER}. Below is your conversation with {USER}. If {USER} "
         "mentions any people, things, places, events etc. you don't know about (or if you don't know details about "
         "mentioned people, things, places, events etc. in relation to {USER} specifically) then follow up with "
-        "corresponding clarifying questions to {USER}.\n\n{DIALOG}"
+        "corresponding clarifying questions to {USER}.\n"
+        "\n"
+        "---\n"
+        "\n"
+        "{DIALOG}"
     ),
 )
 DIALOG = DialogGptCompletionFactory(

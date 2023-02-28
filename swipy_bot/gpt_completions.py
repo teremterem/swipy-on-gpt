@@ -95,9 +95,10 @@ class DialogGptCompletion:
             else:
                 prompt_parts.append(self.bot_prefix)
 
-        prompt_content = "\n".join(prompt_parts)
+        utterance_delimiter = "\n\n" if self.settings.double_newline_between_utterances else "\n"
+        dialog = utterance_delimiter.join(prompt_parts)
         self.prompt = self.settings.prompt_settings.prompt_template.format(
-            DIALOG=prompt_content,
+            DIALOG=dialog,
             USER=self.user_first_name,
             BOT=self.bot_name,
         )
