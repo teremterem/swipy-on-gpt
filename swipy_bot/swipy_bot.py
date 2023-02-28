@@ -2,6 +2,7 @@
 import asyncio
 from datetime import datetime
 
+from asgiref.sync import sync_to_async
 from telegram import Update
 from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
@@ -100,7 +101,7 @@ async def reply_with_gpt_completion(
 
     # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
     arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
-    await Utterance.objects.acreate(
+    utterance = await Utterance.objects.acreate(
         arrival_timestamp_ms=arrival_timestamp_ms,
         swipy_user=tg_update_in_db.swipy_user,
         conversation_id=conversation_id,
@@ -111,6 +112,8 @@ async def reply_with_gpt_completion(
         is_bot=True,
         gpt_completion=gpt_completion.gpt_completion_in_db,
     )
+    gpt_completion.gpt_completion_in_db.alternative_to_utterance = utterance
+    await sync_to_async(gpt_completion.gpt_completion_in_db.save)(update_fields=["alternative_to_utterance"])
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation
 
 
