@@ -16,21 +16,19 @@ from swipy_bot.swipy_config import MOCK_GPT, MAX_CONVERSATION_LENGTH
 class GptPromptSettings:
     prompt_name: str
     prompt_template: str
+    append_bot_name_at_the_end: bool = True
+    double_newline_between_utterances: bool = True
 
 
 @dataclass(frozen=True)
 class GptCompletionSettings:
     prompt_settings: GptPromptSettings
-
     engine: str = "text-davinci-003"
     max_tokens: int = 512  # OpenAI's default is 16
     temperature: float = 1.0  # Possible range - from 0.0 to 2.0
     top_p: float = 1.0  # Possible range - from 0.0 to 1.0
     frequency_penalty: float = 0.0  # Possible range - from -2.0 to 2.0
     presence_penalty: float = 0.0  # Possible range - from -2.0 to 2.0
-
-    append_bot_name_at_the_end: bool = True
-    double_newline_between_utterances: bool = True
 
 
 class DialogGptCompletion:
@@ -88,14 +86,14 @@ class DialogGptCompletion:
                 utterance_prefix = self.user_prefix
             prompt_parts.append(f"{utterance_prefix} {utterance.text}")
 
-        if self.settings.append_bot_name_at_the_end:
+        if self.settings.prompt_settings.append_bot_name_at_the_end:
             if stop_before_utterance and not stop_before_utterance.is_bot:
                 # we are trying to mimic the user, not the bot
                 prompt_parts.append(self.user_prefix)
             else:
                 prompt_parts.append(self.bot_prefix)
 
-        utterance_delimiter = "\n\n" if self.settings.double_newline_between_utterances else "\n"
+        utterance_delimiter = "\n\n" if self.settings.prompt_settings.double_newline_between_utterances else "\n"
         dialog = utterance_delimiter.join(prompt_parts)
         self.prompt = self.settings.prompt_settings.prompt_template.format(
             DIALOG=dialog,

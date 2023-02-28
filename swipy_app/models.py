@@ -18,7 +18,12 @@ class GptCompletion(models.Model):
     arrival_timestamp_ms = models.BigIntegerField(null=True)
     triggering_update = models.ForeignKey(TelegramUpdate, on_delete=models.CASCADE, null=True)
     swipy_user = models.ForeignKey("SwipyUser", on_delete=models.CASCADE)
-    alternative_to_utterance = models.ForeignKey("Utterance", on_delete=models.CASCADE, null=True)
+    alternative_to_utterance = models.ForeignKey(
+        "Utterance",
+        on_delete=models.CASCADE,
+        null=True,
+        related_name="alternative_completion_set",
+    )
 
     prompt = models.TextField(null=True, blank=True)
     completion = models.TextField(null=True, blank=True)
@@ -40,7 +45,7 @@ class Conversation(models.Model):
     summary = models.TextField(null=True, blank=True)
 
     def __str__(self) -> str:
-        return f"{self.id} - {self.title}"
+        return f"{self.pk} - {self.title}"
 
 
 class Utterance(models.Model):
