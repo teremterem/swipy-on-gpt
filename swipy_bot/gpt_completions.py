@@ -1,5 +1,4 @@
 # pylint: disable=too-many-instance-attributes,too-few-public-methods,too-many-arguments
-import asyncio
 import random
 import traceback
 from dataclasses import dataclass
@@ -69,13 +68,20 @@ class DialogGptCompletion:
 
         utterances = Utterance.objects.filter(conversation_id=conversation_id).order_by("-arrival_timestamp_ms")
         # TODO oleksandr: replace MAX_CONVERSATION_LENGTH with a more sophisticated logic
-        utterances = utterances[:MAX_CONVERSATION_LENGTH]
-        utterances = await sync_to_async(list)(utterances)
+        if stop_before_utterance:
+            # pretend that the last utterance was the one before the stop_before_utterance
+            utterances = await sync_to_async(list)(utterances)
+            for idx, utterance in enumerate(utterances):
+                if utterance.id == stop_before_utterance.pk:
+                    utterances = utterances[idx + 1 :]
+                    break
+            utterances = utterances[:MAX_CONVERSATION_LENGTH]
+        else:
+            # don't pretend, just take the last MAX_CONVERSATION_LENGTH utterances
+            utterances = utterances[:MAX_CONVERSATION_LENGTH]
+            utterances = await sync_to_async(list)(utterances)
 
         for utterance in reversed(utterances):
-            if stop_before_utterance and utterance.id == stop_before_utterance.pk:
-                break
-
             if not utterance.is_bot and utterance.text == "/start":
                 # don't include /start in the prompt
                 continue
@@ -131,7 +137,7 @@ class DialogGptCompletion:
 
         try:
             if MOCK_GPT:
-                await asyncio.sleep(1)
+                # await asyncio.sleep(1)
                 self.completion = f"\n\nHERE GOES GPT RESPONSE (IT'S A MOCK!) {random.randint(0, 10000)}"
             else:
                 gpt_response = await openai.Completion.acreate(
