@@ -1,8 +1,13 @@
 # pylint: disable=too-few-public-methods
+import typing
+from collections import namedtuple
 from datetime import datetime
 
-from asgiref.sync import sync_to_async
+from asgiref.sync import sync_to_async, async_to_sync
 from django.db import models
+
+if typing.TYPE_CHECKING:
+    from swipy_bot.gpt_completions import DialogGptCompletionFactory
 
 
 class TelegramUpdate(models.Model):
@@ -66,6 +71,41 @@ class Utterance(models.Model):
     gpt_completion = models.ForeignKey(GptCompletion, on_delete=models.CASCADE, null=True)
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE)
 
+    def generate_alternatives(self, alternative_completion_factories: list["DialogGptCompletionFactory"]) -> None:
+        existing_alternatives = {}
+        for existing_alternative in self.alternative_completion_set.all():
+            key = _CompletionSettingsTuple(
+                prompt_name=existing_alternative.prompt_name,
+                engine=existing_alternative.engine,
+                max_tokens=existing_alternative.max_tokens,
+                temperature=existing_alternative.temperature,
+                top_p=existing_alternative.top_p,
+                frequency_penalty=existing_alternative.frequency_penalty,
+                presence_penalty=existing_alternative.presence_penalty,
+            )
+            existing_alternatives[key] = existing_alternatives.get(key, 0) + 1
+
+        for completion_factory in alternative_completion_factories:
+            key = _CompletionSettingsTuple(
+                prompt_name=completion_factory.settings.prompt_settings.prompt_name,
+                engine=completion_factory.settings.engine,
+                max_tokens=completion_factory.settings.max_tokens,
+                temperature=completion_factory.settings.temperature,
+                top_p=completion_factory.settings.top_p,
+                frequency_penalty=completion_factory.settings.frequency_penalty,
+                presence_penalty=completion_factory.settings.presence_penalty,
+            )
+            missing_count = 2 if completion_factory.settings.temperature else 1
+            missing_count -= existing_alternatives.get(key, 0)
+            for _ in range(missing_count):
+                completion = completion_factory.new_completion(self.swipy_user)
+                async_to_sync(completion.fulfil)(
+                    conversation_id=self.conversation_id,
+                    stop_before_utterance=self,
+                )
+                completion.gpt_completion_in_db.alternative_to_utterance = self
+                completion.gpt_completion_in_db.save(update_fields=["alternative_to_utterance"])
+
 
 class SwipyUser(models.Model):
     # TODO oleksandr: shouldn't it be user_telegram_id plus chat_telegram_id ?
@@ -105,3 +145,17 @@ class SwipyUser(models.Model):
         self.current_conversation = None
         await sync_to_async(self.save)(update_fields=["current_conversation"])
         # self.current_conversation_id is assigned with None automatically, no need to do it explicitly
+
+
+_CompletionSettingsTuple = namedtuple(
+    "CompletionSettings",
+    [
+        "prompt_name",
+        "engine",
+        "max_tokens",
+        "temperature",
+        "top_p",
+        "frequency_penalty",
+        "presence_penalty",
+    ],
+)

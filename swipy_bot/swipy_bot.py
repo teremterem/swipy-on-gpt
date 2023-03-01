@@ -1,4 +1,4 @@
-# pylint: disable=unused-argument
+# pylint: disable=unused-argument,duplicate-code
 import asyncio
 from datetime import datetime
 
@@ -9,52 +9,9 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Messa
 from telegram.ext.filters import TEXT
 
 from swipy_app.models import Utterance, TelegramUpdate
-from swipy_bot.gpt_completions import DialogGptCompletionFactory, GptPromptSettings, GptCompletionSettings
-from swipy_bot.swipy_config import TELEGRAM_TOKEN, BOT_NAME
-
-ASK_EVERYTHING_PROMPT = GptPromptSettings(
-    prompt_name="ask-everything-0.3",
-    prompt_template=(
-        "Your name is {BOT} and the user's name is {USER}. Below is your conversation with {USER}. If {USER} "
-        "mentions any people, things, places, events etc. you don't know about (or if you don't know details about "
-        "mentioned people, things, places, events etc. in relation to {USER} specifically) then follow up with "
-        "corresponding clarifying questions to {USER}.\n"
-        "\n"
-        "---\n"
-        "\n"
-        "{DIALOG}"
-    ),
-)
-DIALOG = DialogGptCompletionFactory(
-    settings=GptCompletionSettings(
-        prompt_settings=ASK_EVERYTHING_PROMPT,
-    ),
-    bot_name=BOT_NAME,
-)
-ALTERNATIVE_DIALOGS = [
-    DIALOG,  # temperature=1.0 (default)
-    DialogGptCompletionFactory(
-        settings=GptCompletionSettings(
-            prompt_settings=ASK_EVERYTHING_PROMPT,
-            temperature=0.7,
-        ),
-        bot_name=BOT_NAME,
-    ),
-    DialogGptCompletionFactory(
-        settings=GptCompletionSettings(
-            prompt_settings=ASK_EVERYTHING_PROMPT,
-            temperature=0.3,
-        ),
-        bot_name=BOT_NAME,
-    ),
-    DialogGptCompletionFactory(
-        settings=GptCompletionSettings(
-            prompt_settings=ASK_EVERYTHING_PROMPT,
-            temperature=0.0,
-        ),
-        bot_name=BOT_NAME,
-    ),
-]
+from swipy_bot.gpt_completions import DialogGptCompletionFactory
+from swipy_bot.gpt_prompt_definitions import DIALOG
+from swipy_bot.swipy_config import TELEGRAM_TOKEN
 
 # TODO oleksandr: is this a dirty hack ? use this instead ?
 #  https://stackoverflow.com/questions/30596484/python-asyncio-context

@@ -1,15 +1,13 @@
 # pylint: disable=unused-argument,too-few-public-methods
-from collections import namedtuple
 from datetime import datetime
 from pprint import pformat
 
-from asgiref.sync import async_to_sync
 from django.contrib import admin
 from django.utils.html import format_html
 from django_object_actions import DjangoObjectActions, action
 
 from swipy_app.models import TelegramUpdate, Utterance, GptCompletion, Conversation, SwipyUser
-from swipy_bot.swipy_bot import ALTERNATIVE_DIALOGS
+from swipy_bot.gpt_prompt_definitions import ALTERNATIVE_DIALOGS
 
 
 class TelegramUpdateAdmin(admin.ModelAdmin):
@@ -133,20 +131,6 @@ class AlternativeCompletionInline(admin.TabularInline):
     show_change_link = True
 
 
-_CompletionSettingsTuple = namedtuple(
-    "CompletionSettings",
-    [
-        "prompt_name",
-        "engine",
-        "max_tokens",
-        "temperature",
-        "top_p",
-        "frequency_penalty",
-        "presence_penalty",
-    ],
-)
-
-
 class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
     inlines = [AlternativeCompletionInline]
     ordering = ["-arrival_timestamp_ms"]
@@ -182,39 +166,7 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
 
     @action(label="Generate alternatives")
     def generate_alternatives(self, request, utterance):
-        existing_alternatives = {}
-        for existing_alternative in utterance.alternative_completion_set.all():
-            key = _CompletionSettingsTuple(
-                prompt_name=existing_alternative.prompt_name,
-                engine=existing_alternative.engine,
-                max_tokens=existing_alternative.max_tokens,
-                temperature=existing_alternative.temperature,
-                top_p=existing_alternative.top_p,
-                frequency_penalty=existing_alternative.frequency_penalty,
-                presence_penalty=existing_alternative.presence_penalty,
-            )
-            existing_alternatives[key] = existing_alternatives.get(key, 0) + 1
-
-        for completer in ALTERNATIVE_DIALOGS:
-            key = _CompletionSettingsTuple(
-                prompt_name=completer.settings.prompt_settings.prompt_name,
-                engine=completer.settings.engine,
-                max_tokens=completer.settings.max_tokens,
-                temperature=completer.settings.temperature,
-                top_p=completer.settings.top_p,
-                frequency_penalty=completer.settings.frequency_penalty,
-                presence_penalty=completer.settings.presence_penalty,
-            )
-            missing_count = 2 if completer.settings.temperature else 1
-            missing_count -= existing_alternatives.get(key, 0)
-            for _ in range(missing_count):
-                completion = completer.new_completion(utterance.swipy_user)
-                async_to_sync(completion.fulfil)(
-                    conversation_id=utterance.conversation_id,
-                    stop_before_utterance=utterance,
-                )
-                completion.gpt_completion_in_db.alternative_to_utterance = utterance
-                completion.gpt_completion_in_db.save(update_fields=["alternative_to_utterance"])
+        utterance.generate_alternatives(ALTERNATIVE_DIALOGS)
 
 
 class ConversationInline(admin.TabularInline):
