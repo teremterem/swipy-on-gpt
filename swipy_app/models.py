@@ -52,6 +52,10 @@ class Conversation(models.Model):
     def __str__(self) -> str:
         return f"{self.pk} - {self.title}"
 
+    def generate_alternatives(self, alternative_completion_factories: list["DialogGptCompletionFactory"]) -> None:
+        for utterance in self.utterance_set.all():
+            utterance.generate_alternatives(alternative_completion_factories)
+
 
 class Utterance(models.Model):
     class Meta:
@@ -145,6 +149,10 @@ class SwipyUser(models.Model):
         self.current_conversation = None
         await sync_to_async(self.save)(update_fields=["current_conversation"])
         # self.current_conversation_id is assigned with None automatically, no need to do it explicitly
+
+    def generate_alternatives(self, alternative_completion_factories: list["DialogGptCompletionFactory"]) -> None:
+        for conversation in self.conversation_set.all():
+            conversation.generate_alternatives(alternative_completion_factories)
 
 
 _CompletionSettingsTuple = namedtuple(

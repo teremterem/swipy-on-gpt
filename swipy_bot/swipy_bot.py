@@ -1,4 +1,4 @@
-# pylint: disable=unused-argument,duplicate-code
+# pylint: disable=unused-argument
 import asyncio
 from datetime import datetime
 
