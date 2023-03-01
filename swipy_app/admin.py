@@ -152,6 +152,7 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
         "gpt_completion",
         "triggering_update",
         "conversation",
+        "chat_context",
     ]
     change_actions = ["generate_alternatives"]
 
@@ -163,6 +164,12 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+    @admin.display(description="Chat context")
+    def chat_context(self, utterance: Utterance) -> str | None:
+        if utterance.gpt_completion is None:
+            return None
+        return utterance.gpt_completion.prompt
 
     @admin.display(description="Arrival time")
     def arrival_time(self, utterance: Utterance) -> str:
