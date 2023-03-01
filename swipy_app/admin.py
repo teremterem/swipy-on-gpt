@@ -106,6 +106,7 @@ class ConversationAdmin(admin.ModelAdmin):
     list_display = ["id", "title", "swipy_user", "last_update_time"]
     list_display_links = list_display
     fields = ["id", "title", "swipy_user", "last_update_time", "summary"]
+    change_actions = ["generate_alternatives"]
 
     def has_add_permission(self, request):
         return False
@@ -117,9 +118,13 @@ class ConversationAdmin(admin.ModelAdmin):
         return False
 
     @admin.display(description="Last update time")
-    def last_update_time(self, obj):
+    def last_update_time(self, conversation: Conversation) -> str:
         # TODO oleksandr: get rid of duplicate code
-        return datetime.fromtimestamp(obj.last_update_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+        return datetime.fromtimestamp(conversation.last_update_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+
+    @action(label="Generate alternatives")
+    def generate_alternatives(self, request, conversation: Conversation) -> None:
+        conversation.generate_alternatives(ALTERNATIVE_DIALOGS)
 
 
 class AlternativeCompletionInline(admin.TabularInline):
@@ -160,12 +165,12 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
         return False
 
     @admin.display(description="Arrival time")
-    def arrival_time(self, obj):
+    def arrival_time(self, utterance: Utterance) -> str:
         # TODO oleksandr: get rid of duplicate code
-        return datetime.fromtimestamp(obj.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+        return datetime.fromtimestamp(utterance.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
     @action(label="Generate alternatives")
-    def generate_alternatives(self, request, utterance):
+    def generate_alternatives(self, request, utterance: Utterance) -> None:
         utterance.generate_alternatives(ALTERNATIVE_DIALOGS)
 
 
@@ -196,6 +201,7 @@ class SwipyUserAdmin(admin.ModelAdmin):
         "chat_telegram_id",
         # "current_conversation",
     ]
+    change_actions = ["generate_alternatives"]
 
     def has_add_permission(self, request):
         return False
@@ -205,6 +211,10 @@ class SwipyUserAdmin(admin.ModelAdmin):
 
     # def has_change_permission(self, request, obj=None):
     #     return False
+
+    @action(label="Generate alternatives")
+    def generate_alternatives(self, request, swipy_user: SwipyUser) -> None:
+        swipy_user.generate_alternatives(ALTERNATIVE_DIALOGS)
 
 
 admin.site.register(TelegramUpdate, TelegramUpdateAdmin)
