@@ -33,7 +33,7 @@ attrs==22.2.0
     # via
     #   -c requirements.txt
     #   jsonschema
-babel==2.11.0
+babel==2.12.1
     # via jupyterlab-server
 backcall==0.2.0
     # via ipython
@@ -94,7 +94,7 @@ ipykernel==6.21.2
     # via
     #   nbclassic
     #   notebook
-ipython==8.10.0
+ipython==8.11.0
     # via
     #   ipykernel
     #   jupyterlab
@@ -234,7 +234,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pip-tools==6.12.2
+pip-tools==6.12.3
     # via -r dev-requirements.in
 platformdirs==3.0.0
     # via
@@ -242,14 +242,14 @@ platformdirs==3.0.0
     #   jupyter-core
     #   pylint
     #   virtualenv
-pre-commit==3.1.0
+pre-commit==3.1.1
     # via -r dev-requirements.in
 prometheus-client==0.16.0
     # via
     #   jupyter-server
     #   nbclassic
     #   notebook
-prompt-toolkit==3.0.37
+prompt-toolkit==3.0.38
     # via ipython
 psutil==5.9.4
     # via ipykernel
@@ -277,8 +277,6 @@ python-dateutil==2.8.2
     #   jupyter-client
 python-json-logger==2.0.7
     # via jupyter-events
-pytz==2022.7.1
-    # via babel
 pyyaml==6.0
     # via
     #   jupyter-events
@@ -361,7 +359,7 @@ urllib3==1.26.14
     # via
     #   -c requirements.txt
     #   requests
-virtualenv==20.19.0
+virtualenv==20.20.0
     # via pre-commit
 wcwidth==0.2.6
     # via prompt-toolkit
