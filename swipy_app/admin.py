@@ -99,7 +99,7 @@ class UtteranceInline(admin.TabularInline):
     show_change_link = True
 
 
-class ConversationAdmin(admin.ModelAdmin):
+class ConversationAdmin(DjangoObjectActions, admin.ModelAdmin):
     inlines = [UtteranceInline]
     ordering = ["-last_update_timestamp_ms"]
     list_filter = ["swipy_user"]
@@ -184,7 +184,7 @@ class ConversationInline(admin.TabularInline):
     show_change_link = True
 
 
-class SwipyUserAdmin(admin.ModelAdmin):
+class SwipyUserAdmin(DjangoObjectActions, admin.ModelAdmin):
     inlines = [ConversationInline]
     ordering = ["full_name", "chat_telegram_id"]
     list_display = ["id", "full_name", "chat_telegram_id", "current_conversation"]
