@@ -54,7 +54,8 @@ class Conversation(models.Model):
 
     def generate_alternatives(self, alternative_completion_factories: list["DialogGptCompletionFactory"]) -> None:
         for utterance in self.utterance_set.all():
-            utterance.generate_alternatives(alternative_completion_factories)
+            if utterance.is_bot:
+                utterance.generate_alternatives(alternative_completion_factories)
 
 
 class Utterance(models.Model):
