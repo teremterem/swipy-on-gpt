@@ -169,7 +169,7 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
     def chat_context(self, utterance: Utterance) -> str | None:
         if utterance.gpt_completion is None:
             return None
-        return utterance.gpt_completion.prompt
+        return format_html('<pre style="white-space: pre-wrap">{}</pre>', utterance.gpt_completion.prompt)
 
     @admin.display(description="Arrival time")
     def arrival_time(self, utterance: Utterance) -> str:
