@@ -2,6 +2,7 @@
 import asyncio
 from datetime import datetime
 
+from asgiref.sync import sync_to_async
 from telegram import Update
 from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
@@ -9,17 +10,8 @@ from telegram.ext.filters import TEXT
 
 from swipy_app.models import Utterance, TelegramUpdate
 from swipy_bot.gpt_completions import DialogGptCompletionFactory
-from swipy_bot.swipy_config import TELEGRAM_TOKEN, BOT_NAME
-
-DIALOG = DialogGptCompletionFactory(
-    bot_name=BOT_NAME,
-    prompt_template=(
-        "Your name is {BOT} and the user's name is {USER}. Here is your dialog with {USER}. If {USER} "
-        "mentions any people, things, places, events etc. you don't know about (or if you don't know details about "
-        "mentioned people, things, places, events etc. in relation to {USER} specifically) then follow up with "
-        "corresponding clarifying questions to {USER}.\n\n{DIALOG}"
-    ),
-)
+from swipy_bot.gpt_prompt_definitions import DIALOG
+from swipy_bot.swipy_config import TELEGRAM_TOKEN
 
 # TODO oleksandr: is this a dirty hack ? use this instead ?
 #  https://stackoverflow.com/questions/30596484/python-asyncio-context
@@ -83,17 +75,19 @@ async def reply_with_gpt_completion(
 
     # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
     arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
-    await Utterance.objects.acreate(
+    utterance = await Utterance.objects.acreate(
         arrival_timestamp_ms=arrival_timestamp_ms,
         swipy_user=tg_update_in_db.swipy_user,
         conversation_id=conversation_id,
-        telegram_message_id=response_msg.message_id,
+        telegram_message_id=response_msg.message_id,  # TODO oleksandr: store complete message json in db ?
         triggering_update=tg_update_in_db,
-        name=gpt_completion.settings.bot_name,
+        name=gpt_completion.bot_name,
         text=response_msg.text,
         is_bot=True,
         gpt_completion=gpt_completion.gpt_completion_in_db,
     )
+    gpt_completion.gpt_completion_in_db.alternative_to_utterance = utterance
+    await sync_to_async(gpt_completion.gpt_completion_in_db.save)(update_fields=["alternative_to_utterance"])
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation
 
 

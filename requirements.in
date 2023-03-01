@@ -1,6 +1,7 @@
-django==4.1.6
-openai==0.26.5
-python-dotenv==0.21.1
-python-telegram-bot==20.0
+django==4.1.7
+django-object-actions==4.1.0
+openai==0.27.0
+python-dotenv==1.0.0
+python-telegram-bot==20.1
 uvicorn==0.20.0
-whitenoise==6.3.0
+whitenoise==6.4.0

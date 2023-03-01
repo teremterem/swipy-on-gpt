@@ -4,8 +4,10 @@ from pprint import pformat
 
 from django.contrib import admin
 from django.utils.html import format_html
+from django_object_actions import DjangoObjectActions, action
 
 from swipy_app.models import TelegramUpdate, Utterance, GptCompletion, Conversation, SwipyUser
+from swipy_bot.gpt_prompt_definitions import ALTERNATIVE_DIALOGS
 
 
 class TelegramUpdateAdmin(admin.ModelAdmin):
@@ -37,13 +39,16 @@ class TelegramUpdateAdmin(admin.ModelAdmin):
 class GptCompletionAdmin(admin.ModelAdmin):
     ordering = ["-request_timestamp_ms"]
     list_filter = ["swipy_user"]
-    list_display = ["id", "request_time", "arrival_time", "completion"]
+    list_display = ["id", "arrival_time", "completion", "alternative_to_utterance"]
     list_display_links = list_display
     fields = [
         "request_time",
         "arrival_time",
         "prompt_pre",
         "completion_pre",
+        "swipy_user",
+        "alternative_to_utterance",
+        "prompt_name",
         "engine",
         "max_tokens",
         "temperature",
@@ -91,18 +96,17 @@ class UtteranceInline(admin.TabularInline):
     ordering = ["arrival_timestamp_ms"]
     fields = ["name", "text"]
     can_delete = False
-    can_add = False  # TODO oleksandr: are you sure this property exists ?
-    can_edit = False  # TODO oleksandr: are you sure this property exists ?
     show_change_link = True
 
 
-class ConversationAdmin(admin.ModelAdmin):
+class ConversationAdmin(DjangoObjectActions, admin.ModelAdmin):
     inlines = [UtteranceInline]
     ordering = ["-last_update_timestamp_ms"]
     list_filter = ["swipy_user"]
     list_display = ["id", "title", "swipy_user", "last_update_time"]
     list_display_links = list_display
     fields = ["id", "title", "swipy_user", "last_update_time", "summary"]
+    change_actions = ["generate_alternatives"]
 
     def has_add_permission(self, request):
         return False
@@ -114,12 +118,26 @@ class ConversationAdmin(admin.ModelAdmin):
         return False
 
     @admin.display(description="Last update time")
-    def last_update_time(self, obj):
+    def last_update_time(self, conversation: Conversation) -> str:
         # TODO oleksandr: get rid of duplicate code
-        return datetime.fromtimestamp(obj.last_update_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+        return datetime.fromtimestamp(conversation.last_update_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+
+    @action(label="Generate alternatives")
+    def generate_alternatives(self, request, conversation: Conversation) -> None:
+        conversation.generate_alternatives(ALTERNATIVE_DIALOGS)
 
 
-class UtteranceAdmin(admin.ModelAdmin):
+class AlternativeCompletionInline(admin.TabularInline):
+    model = GptCompletion
+    # TODO oleksandr: add more fields to both lists
+    ordering = ["temperature", "prompt_name", "request_timestamp_ms"]
+    fields = ["completion", "prompt_name", "temperature"]
+    can_delete = False
+    show_change_link = True
+
+
+class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
+    inlines = [AlternativeCompletionInline]
     ordering = ["-arrival_timestamp_ms"]
     list_filter = ["swipy_user"]
     list_display = ["id", "arrival_time", "name", "text", "conversation"]
@@ -134,7 +152,9 @@ class UtteranceAdmin(admin.ModelAdmin):
         "gpt_completion",
         "triggering_update",
         "conversation",
+        "chat_context",
     ]
+    change_actions = ["generate_alternatives"]
 
     def has_add_permission(self, request):
         return False
@@ -145,10 +165,20 @@ class UtteranceAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
         return False
 
+    @admin.display(description="Chat context")
+    def chat_context(self, utterance: Utterance) -> str | None:
+        if utterance.gpt_completion is None:
+            return None
+        return format_html('<pre style="white-space: pre-wrap">{}</pre>', utterance.gpt_completion.prompt)
+
     @admin.display(description="Arrival time")
-    def arrival_time(self, obj):
+    def arrival_time(self, utterance: Utterance) -> str:
         # TODO oleksandr: get rid of duplicate code
-        return datetime.fromtimestamp(obj.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+        return datetime.fromtimestamp(utterance.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+
+    @action(label="Generate alternatives")
+    def generate_alternatives(self, request, utterance: Utterance) -> None:
+        utterance.generate_alternatives(ALTERNATIVE_DIALOGS)
 
 
 class ConversationInline(admin.TabularInline):
@@ -158,12 +188,10 @@ class ConversationInline(admin.TabularInline):
     fields = ["id", "title", "last_update_timestamp_ms"]
     readonly_fields = ["id", "title", "last_update_timestamp_ms"]
     can_delete = False
-    can_add = False  # TODO oleksandr: are you sure this property exists ?
-    can_edit = False  # TODO oleksandr: are you sure this property exists ?
     show_change_link = True
 
 
-class SwipyUserAdmin(admin.ModelAdmin):
+class SwipyUserAdmin(DjangoObjectActions, admin.ModelAdmin):
     inlines = [ConversationInline]
     ordering = ["full_name", "chat_telegram_id"]
     list_display = ["id", "full_name", "chat_telegram_id", "current_conversation"]
@@ -180,6 +208,7 @@ class SwipyUserAdmin(admin.ModelAdmin):
         "chat_telegram_id",
         # "current_conversation",
     ]
+    change_actions = ["generate_alternatives"]
 
     def has_add_permission(self, request):
         return False
@@ -189,6 +218,10 @@ class SwipyUserAdmin(admin.ModelAdmin):
 
     # def has_change_permission(self, request, obj=None):
     #     return False
+
+    @action(label="Generate alternatives")
+    def generate_alternatives(self, request, swipy_user: SwipyUser) -> None:
+        swipy_user.generate_alternatives(ALTERNATIVE_DIALOGS)
 
 
 admin.site.register(TelegramUpdate, TelegramUpdateAdmin)

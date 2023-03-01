@@ -2,6 +2,7 @@
 import asyncio
 import random
 import traceback
+from dataclasses import dataclass
 from datetime import datetime
 
 import openai
@@ -11,25 +12,46 @@ from swipy_app.models import GptCompletion, TelegramUpdate, Utterance, SwipyUser
 from swipy_bot.swipy_config import MOCK_GPT, MAX_CONVERSATION_LENGTH
 
 
+@dataclass(frozen=True)
+class GptPromptSettings:
+    prompt_name: str
+    prompt_template: str
+    append_bot_name_at_the_end: bool = True
+    double_newline_between_utterances: bool = True
+
+
+@dataclass(frozen=True)
+class GptCompletionSettings:
+    prompt_settings: GptPromptSettings
+    engine: str = "text-davinci-003"
+    max_tokens: int = 512  # OpenAI's default is 16
+    temperature: float = 1.0  # Possible range - from 0.0 to 2.0
+    top_p: float = 1.0  # Possible range - from 0.0 to 1.0
+    frequency_penalty: float = 0.0  # Possible range - from -2.0 to 2.0
+    presence_penalty: float = 0.0  # Possible range - from -2.0 to 2.0
+
+
 class DialogGptCompletion:
     def __init__(
         self,
-        settings: "DialogGptCompletionFactory",
+        settings: GptCompletionSettings,
+        bot_name: str,
         swipy_user: SwipyUser,
     ):
         self.settings = settings
+        self.bot_name = bot_name
         self.swipy_user = swipy_user
 
         self.user_first_name = self.swipy_user.first_name
         self.user_prefix = self.utterance_prefix(self.user_first_name)
-        self.bot_prefix = self.utterance_prefix(self.settings.bot_name)
+        self.bot_prefix = self.utterance_prefix(self.bot_name)
 
         self.gpt_completion_in_db: GptCompletion | None = None
         # TODO oleksandr: there are times when you don't need this stop list, for ex. when you're summarizing
         self.stop_list = [
             # "\n",  # TODO oleksandr: enable this if it's the very first exchange ?
             self.user_prefix,
-            # self.bot_prefix,
+            self.bot_prefix,
         ]
 
         self.completion: str | None = None
@@ -38,7 +60,11 @@ class DialogGptCompletion:
     def utterance_prefix(self, utterer_name) -> str:
         return f"*{utterer_name}:*"
 
-    async def build_prompt(self, conversation_id: int) -> None:
+    async def build_prompt(
+        self,
+        conversation_id: int,
+        stop_before_utterance: Utterance | None = None,
+    ) -> None:
         prompt_parts = []
 
         utterances = Utterance.objects.filter(conversation_id=conversation_id).order_by("-arrival_timestamp_ms")
@@ -47,6 +73,9 @@ class DialogGptCompletion:
         utterances = await sync_to_async(list)(utterances)
 
         for utterance in reversed(utterances):
+            if stop_before_utterance and utterance.id == stop_before_utterance.pk:
+                break
+
             if not utterance.is_bot and utterance.text == "/start":
                 # don't include /start in the prompt
                 continue
@@ -57,18 +86,31 @@ class DialogGptCompletion:
                 utterance_prefix = self.user_prefix
             prompt_parts.append(f"{utterance_prefix} {utterance.text}")
 
-        if self.settings.append_bot_name_at_the_end:
-            prompt_parts.append(self.bot_prefix)
+        if self.settings.prompt_settings.append_bot_name_at_the_end:
+            if stop_before_utterance and not stop_before_utterance.is_bot:
+                # we are trying to mimic the user, not the bot
+                prompt_parts.append(self.user_prefix)
+            else:
+                prompt_parts.append(self.bot_prefix)
 
-        prompt_content = "\n".join(prompt_parts)
-        self.prompt = self.settings.prompt_template.format(
-            DIALOG=prompt_content,
+        utterance_delimiter = "\n\n" if self.settings.prompt_settings.double_newline_between_utterances else "\n"
+        dialog = utterance_delimiter.join(prompt_parts)
+        self.prompt = self.settings.prompt_settings.prompt_template.format(
+            DIALOG=dialog,
             USER=self.user_first_name,
-            BOT=self.settings.bot_name,
+            BOT=self.bot_name,
         )
 
-    async def fulfil(self, conversation_id: int, tg_update_in_db: TelegramUpdate | None = None) -> None:
-        await self.build_prompt(conversation_id)
+    async def fulfil(
+        self,
+        conversation_id: int,
+        tg_update_in_db: TelegramUpdate | None = None,
+        stop_before_utterance: Utterance | None = None,
+    ) -> None:
+        await self.build_prompt(
+            conversation_id=conversation_id,
+            stop_before_utterance=stop_before_utterance,
+        )
 
         # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
         request_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
@@ -78,6 +120,7 @@ class DialogGptCompletion:
             triggering_update=tg_update_in_db,
             swipy_user_id=self.swipy_user.pk,
             prompt=self.prompt,
+            prompt_name=self.settings.prompt_settings.prompt_name,
             engine=self.settings.engine,
             max_tokens=self.settings.max_tokens,
             temperature=self.settings.temperature,
@@ -124,30 +167,16 @@ class DialogGptCompletion:
 class DialogGptCompletionFactory:  # TODO oleksandr: extend from GptCompletionSettings (a frozen dataclass)
     def __init__(
         self,
+        settings: GptCompletionSettings,
         bot_name: str,
-        prompt_template: str = "{DIALOG}",
-        append_bot_name_at_the_end: bool = True,
-        engine: str = "text-davinci-003",
-        max_tokens: int = 512,  # OpenAI's default is 16
-        temperature: float = 1.0,  # Possible range - from 0.0 to 2.0
-        top_p: float = 1.0,  # Possible range - from 0.0 to 1.0
-        frequency_penalty: float = 0.0,  # Possible range - from -2.0 to 2.0
-        presence_penalty: float = 0.0,  # Possible range - from -2.0 to 2.0
     ):
+        self.settings = settings
         self.bot_name = bot_name
-        self.prompt_template = prompt_template
-        self.append_bot_name_at_the_end = append_bot_name_at_the_end
-
-        self.engine = engine
-        self.max_tokens = max_tokens
-        self.temperature = temperature
-        self.top_p = top_p
-        self.frequency_penalty = frequency_penalty
-        self.presence_penalty = presence_penalty
 
     def new_completion(self, swipy_user: SwipyUser) -> DialogGptCompletion:
         gpt_completion = DialogGptCompletion(
-            settings=self,
+            settings=self.settings,
+            bot_name=self.bot_name,
             swipy_user=swipy_user,
         )
         return gpt_completion
