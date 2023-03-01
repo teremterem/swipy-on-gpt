@@ -122,7 +122,7 @@ async def reply_with_gpt_completion(
         arrival_timestamp_ms=arrival_timestamp_ms,
         swipy_user=tg_update_in_db.swipy_user,
         conversation_id=conversation_id,
-        telegram_message_id=response_msg.message_id,
+        telegram_message_id=response_msg.message_id,  # TODO oleksandr: store complete message json in db ?
         triggering_update=tg_update_in_db,
         name=gpt_completion.bot_name,
         text=response_msg.text,
