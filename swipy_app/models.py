@@ -1,10 +1,11 @@
 # pylint: disable=too-few-public-methods
 import typing
 from collections import namedtuple
-from datetime import datetime
 
 from asgiref.sync import sync_to_async, async_to_sync
 from django.db import models
+
+from swipy_app.swipy_utils import current_time_utc_ms
 
 if typing.TYPE_CHECKING:
     from swipy_app.gpt_completions import DialogGptCompletionFactory
@@ -129,8 +130,7 @@ class SwipyUser(models.Model):
         if not self.current_conversation:
             self.current_conversation = await Conversation.objects.acreate(
                 swipy_user=self,
-                # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
-                last_update_timestamp_ms=int(datetime.utcnow().timestamp() * 1000),
+                last_update_timestamp_ms=current_time_utc_ms(),
             )
             await sync_to_async(self.save)(update_fields=["current_conversation"])
         return self.current_conversation

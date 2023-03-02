@@ -1,6 +1,5 @@
 # pylint: disable=unused-argument
 import asyncio
-from datetime import datetime
 
 from asgiref.sync import sync_to_async
 from telegram import Update
@@ -12,6 +11,7 @@ from swipy_app.gpt_completions import DialogGptCompletionFactory
 from swipy_app.gpt_prompt_definitions import DIALOG
 from swipy_app.models import Utterance, TelegramUpdate
 from swipy_app.swipy_config import TELEGRAM_TOKEN
+from swipy_app.swipy_utils import current_time_utc_ms
 
 # TODO oleksandr: is this a dirty hack ? use this instead ?
 #  https://stackoverflow.com/questions/30596484/python-asyncio-context
@@ -30,10 +30,8 @@ async def reply_with_gpt_completion(
 
     conversation_id = await tg_update_in_db.swipy_user.get_current_conversation_id()
 
-    # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
-    arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
     await Utterance.objects.acreate(
-        arrival_timestamp_ms=arrival_timestamp_ms,
+        arrival_timestamp_ms=current_time_utc_ms(),
         swipy_user=tg_update_in_db.swipy_user,
         conversation_id=conversation_id,
         telegram_message_id=update.effective_message.message_id,
@@ -73,10 +71,8 @@ async def reply_with_gpt_completion(
         # ),
     )
 
-    # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
-    arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
     utterance = await Utterance.objects.acreate(
-        arrival_timestamp_ms=arrival_timestamp_ms,
+        arrival_timestamp_ms=current_time_utc_ms(),
         swipy_user=tg_update_in_db.swipy_user,
         conversation_id=conversation_id,
         telegram_message_id=response_msg.message_id,  # TODO oleksandr: store complete message json in db ?

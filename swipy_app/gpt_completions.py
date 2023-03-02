@@ -2,13 +2,13 @@
 import random
 import traceback
 from dataclasses import dataclass
-from datetime import datetime
 
 import openai
 from asgiref.sync import sync_to_async
 
 from swipy_app.models import GptCompletion, TelegramUpdate, Utterance, SwipyUser
 from swipy_app.swipy_config import MOCK_GPT, MAX_CONVERSATION_LENGTH
+from swipy_app.swipy_utils import current_time_utc_ms
 
 
 @dataclass(frozen=True)
@@ -118,11 +118,8 @@ class DialogGptCompletion:
             stop_before_utterance=stop_before_utterance,
         )
 
-        # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
-        request_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
-
         self.gpt_completion_in_db = await GptCompletion.objects.acreate(
-            request_timestamp_ms=request_timestamp_ms,
+            request_timestamp_ms=current_time_utc_ms(),
             triggering_update=tg_update_in_db,
             swipy_user_id=self.swipy_user.pk,
             prompt=self.prompt,
@@ -156,16 +153,12 @@ class DialogGptCompletion:
                     len(gpt_response.choices) == 1
                 ), f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
         except Exception:
-            # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
-            arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
-            self.gpt_completion_in_db.arrival_timestamp_ms = arrival_timestamp_ms
+            self.gpt_completion_in_db.arrival_timestamp_ms = current_time_utc_ms()
             self.gpt_completion_in_db.completion = f"===== ERROR =====\n\n{traceback.format_exc()}"
             await sync_to_async(self.gpt_completion_in_db.save)(update_fields=["arrival_timestamp_ms", "completion"])
             raise
 
-        # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
-        arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
-        self.gpt_completion_in_db.arrival_timestamp_ms = arrival_timestamp_ms
+        self.gpt_completion_in_db.arrival_timestamp_ms = current_time_utc_ms()
         self.gpt_completion_in_db.completion = self.completion
         await sync_to_async(self.gpt_completion_in_db.save)(update_fields=["arrival_timestamp_ms", "completion"])
 
