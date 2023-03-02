@@ -170,7 +170,7 @@ class DialogGptCompletion:
         await sync_to_async(self.gpt_completion_in_db.save)(update_fields=["arrival_timestamp_ms", "completion"])
 
 
-class DialogGptCompletionFactory:  # TODO oleksandr: extend from GptCompletionSettings (a frozen dataclass)
+class DialogGptCompletionFactory:
     def __init__(
         self,
         settings: GptCompletionSettings,
