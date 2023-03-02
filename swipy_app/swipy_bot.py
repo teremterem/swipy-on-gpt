@@ -8,10 +8,10 @@ from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from telegram.ext.filters import TEXT
 
+from swipy_app.gpt_completions import DialogGptCompletionFactory
+from swipy_app.gpt_prompt_definitions import DIALOG
 from swipy_app.models import Utterance, TelegramUpdate
-from swipy_bot.gpt_completions import DialogGptCompletionFactory
-from swipy_bot.gpt_prompt_definitions import DIALOG
-from swipy_bot.swipy_config import TELEGRAM_TOKEN
+from swipy_app.swipy_config import TELEGRAM_TOKEN
 
 # TODO oleksandr: is this a dirty hack ? use this instead ?
 #  https://stackoverflow.com/questions/30596484/python-asyncio-context

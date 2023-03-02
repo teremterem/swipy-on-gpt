@@ -7,7 +7,7 @@ from asgiref.sync import sync_to_async, async_to_sync
 from django.db import models
 
 if typing.TYPE_CHECKING:
-    from swipy_bot.gpt_completions import DialogGptCompletionFactory
+    from swipy_app.gpt_completions import DialogGptCompletionFactory
 
 
 class TelegramUpdate(models.Model):

@@ -8,7 +8,7 @@ import openai
 from asgiref.sync import sync_to_async
 
 from swipy_app.models import GptCompletion, TelegramUpdate, Utterance, SwipyUser
-from swipy_bot.swipy_config import MOCK_GPT, MAX_CONVERSATION_LENGTH
+from swipy_app.swipy_config import MOCK_GPT, MAX_CONVERSATION_LENGTH
 
 
 @dataclass(frozen=True)

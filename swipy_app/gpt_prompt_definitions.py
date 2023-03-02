@@ -1,5 +1,5 @@
-from swipy_bot.gpt_completions import GptPromptSettings, DialogGptCompletionFactory, GptCompletionSettings
-from swipy_bot.swipy_config import BOT_NAME
+from swipy_app.gpt_completions import GptPromptSettings, DialogGptCompletionFactory, GptCompletionSettings
+from swipy_app.swipy_config import BOT_NAME
 
 ASK_EVERYTHING_PROMPT = GptPromptSettings(
     prompt_name="ask-everything-0.3",

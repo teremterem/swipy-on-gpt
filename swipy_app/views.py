@@ -7,7 +7,7 @@ from django.http import HttpResponse, HttpRequest
 from telegram import Update
 
 from swipy_app.models import TelegramUpdate, SwipyUser
-from swipy_bot.swipy_bot import application, UPDATE_DB_MODELS_VOLATILE_CACHE
+from swipy_app.swipy_bot import application, UPDATE_DB_MODELS_VOLATILE_CACHE
 
 
 async def health_check(request: HttpRequest) -> HttpResponse:  # pylint: disable=unused-argument

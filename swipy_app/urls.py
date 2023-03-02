@@ -1,6 +1,6 @@
 from django.urls import path
 
-from swipy_bot.swipy_config import TELEGRAM_TOKEN
+from swipy_app.swipy_config import TELEGRAM_TOKEN
 from . import views
 
 urlpatterns = [

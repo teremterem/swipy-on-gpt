@@ -7,7 +7,7 @@ from django.utils.html import format_html
 from django_object_actions import DjangoObjectActions, action
 
 from swipy_app.models import TelegramUpdate, Utterance, GptCompletion, Conversation, SwipyUser
-from swipy_bot.gpt_prompt_definitions import ALTERNATIVE_DIALOGS
+from swipy_app.gpt_prompt_definitions import ALTERNATIVE_DIALOGS
 
 
 class TelegramUpdateAdmin(admin.ModelAdmin):
