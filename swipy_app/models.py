@@ -79,6 +79,12 @@ class Utterance(models.Model):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE)
 
     def generate_alternatives(self, completion_config_alternatives: list["GptCompletionSettings"]) -> None:
+        if self.is_bot and not self.gpt_completion:
+            # It is a bot utterance, but it doesn't have a completion object associated with it. That's an indication
+            # that we should not generate alternatives for it. The utterance in this position might not be meant for
+            # generation, but rather a hardcoded response should be returned. An example of this may be a greeting.
+            return
+
         existing_alternatives = {}
         for existing_alternative in self.alternative_completion_set.all():
             key = _CompletionSettingsTuple(

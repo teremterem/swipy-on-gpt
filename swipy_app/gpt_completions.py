@@ -1,5 +1,4 @@
 # pylint: disable=too-many-instance-attributes,too-few-public-methods
-import asyncio
 import random
 import traceback
 from abc import ABC, abstractmethod
@@ -241,15 +240,7 @@ class ChatGptCompletion(BaseDialogGptCompletion):
         return pformat(self.prompt_raw)
 
     async def _make_openai_call(self) -> str:
-        if not self.context_utterances:
-            # we have no context, let's answer with a hardcoded message
-            # TODO oleksandr: move this conversation starter to the settings and apply it with BaseDialogGptCompletion
-            await asyncio.sleep(1)
-            hardcoded_response = (
-                f"Hi {self.swipy_user.first_name}! My name is {self.settings.prompt_settings.bot_name}. "
-                f"How can I help you?"
-            )
-            return hardcoded_response
+        assert self.context_utterances, "Expected at least one utterance in the context, cannot call GPT without it"
 
         gpt_response = await openai.ChatCompletion.acreate(
             # TODO oleksandr: submit user id from Telegram (or from your database) too
