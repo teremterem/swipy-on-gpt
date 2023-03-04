@@ -223,15 +223,15 @@ class ChatGptCompletion(BaseDialogGptCompletion):
         )
         messages = [
             {
-                "role": "system",
                 "content": prompt,
+                "role": "system",
             }
         ]
         for utterance in self.context_utterances:
             messages.append(
                 {
-                    "role": "assistant" if utterance.is_bot else "user",
                     "content": utterance.text,
+                    "role": "assistant" if utterance.is_bot else "user",
                 }
             )
         return messages
