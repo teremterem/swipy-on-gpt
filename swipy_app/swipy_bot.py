@@ -61,8 +61,9 @@ async def reply_with_gpt_completion(
     if user_requested_new_conv:
         await asyncio.sleep(1)  # TODO oleksandr: are you sure about this ?
         response_text = (
-            f"Hi {user_first_name}! My name is {gpt_completion_settings.prompt_settings.bot_name} 🤖 "
-            f"How can I help you?"
+            f"Hi {user_first_name}! My name is {gpt_completion_settings.prompt_settings.bot_name}🤖\n"
+            f"\n"
+            f"How can I help you? 😊"
         )
         gpt_completion_in_db = None
     else:
