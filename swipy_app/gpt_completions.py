@@ -1,7 +1,9 @@
-# pylint: disable=too-many-instance-attributes,too-few-public-methods,too-many-arguments
+# pylint: disable=too-many-instance-attributes,too-few-public-methods
 import random
 import traceback
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Any
 
 import openai
 from asgiref.sync import sync_to_async
@@ -15,14 +17,14 @@ from swipy_app.swipy_utils import current_time_utc_ms
 class GptPromptSettings:
     prompt_name: str
     prompt_template: str
-    append_bot_name_at_the_end: bool = True
+    append_bot_name_at_the_end: bool = True  # TODO oleksandr: check if it is needed in case of ChatGptCompletion
     double_newline_between_utterances: bool = True
 
 
 @dataclass(frozen=True)
 class GptCompletionSettings:
     prompt_settings: GptPromptSettings
-    engine: str = "text-davinci-003"
+    engine: str = "text-davinci-003"  # TODO oleksandr: don't assume a default engine ?
     max_tokens: int = 512  # OpenAI's default is 16
     temperature: float = 1.0  # Possible range - from 0.0 to 2.0
     top_p: float = 1.0  # Possible range - from 0.0 to 1.0
@@ -30,7 +32,7 @@ class GptCompletionSettings:
     presence_penalty: float = 0.0  # Possible range - from -2.0 to 2.0
 
 
-class DialogGptCompletion:
+class BaseDialogGptCompletion(ABC):
     def __init__(
         self,
         settings: GptCompletionSettings,
@@ -40,32 +42,32 @@ class DialogGptCompletion:
         self.settings = settings
         self.bot_name = bot_name
         self.swipy_user = swipy_user
-
         self.user_first_name = self.swipy_user.first_name
-        self.user_prefix = self.utterance_prefix(self.user_first_name)
-        self.bot_prefix = self.utterance_prefix(self.bot_name)
 
+        self.context_utterances: list[Utterance] | None = None
         self.gpt_completion_in_db: GptCompletion | None = None
-        # TODO oleksandr: there are times when you don't need this stop list, for ex. when you're summarizing
-        self.stop_list = [
-            # "\n",  # TODO oleksandr: enable this if it's the very first exchange ?
-            self.user_prefix,
-            self.bot_prefix,
-        ]
 
+        self.prompt_raw: Any | None = None
+        self.prompt_str: str | None = None
         self.completion: str | None = None
-        self.prompt: str | None = None
 
-    def utterance_prefix(self, utterer_name) -> str:
-        return f"*{utterer_name}:*"
+    @abstractmethod
+    async def _build_raw_prompt(self, stop_before_utterance: Utterance | None = None) -> Any:
+        pass
 
-    async def build_prompt(
+    @abstractmethod
+    async def _make_openai_call(self) -> str:
+        pass
+
+    def _convert_raw_prompt_to_str(self) -> str:
+        return str(self.prompt_raw)
+
+    # noinspection PyMethodMayBeStatic
+    async def _prepare_context_utterances(
         self,
         conversation_id: int,
         stop_before_utterance: Utterance | None = None,
-    ) -> None:
-        prompt_parts = []
-
+    ) -> list[Utterance]:
         utterances = Utterance.objects.filter(conversation_id=conversation_id).order_by("-arrival_timestamp_ms")
         # TODO oleksandr: replace MAX_CONVERSATION_LENGTH with a more sophisticated logic
         if stop_before_utterance:
@@ -81,11 +83,77 @@ class DialogGptCompletion:
             utterances = utterances[:MAX_CONVERSATION_LENGTH]
             utterances = await sync_to_async(list)(utterances)
 
-        for utterance in reversed(utterances):
-            if not utterance.is_bot and utterance.text == "/start":
-                # don't include /start in the prompt
-                continue
+        utterances = [
+            utterance
+            for utterance in reversed(utterances)
+            if utterance.is_bot or utterance.text != "/start"  # don't include /start (from user) in the prompt
+        ]
+        return utterances
 
+    async def fulfil(
+        self,
+        conversation_id: int,
+        tg_update_in_db: TelegramUpdate | None = None,
+        stop_before_utterance: Utterance | None = None,
+    ) -> None:
+        self.context_utterances = await self._prepare_context_utterances(
+            conversation_id=conversation_id,
+            stop_before_utterance=stop_before_utterance,
+        )
+        self.prompt_raw = await self._build_raw_prompt(stop_before_utterance=stop_before_utterance)
+        self.prompt_str = self._convert_raw_prompt_to_str()
+
+        self.gpt_completion_in_db = await GptCompletion.objects.acreate(
+            request_timestamp_ms=current_time_utc_ms(),
+            triggering_update=tg_update_in_db,
+            swipy_user_id=self.swipy_user.pk,
+            prompt=self.prompt_str,
+            prompt_name=self.settings.prompt_settings.prompt_name,
+            engine=self.settings.engine,
+            max_tokens=self.settings.max_tokens,
+            temperature=self.settings.temperature,
+            top_p=self.settings.top_p,
+            frequency_penalty=self.settings.frequency_penalty,
+            presence_penalty=self.settings.presence_penalty,
+        )
+
+        try:
+            if MOCK_GPT:
+                # await asyncio.sleep(1)
+                self.completion = f"\n\nHERE GOES GPT RESPONSE (IT'S A MOCK!) {random.randint(0, 10000)}"
+            else:
+                self.completion = await self._make_openai_call()
+        except Exception:
+            self.gpt_completion_in_db.arrival_timestamp_ms = current_time_utc_ms()
+            self.gpt_completion_in_db.completion = f"===== ERROR =====\n\n{traceback.format_exc()}"
+            await sync_to_async(self.gpt_completion_in_db.save)(update_fields=["arrival_timestamp_ms", "completion"])
+            raise
+
+        self.gpt_completion_in_db.arrival_timestamp_ms = current_time_utc_ms()
+        self.gpt_completion_in_db.completion = self.completion
+        await sync_to_async(self.gpt_completion_in_db.save)(update_fields=["arrival_timestamp_ms", "completion"])
+
+
+class TextDialogGptCompletion(BaseDialogGptCompletion):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.user_prefix = self.utterance_prefix(self.user_first_name)
+        self.bot_prefix = self.utterance_prefix(self.bot_name)
+        self.stop_list = [
+            # "\n",  # TODO oleksandr: enable this if it's the very first exchange ?
+            self.user_prefix,
+            self.bot_prefix,
+        ]
+
+    # noinspection PyMethodMayBeStatic
+    def utterance_prefix(self, utterer_name) -> str:
+        return f"*{utterer_name}:*"
+
+    async def _build_raw_prompt(self, stop_before_utterance: Utterance | None = None) -> Any:
+        prompt_parts = []
+
+        for utterance in self.context_utterances:
             if utterance.is_bot:
                 utterance_prefix = self.bot_prefix
             else:
@@ -101,81 +169,24 @@ class DialogGptCompletion:
 
         utterance_delimiter = "\n\n" if self.settings.prompt_settings.double_newline_between_utterances else "\n"
         dialog = utterance_delimiter.join(prompt_parts)
-        self.prompt = self.settings.prompt_settings.prompt_template.format(
+        prompt = self.settings.prompt_settings.prompt_template.format(
             DIALOG=dialog,
             USER=self.user_first_name,
             BOT=self.bot_name,
         )
+        return prompt
 
-    async def fulfil(
-        self,
-        conversation_id: int,
-        tg_update_in_db: TelegramUpdate | None = None,
-        stop_before_utterance: Utterance | None = None,
-    ) -> None:
-        await self.build_prompt(
-            conversation_id=conversation_id,
-            stop_before_utterance=stop_before_utterance,
+    async def _make_openai_call(self) -> str:
+        gpt_response = await openai.Completion.acreate(
+            # TODO oleksandr: submit user id from Telegram (or from your database) too
+            prompt=self.gpt_completion_in_db.prompt,
+            stop=self.stop_list,
+            engine=self.gpt_completion_in_db.engine,
+            max_tokens=self.gpt_completion_in_db.max_tokens,
+            temperature=self.gpt_completion_in_db.temperature,
+            top_p=self.gpt_completion_in_db.top_p,
+            frequency_penalty=self.gpt_completion_in_db.frequency_penalty,
+            presence_penalty=self.gpt_completion_in_db.presence_penalty,
         )
-
-        self.gpt_completion_in_db = await GptCompletion.objects.acreate(
-            request_timestamp_ms=current_time_utc_ms(),
-            triggering_update=tg_update_in_db,
-            swipy_user_id=self.swipy_user.pk,
-            prompt=self.prompt,
-            prompt_name=self.settings.prompt_settings.prompt_name,
-            engine=self.settings.engine,
-            max_tokens=self.settings.max_tokens,
-            temperature=self.settings.temperature,
-            top_p=self.settings.top_p,
-            frequency_penalty=self.settings.frequency_penalty,
-            presence_penalty=self.settings.presence_penalty,
-        )
-
-        try:
-            if MOCK_GPT:
-                # await asyncio.sleep(1)
-                self.completion = f"\n\nHERE GOES GPT RESPONSE (IT'S A MOCK!) {random.randint(0, 10000)}"
-            else:
-                gpt_response = await openai.Completion.acreate(
-                    # TODO oleksandr: submit user id from Telegram (or from your database) too
-                    prompt=self.gpt_completion_in_db.prompt,
-                    stop=self.stop_list,
-                    engine=self.gpt_completion_in_db.engine,
-                    max_tokens=self.gpt_completion_in_db.max_tokens,
-                    temperature=self.gpt_completion_in_db.temperature,
-                    top_p=self.gpt_completion_in_db.top_p,
-                    frequency_penalty=self.gpt_completion_in_db.frequency_penalty,
-                    presence_penalty=self.gpt_completion_in_db.presence_penalty,
-                )
-                self.completion = gpt_response.choices[0].text
-                assert (
-                    len(gpt_response.choices) == 1
-                ), f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
-        except Exception:
-            self.gpt_completion_in_db.arrival_timestamp_ms = current_time_utc_ms()
-            self.gpt_completion_in_db.completion = f"===== ERROR =====\n\n{traceback.format_exc()}"
-            await sync_to_async(self.gpt_completion_in_db.save)(update_fields=["arrival_timestamp_ms", "completion"])
-            raise
-
-        self.gpt_completion_in_db.arrival_timestamp_ms = current_time_utc_ms()
-        self.gpt_completion_in_db.completion = self.completion
-        await sync_to_async(self.gpt_completion_in_db.save)(update_fields=["arrival_timestamp_ms", "completion"])
-
-
-class DialogGptCompletionFactory:
-    def __init__(
-        self,
-        settings: GptCompletionSettings,
-        bot_name: str,
-    ):
-        self.settings = settings
-        self.bot_name = bot_name
-
-    def new_completion(self, swipy_user: SwipyUser) -> DialogGptCompletion:
-        gpt_completion = DialogGptCompletion(
-            settings=self.settings,
-            bot_name=self.bot_name,
-            swipy_user=swipy_user,
-        )
-        return gpt_completion
+        assert len(gpt_response.choices) == 1, f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
+        return gpt_response.choices[0].text
