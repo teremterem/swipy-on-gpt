@@ -6,6 +6,7 @@ from django.db import migrations
 
 
 def summarize_conversations(apps, schema_editor):
+    """ATTENTION! THIS FUNCTION IS NOT CALLED ANYMORE, NOOP IS CALLED INSTEAD"""
     # TODO oleksandr: this might be a bad idea - implementation might change over time
     # TODO oleksandr: replace with ChatGptCompletion
     from swipy_app.gpt_completions import DialogGptCompletionFactory
@@ -67,5 +68,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(summarize_conversations, migrations.RunPython.noop),
+        migrations.RunPython(migrations.RunPython.noop, migrations.RunPython.noop),
     ]
