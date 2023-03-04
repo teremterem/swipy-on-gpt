@@ -243,7 +243,7 @@ class ChatGptCompletion(BaseDialogGptCompletion):
         gpt_response = await openai.ChatCompletion.acreate(
             # TODO oleksandr: submit user id from Telegram (or from your database) too
             messages=self.prompt_raw,  # this time it's a list of dicts
-            engine=self.gpt_completion_in_db.engine,
+            model=self.gpt_completion_in_db.engine,
             max_tokens=self.gpt_completion_in_db.max_tokens,
             temperature=self.gpt_completion_in_db.temperature,
             top_p=self.gpt_completion_in_db.top_p,
