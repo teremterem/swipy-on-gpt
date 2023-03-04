@@ -146,12 +146,12 @@ class BaseDialogGptCompletion(ABC):
         except Exception:
             self.gpt_completion_in_db.arrival_timestamp_ms = current_time_utc_ms()
             self.gpt_completion_in_db.completion = f"===== ERROR =====\n\n{traceback.format_exc()}"
-            await sync_to_async(self.gpt_completion_in_db.save)(update_fields=["arrival_timestamp_ms", "completion"])
+            await sync_to_async(self.gpt_completion_in_db.save)()
             raise
 
         self.gpt_completion_in_db.arrival_timestamp_ms = current_time_utc_ms()
         self.gpt_completion_in_db.completion = self.completion
-        await sync_to_async(self.gpt_completion_in_db.save)(update_fields=["arrival_timestamp_ms", "completion"])
+        await sync_to_async(self.gpt_completion_in_db.save)()
 
 
 class TextDialogGptCompletion(BaseDialogGptCompletion):
@@ -208,5 +208,7 @@ class TextDialogGptCompletion(BaseDialogGptCompletion):
             frequency_penalty=self.gpt_completion_in_db.frequency_penalty,
             presence_penalty=self.gpt_completion_in_db.presence_penalty,
         )
+        self.gpt_completion_in_db.full_api_response = gpt_response
+        # TODO oleksandr: are you sure the following assertion in necessary at all?
         assert len(gpt_response.choices) == 1, f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
         return gpt_response.choices[0].text
