@@ -1,4 +1,5 @@
 # pylint: disable=too-few-public-methods
+import logging
 import typing
 from collections import namedtuple
 
@@ -9,6 +10,8 @@ from swipy_app.swipy_utils import current_time_utc_ms
 
 if typing.TYPE_CHECKING:
     from swipy_app.gpt_completions import GptCompletionSettings
+
+log = logging.getLogger(__name__)
 
 
 class TelegramUpdate(models.Model):
@@ -111,13 +114,17 @@ class Utterance(models.Model):
             missing_count = 2 if completion_config.temperature else 1
             missing_count -= existing_alternatives.get(key, 0)
             for _ in range(missing_count):
-                completion = async_to_sync(completion_config.fulfil_completion)(
-                    swipy_user=self.swipy_user,
-                    conversation_id=self.conversation_id,
-                    stop_before_utterance=self,
-                )
-                completion.gpt_completion_in_db.alternative_to_utterance = self
-                completion.gpt_completion_in_db.save(update_fields=["alternative_to_utterance"])
+                completion = completion_config.new_completion(self.swipy_user)
+                try:
+                    async_to_sync(completion.fulfil)(
+                        conversation_id=self.conversation_id,
+                        stop_before_utterance=self,
+                    )
+                except Exception as ex:  # pylint: disable=broad-except
+                    log.exception("Failed to generate alternative for utterance %s: %s", self.pk, ex)
+                if completion.gpt_completion_in_db:
+                    completion.gpt_completion_in_db.alternative_to_utterance = self
+                    completion.gpt_completion_in_db.save(update_fields=["alternative_to_utterance"])
 
 
 class SwipyUser(models.Model):

@@ -32,7 +32,7 @@ MAIN_COMPLETION_CONFIG = GptCompletionSettings(
     prompt_settings=ASK_EVERYTHING_CHATGPT_PROMPT,
 )  # temperature=1.0 (default)
 
-CHATGPT_COMPLETION_CONFIG_ALTERNATIVES = [
+COMPLETION_CONFIG_ALTERNATIVES = [
     MAIN_COMPLETION_CONFIG,  # temperature=1.0 (default)
     # GptCompletionSettings(
     #     prompt_settings=ASK_EVERYTHING_CHATGPT_PROMPT,
@@ -42,8 +42,6 @@ CHATGPT_COMPLETION_CONFIG_ALTERNATIVES = [
     #     prompt_settings=ASK_EVERYTHING_CHATGPT_PROMPT,
     #     temperature=0.0,
     # ),
-]
-DAVINCI_COMPLETION_CONFIG_ALTERNATIVES = [
     GptCompletionSettings(
         prompt_settings=ASK_EVERYTHING_DAVINCI_PROMPT,
     ),  # temperature=1.0 (default)

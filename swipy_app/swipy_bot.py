@@ -54,9 +54,9 @@ async def reply_with_gpt_completion(
             await update.effective_chat.send_chat_action(ChatAction.TYPING)
             await asyncio.sleep(10)
 
-    # if not user_requested_new_conv:
-    #     await asyncio.sleep(1)  # TODO oleksandr: are you sure about this ?
-    asyncio.get_event_loop().create_task(_keep_typing_task())
+    if not user_requested_new_conv:
+        # await asyncio.sleep(1)  # TODO oleksandr: are you sure about this ?
+        asyncio.get_event_loop().create_task(_keep_typing_task())
 
     if user_requested_new_conv:
         # await asyncio.sleep(1)  # TODO oleksandr: are you sure about this ?
