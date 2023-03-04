@@ -3,6 +3,7 @@ import random
 import traceback
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from pprint import pformat
 from typing import Any
 
 import openai
@@ -16,16 +17,16 @@ from swipy_app.swipy_utils import current_time_utc_ms
 @dataclass(frozen=True)
 class GptPromptSettings:
     prompt_name: str
+    completion_class: type["BaseDialogGptCompletion"]
     prompt_template: str
     bot_name: str
     append_bot_name_at_the_end: bool = True  # TODO oleksandr: check if it is needed in case of ChatGptCompletion
-    double_newline_between_utterances: bool = True
+    double_newline_between_utterances: bool = True  # TODO oleksandr: irrelevant in case of ChatGptCompletion
 
 
 @dataclass(frozen=True)
 class GptCompletionSettings:
     prompt_settings: GptPromptSettings
-    completion_class: type["BaseDialogGptCompletion"]
     engine: str = "text-davinci-003"  # TODO oleksandr: don't assume a default engine ?
     max_tokens: int = 512  # OpenAI's default is 16
     temperature: float = 1.0  # Possible range - from 0.0 to 2.0
@@ -34,7 +35,7 @@ class GptCompletionSettings:
     presence_penalty: float = 0.0  # Possible range - from -2.0 to 2.0
 
     def new_completion(self, swipy_user: SwipyUser) -> "BaseDialogGptCompletion":
-        return self.completion_class(
+        return self.prompt_settings.completion_class(
             settings=self,
             swipy_user=swipy_user,
         )
@@ -212,3 +213,47 @@ class TextDialogGptCompletion(BaseDialogGptCompletion):
         # TODO oleksandr: are you sure the following assertion in necessary at all?
         assert len(gpt_response.choices) == 1, f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
         return gpt_response.choices[0].text
+
+
+class ChatGptCompletion(BaseDialogGptCompletion):
+    async def _build_raw_prompt(self, stop_before_utterance: Utterance | None = None) -> Any:
+        prompt = self.settings.prompt_settings.prompt_template.format(
+            USER=self.swipy_user.first_name,
+            BOT=self.settings.prompt_settings.bot_name,
+        )
+        messages = [
+            {
+                "role": "system",
+                "content": prompt,
+            }
+        ]
+        for utterance in self.context_utterances:
+            messages.append(
+                {
+                    "role": "assistant" if utterance.is_bot else "user",
+                    "content": utterance.text,
+                }
+            )
+        return messages
+
+    def _convert_raw_prompt_to_str(self) -> str:
+        return pformat(self.prompt_raw)
+
+    async def _make_openai_call(self) -> str:
+        gpt_response = await openai.ChatCompletion.acreate(
+            # TODO oleksandr: submit user id from Telegram (or from your database) too
+            prompt=self.gpt_completion_in_db.prompt,
+            engine=self.gpt_completion_in_db.engine,
+            max_tokens=self.gpt_completion_in_db.max_tokens,
+            temperature=self.gpt_completion_in_db.temperature,
+            top_p=self.gpt_completion_in_db.top_p,
+            frequency_penalty=self.gpt_completion_in_db.frequency_penalty,
+            presence_penalty=self.gpt_completion_in_db.presence_penalty,
+        )
+        self.gpt_completion_in_db.full_api_response = gpt_response
+        # TODO oleksandr: are you sure the following assertion in necessary at all?
+        assert len(gpt_response.choices) == 1, f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
+        assert (
+            gpt_response.choices[0].message.role == "assistant"
+        ), f"Expected assistant's response, but got {gpt_response.choices[0].message.role}"
+        return gpt_response.choices[0].message
