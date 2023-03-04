@@ -44,9 +44,10 @@ class GptCompletionAdmin(admin.ModelAdmin):
     fields = [
         "request_time",
         "arrival_time",
+        "swipy_user",
         "prompt_pre",
         "completion_pre",
-        "swipy_user",
+        "pretty_full_api_response",
         "alternative_to_utterance",
         "prompt_name",
         "engine",
@@ -76,6 +77,10 @@ class GptCompletionAdmin(admin.ModelAdmin):
     @admin.display(description="Completion")
     def completion_pre(self, obj):
         return format_html('<pre style="white-space: pre-wrap">{}</pre>', obj.completion)
+
+    @admin.display(description="Full API response")
+    def pretty_full_api_response(self, obj):
+        return format_html('<pre style="white-space: pre-wrap">{}</pre>', pformat(obj.full_api_response))
 
     @admin.display(description="Request time")
     def request_time(self, obj):
