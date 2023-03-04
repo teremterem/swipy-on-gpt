@@ -17,6 +17,7 @@ from swipy_app.swipy_utils import current_time_utc_ms
 class GptPromptSettings:
     prompt_name: str
     prompt_template: str
+    bot_name: str
     append_bot_name_at_the_end: bool = True  # TODO oleksandr: check if it is needed in case of ChatGptCompletion
     double_newline_between_utterances: bool = True
 
@@ -24,6 +25,7 @@ class GptPromptSettings:
 @dataclass(frozen=True)
 class GptCompletionSettings:
     prompt_settings: GptPromptSettings
+    completion_class: type["BaseDialogGptCompletion"]
     engine: str = "text-davinci-003"  # TODO oleksandr: don't assume a default engine ?
     max_tokens: int = 512  # OpenAI's default is 16
     temperature: float = 1.0  # Possible range - from 0.0 to 2.0
@@ -31,18 +33,36 @@ class GptCompletionSettings:
     frequency_penalty: float = 0.0  # Possible range - from -2.0 to 2.0
     presence_penalty: float = 0.0  # Possible range - from -2.0 to 2.0
 
+    def new_completion(self, swipy_user: SwipyUser) -> "BaseDialogGptCompletion":
+        return self.completion_class(
+            settings=self,
+            swipy_user=swipy_user,
+        )
+
+    async def fulfil_completion(
+        self,
+        swipy_user: SwipyUser,
+        conversation_id: int,
+        tg_update_in_db: TelegramUpdate | None = None,
+        stop_before_utterance: Utterance | None = None,
+    ):
+        completion = self.new_completion(swipy_user)
+        await completion.fulfil(
+            conversation_id=conversation_id,
+            tg_update_in_db=tg_update_in_db,
+            stop_before_utterance=stop_before_utterance,
+        )
+        return completion
+
 
 class BaseDialogGptCompletion(ABC):
     def __init__(
         self,
         settings: GptCompletionSettings,
-        bot_name: str,
         swipy_user: SwipyUser,
     ):
         self.settings = settings
-        self.bot_name = bot_name
         self.swipy_user = swipy_user
-        self.user_first_name = self.swipy_user.first_name
 
         self.context_utterances: list[Utterance] | None = None
         self.gpt_completion_in_db: GptCompletion | None = None
@@ -138,8 +158,8 @@ class TextDialogGptCompletion(BaseDialogGptCompletion):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.user_prefix = self.utterance_prefix(self.user_first_name)
-        self.bot_prefix = self.utterance_prefix(self.bot_name)
+        self.user_prefix = self.utterance_prefix(self.swipy_user.first_name)
+        self.bot_prefix = self.utterance_prefix(self.settings.prompt_settings.bot_name)
         self.stop_list = [
             # "\n",  # TODO oleksandr: enable this if it's the very first exchange ?
             self.user_prefix,
@@ -171,8 +191,8 @@ class TextDialogGptCompletion(BaseDialogGptCompletion):
         dialog = utterance_delimiter.join(prompt_parts)
         prompt = self.settings.prompt_settings.prompt_template.format(
             DIALOG=dialog,
-            USER=self.user_first_name,
-            BOT=self.bot_name,
+            USER=self.swipy_user.first_name,
+            BOT=self.settings.prompt_settings.bot_name,
         )
         return prompt
 

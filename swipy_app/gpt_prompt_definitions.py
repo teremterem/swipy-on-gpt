@@ -1,4 +1,4 @@
-from swipy_app.gpt_completions import GptPromptSettings, DialogGptCompletionFactory, GptCompletionSettings
+from swipy_app.gpt_completions import GptPromptSettings, GptCompletionSettings, TextDialogGptCompletion
 from swipy_app.swipy_config import BOT_NAME
 
 ASK_EVERYTHING_PROMPT = GptPromptSettings(
@@ -13,34 +13,22 @@ ASK_EVERYTHING_PROMPT = GptPromptSettings(
         "\n"
         "{DIALOG}"
     ),
-)
-DIALOG = DialogGptCompletionFactory(
-    settings=GptCompletionSettings(
-        prompt_settings=ASK_EVERYTHING_PROMPT,
-    ),
     bot_name=BOT_NAME,
 )
-ALTERNATIVE_DIALOGS = [
-    DIALOG,  # temperature=1.0 (default)
-    DialogGptCompletionFactory(
-        settings=GptCompletionSettings(
-            prompt_settings=ASK_EVERYTHING_PROMPT,
-            temperature=0.7,
-        ),
-        bot_name=BOT_NAME,
+MAIN_COMPLETION_CONFIG = GptCompletionSettings(
+    completion_class=TextDialogGptCompletion,
+    prompt_settings=ASK_EVERYTHING_PROMPT,
+)
+COMPLETION_CONFIG_ALTERNATIVES = [
+    MAIN_COMPLETION_CONFIG,  # temperature=1.0 (default)
+    GptCompletionSettings(
+        completion_class=TextDialogGptCompletion,
+        prompt_settings=ASK_EVERYTHING_PROMPT,
+        temperature=0.5,
     ),
-    DialogGptCompletionFactory(
-        settings=GptCompletionSettings(
-            prompt_settings=ASK_EVERYTHING_PROMPT,
-            temperature=0.3,
-        ),
-        bot_name=BOT_NAME,
-    ),
-    DialogGptCompletionFactory(
-        settings=GptCompletionSettings(
-            prompt_settings=ASK_EVERYTHING_PROMPT,
-            temperature=0.0,
-        ),
-        bot_name=BOT_NAME,
+    GptCompletionSettings(
+        completion_class=TextDialogGptCompletion,
+        prompt_settings=ASK_EVERYTHING_PROMPT,
+        temperature=0.0,
     ),
 ]

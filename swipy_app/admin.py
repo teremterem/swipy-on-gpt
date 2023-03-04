@@ -6,8 +6,8 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django_object_actions import DjangoObjectActions, action
 
+from swipy_app.gpt_prompt_definitions import COMPLETION_CONFIG_ALTERNATIVES
 from swipy_app.models import TelegramUpdate, Utterance, GptCompletion, Conversation, SwipyUser
-from swipy_app.gpt_prompt_definitions import ALTERNATIVE_DIALOGS
 
 
 class TelegramUpdateAdmin(admin.ModelAdmin):
@@ -124,7 +124,7 @@ class ConversationAdmin(DjangoObjectActions, admin.ModelAdmin):
 
     @action(label="Generate alternatives")
     def generate_alternatives(self, request, conversation: Conversation) -> None:
-        conversation.generate_alternatives(ALTERNATIVE_DIALOGS)
+        conversation.generate_alternatives(COMPLETION_CONFIG_ALTERNATIVES)
 
 
 class AlternativeCompletionInline(admin.TabularInline):
@@ -178,7 +178,7 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
 
     @action(label="Generate alternatives")
     def generate_alternatives(self, request, utterance: Utterance) -> None:
-        utterance.generate_alternatives(ALTERNATIVE_DIALOGS)
+        utterance.generate_alternatives(COMPLETION_CONFIG_ALTERNATIVES)
 
 
 class ConversationInline(admin.TabularInline):
@@ -221,7 +221,7 @@ class SwipyUserAdmin(DjangoObjectActions, admin.ModelAdmin):
 
     @action(label="Generate alternatives")
     def generate_alternatives(self, request, swipy_user: SwipyUser) -> None:
-        swipy_user.generate_alternatives(ALTERNATIVE_DIALOGS)
+        swipy_user.generate_alternatives(COMPLETION_CONFIG_ALTERNATIVES)
 
 
 admin.site.register(TelegramUpdate, TelegramUpdateAdmin)
