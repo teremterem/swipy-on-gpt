@@ -15,12 +15,14 @@ ASK_EVERYTHING_PROMPT_TEMPLATE = (
 
 ASK_EVERYTHING_CHATGPT_PROMPT = GptPromptSettings(
     prompt_name="chatgpt-ask-everything-0.1",
+    engine="gpt-3.5-turbo-0301",  # TODO oleksandr: use "gpt-3.5-turbo" instead (receives updates) ?
     completion_class=ChatGptCompletion,
     prompt_template=ASK_EVERYTHING_PROMPT_TEMPLATE,
     bot_name=BOT_NAME,
 )
 ASK_EVERYTHING_DAVINCI_PROMPT = GptPromptSettings(
     prompt_name="ask-everything-0.3",
+    engine="text-davinci-003",
     completion_class=TextDialogGptCompletion,
     prompt_template=ASK_EVERYTHING_PROMPT_TEMPLATE + "\n\n---\n\n{DIALOG}",
     bot_name=BOT_NAME,

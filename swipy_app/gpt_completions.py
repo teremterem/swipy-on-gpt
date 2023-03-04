@@ -17,8 +17,9 @@ from swipy_app.swipy_utils import current_time_utc_ms
 @dataclass(frozen=True)
 class GptPromptSettings:
     prompt_name: str
-    completion_class: type["BaseDialogGptCompletion"]
     prompt_template: str
+    completion_class: type["BaseDialogGptCompletion"]
+    engine: str
     bot_name: str
     append_bot_name_at_the_end: bool = True  # TODO oleksandr: check if it is needed in case of ChatGptCompletion
     double_newline_between_utterances: bool = True  # TODO oleksandr: irrelevant in case of ChatGptCompletion
@@ -27,7 +28,6 @@ class GptPromptSettings:
 @dataclass(frozen=True)
 class GptCompletionSettings:
     prompt_settings: GptPromptSettings
-    engine: str = "text-davinci-003"  # TODO oleksandr: don't assume a default engine ?
     max_tokens: int = 512  # OpenAI's default is 16
     temperature: float = 1.0  # Possible range - from 0.0 to 2.0
     top_p: float = 1.0  # Possible range - from 0.0 to 1.0
@@ -130,7 +130,7 @@ class BaseDialogGptCompletion(ABC):
             swipy_user_id=self.swipy_user.pk,
             prompt=self.prompt_str,
             prompt_name=self.settings.prompt_settings.prompt_name,
-            engine=self.settings.engine,
+            engine=self.settings.prompt_settings.engine,
             max_tokens=self.settings.max_tokens,
             temperature=self.settings.temperature,
             top_p=self.settings.top_p,
