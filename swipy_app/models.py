@@ -95,7 +95,7 @@ class Utterance(models.Model):
         for completion_config in completion_config_alternatives:
             key = _CompletionSettingsTuple(
                 prompt_name=completion_config.prompt_settings.prompt_name,
-                engine=completion_config.engine,
+                engine=completion_config.prompt_settings.engine,
                 max_tokens=completion_config.max_tokens,
                 temperature=completion_config.temperature,
                 top_p=completion_config.top_p,
