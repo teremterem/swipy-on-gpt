@@ -240,6 +240,15 @@ class ChatGptCompletion(BaseDialogGptCompletion):
         return pformat(self.prompt_raw)
 
     async def _make_openai_call(self) -> str:
+        if not self.context_utterances:
+            # we have no context, let's answer with a hardcoded message
+            # TODO oleksandr: move this conversation starter to the settings and apply it with BaseDialogGptCompletion
+            hardcoded_response = (
+                f"Hi {self.swipy_user.first_name}! My name is {self.settings.prompt_settings.bot_name}. "
+                f"How can I help you?"
+            )
+            return hardcoded_response
+
         gpt_response = await openai.ChatCompletion.acreate(
             # TODO oleksandr: submit user id from Telegram (or from your database) too
             messages=self.prompt_raw,  # this time it's a list of dicts
