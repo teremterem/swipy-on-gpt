@@ -256,4 +256,4 @@ class ChatGptCompletion(BaseDialogGptCompletion):
         assert (
             gpt_response.choices[0].message.role == "assistant"
         ), f"Expected assistant's response, but got {gpt_response.choices[0].message.role}"
-        return gpt_response.choices[0].message
+        return gpt_response.choices[0].message.content
