@@ -237,7 +237,7 @@ class ChatGptCompletion(BaseDialogGptCompletion):
         return messages
 
     def _convert_raw_prompt_to_str(self) -> str:
-        return pformat(self.prompt_raw)
+        return pformat(self.prompt_raw, sort_dicts=False)
 
     async def _make_openai_call(self) -> str:
         assert self.context_utterances, "Expected at least one utterance in the context, cannot call GPT without it"

@@ -28,7 +28,7 @@ class TelegramUpdateAdmin(admin.ModelAdmin):
 
     @admin.display(description="Payload")
     def pretty_payload(self, obj):
-        return format_html('<pre style="white-space: pre-wrap">{}</pre>', pformat(obj.payload))
+        return format_html('<pre style="white-space: pre-wrap">{}</pre>', pformat(obj.payload, sort_dicts=False))
 
     @admin.display(description="Arrival time")
     def arrival_time(self, obj):
@@ -80,7 +80,10 @@ class GptCompletionAdmin(admin.ModelAdmin):
 
     @admin.display(description="Full API response")
     def pretty_full_api_response(self, obj):
-        return format_html('<pre style="white-space: pre-wrap">{}</pre>', pformat(obj.full_api_response))
+        return format_html(
+            '<pre style="white-space: pre-wrap">{}</pre>',
+            pformat(obj.full_api_response, sort_dicts=False),
+        )
 
     @admin.display(description="Request time")
     def request_time(self, obj):
