@@ -1,13 +1,13 @@
 import asyncio
 import json
-from datetime import datetime
 from functools import wraps
 
 from django.http import HttpResponse, HttpRequest
 from telegram import Update
 
 from swipy_app.models import TelegramUpdate, SwipyUser
-from swipy_bot.swipy_bot import application, UPDATE_DB_MODELS_VOLATILE_CACHE
+from swipy_app.swipy_bot import application, UPDATE_DB_MODELS_VOLATILE_CACHE
+from swipy_app.swipy_utils import current_time_utc_ms
 
 
 async def health_check(request: HttpRequest) -> HttpResponse:  # pylint: disable=unused-argument
@@ -24,8 +24,7 @@ def csrf_exempt_async(view_func):
 
 @csrf_exempt_async
 async def telegram_webhook(request: HttpRequest) -> HttpResponse:
-    # TODO oleksandr: move this to some sort of utils.py ? or maybe to the model itself ?
-    arrival_timestamp_ms = int(datetime.utcnow().timestamp() * 1000)
+    arrival_timestamp_ms = current_time_utc_ms()
 
     async def _process_update() -> None:
         telegram_update_dict = json.loads(request.body)

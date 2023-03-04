@@ -6,8 +6,8 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django_object_actions import DjangoObjectActions, action
 
+from swipy_app.gpt_prompt_definitions import CHATGPT_COMPLETION_CONFIG_ALTERNATIVES
 from swipy_app.models import TelegramUpdate, Utterance, GptCompletion, Conversation, SwipyUser
-from swipy_bot.gpt_prompt_definitions import ALTERNATIVE_DIALOGS
 
 
 class TelegramUpdateAdmin(admin.ModelAdmin):
@@ -28,7 +28,7 @@ class TelegramUpdateAdmin(admin.ModelAdmin):
 
     @admin.display(description="Payload")
     def pretty_payload(self, obj):
-        return format_html('<pre style="white-space: pre-wrap">{}</pre>', pformat(obj.payload))
+        return format_html('<pre style="white-space: pre-wrap">{}</pre>', pformat(obj.payload, sort_dicts=False))
 
     @admin.display(description="Arrival time")
     def arrival_time(self, obj):
@@ -44,9 +44,10 @@ class GptCompletionAdmin(admin.ModelAdmin):
     fields = [
         "request_time",
         "arrival_time",
+        "swipy_user",
         "prompt_pre",
         "completion_pre",
-        "swipy_user",
+        "pretty_full_api_response",
         "alternative_to_utterance",
         "prompt_name",
         "engine",
@@ -76,6 +77,13 @@ class GptCompletionAdmin(admin.ModelAdmin):
     @admin.display(description="Completion")
     def completion_pre(self, obj):
         return format_html('<pre style="white-space: pre-wrap">{}</pre>', obj.completion)
+
+    @admin.display(description="Full API response")
+    def pretty_full_api_response(self, obj):
+        return format_html(
+            '<pre style="white-space: pre-wrap">{}</pre>',
+            pformat(obj.full_api_response, sort_dicts=False),
+        )
 
     @admin.display(description="Request time")
     def request_time(self, obj):
@@ -122,9 +130,9 @@ class ConversationAdmin(DjangoObjectActions, admin.ModelAdmin):
         # TODO oleksandr: get rid of duplicate code
         return datetime.fromtimestamp(conversation.last_update_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
-    @action(label="Generate alternatives")
+    @action(label="ChatGPT alternatives")
     def generate_alternatives(self, request, conversation: Conversation) -> None:
-        conversation.generate_alternatives(ALTERNATIVE_DIALOGS)
+        conversation.generate_alternatives(CHATGPT_COMPLETION_CONFIG_ALTERNATIVES)
 
 
 class AlternativeCompletionInline(admin.TabularInline):
@@ -176,9 +184,9 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
         # TODO oleksandr: get rid of duplicate code
         return datetime.fromtimestamp(utterance.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
-    @action(label="Generate alternatives")
+    @action(label="ChatGPT alternatives")
     def generate_alternatives(self, request, utterance: Utterance) -> None:
-        utterance.generate_alternatives(ALTERNATIVE_DIALOGS)
+        utterance.generate_alternatives(CHATGPT_COMPLETION_CONFIG_ALTERNATIVES)
 
 
 class ConversationInline(admin.TabularInline):
@@ -219,9 +227,9 @@ class SwipyUserAdmin(DjangoObjectActions, admin.ModelAdmin):
     # def has_change_permission(self, request, obj=None):
     #     return False
 
-    @action(label="Generate alternatives")
+    @action(label="ChatGPT alternatives")
     def generate_alternatives(self, request, swipy_user: SwipyUser) -> None:
-        swipy_user.generate_alternatives(ALTERNATIVE_DIALOGS)
+        swipy_user.generate_alternatives(CHATGPT_COMPLETION_CONFIG_ALTERNATIVES)
 
 
 admin.site.register(TelegramUpdate, TelegramUpdateAdmin)

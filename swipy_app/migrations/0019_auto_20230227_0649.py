@@ -4,12 +4,14 @@ import traceback
 from asgiref.sync import async_to_sync
 from django.db import migrations
 
-# TODO oleksandr: this might be a bad idea - implementation might change over time
-from swipy_bot.gpt_completions import DialogGptCompletionFactory
-from swipy_bot.swipy_config import BOT_NAME
-
 
 def summarize_conversations(apps, schema_editor):
+    """ATTENTION! THIS FUNCTION IS NOT CALLED ANYMORE, NOOP IS CALLED INSTEAD"""
+    # TODO oleksandr: this might be a bad idea - implementation might change over time
+    # TODO oleksandr: replace with ChatGptCompletion
+    from swipy_app.gpt_completions import DialogGptCompletionFactory
+    from swipy_app.swipy_config import BOT_NAME
+
     Conversation = apps.get_model("swipy_app", "Conversation")
 
     summarizer = DialogGptCompletionFactory(
@@ -66,5 +68,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(summarize_conversations, migrations.RunPython.noop),
+        migrations.RunPython(migrations.RunPython.noop, migrations.RunPython.noop),
     ]
