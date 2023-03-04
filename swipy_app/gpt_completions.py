@@ -1,4 +1,5 @@
 # pylint: disable=too-many-instance-attributes,too-few-public-methods
+import asyncio
 import random
 import traceback
 from abc import ABC, abstractmethod
@@ -243,6 +244,7 @@ class ChatGptCompletion(BaseDialogGptCompletion):
         if not self.context_utterances:
             # we have no context, let's answer with a hardcoded message
             # TODO oleksandr: move this conversation starter to the settings and apply it with BaseDialogGptCompletion
+            await asyncio.sleep(1)
             hardcoded_response = (
                 f"Hi {self.swipy_user.first_name}! My name is {self.settings.prompt_settings.bot_name}. "
                 f"How can I help you?"
