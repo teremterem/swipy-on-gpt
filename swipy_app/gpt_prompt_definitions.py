@@ -1,7 +1,6 @@
 from swipy_app.gpt_completions import (
     GptPromptSettings,
     GptCompletionSettings,
-    ChatGptCompletion,
     ChatGptEvenLaterPromptCompletion,
 )
 from swipy_app.swipy_config import BOT_NAME
@@ -55,25 +54,38 @@ for prompt_name, prompt_template in PROMPT_TEMPLATE_ALTERNATIVES.items():
             #     prompt_template=" ".join(prompt_template),
             #     bot_name=BOT_NAME,
             # ),
-        ]
+        ],
     )
-PROMPT_ALTERNATIVES.append(
-    GptPromptSettings(
-        prompt_name="CHATGPT-NO-PROMPT",
-        engine=CHATGPT_MODEL,
-        completion_class=ChatGptCompletion,
-        prompt_template=None,
-        bot_name=BOT_NAME,
-    )
-)
+# PROMPT_ALTERNATIVES.append(
+#     GptPromptSettings(
+#         prompt_name="CHATGPT-NO-PROMPT",
+#         engine=CHATGPT_MODEL,
+#         completion_class=ChatGptCompletion,
+#         prompt_template=None,
+#         bot_name=BOT_NAME,
+#     ),
+# )
 
 COMPLETION_CONFIG_ALTERNATIVES = []
 for prompt_config in PROMPT_ALTERNATIVES:
-    COMPLETION_CONFIG_ALTERNATIVES.append(
-        GptCompletionSettings(
-            prompt_settings=prompt_config,
-            temperature=1.0,
-        )
+    COMPLETION_CONFIG_ALTERNATIVES.extend(
+        [
+            GptCompletionSettings(
+                prompt_settings=prompt_config,
+                temperature=1.0,
+                top_p=1.0,
+            ),
+            GptCompletionSettings(
+                prompt_settings=prompt_config,
+                temperature=0.0,
+                top_p=1.0,
+            ),
+            GptCompletionSettings(
+                prompt_settings=prompt_config,
+                temperature=1.0,
+                top_p=0.0,
+            ),
+        ],
     )
 
 MAIN_COMPLETION_CONFIG = COMPLETION_CONFIG_ALTERNATIVES[0]
