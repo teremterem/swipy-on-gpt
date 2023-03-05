@@ -1,5 +1,6 @@
 -c requirements.txt
 black==23.1.0
+humanloop==0.3.3
 jupyterlab==3.6.1
 pip-tools==6.12.3
 pre-commit==3.1.1
