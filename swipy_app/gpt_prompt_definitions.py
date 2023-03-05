@@ -2,7 +2,6 @@ from swipy_app.gpt_completions import (
     GptPromptSettings,
     GptCompletionSettings,
     ChatGptCompletion,
-    ChatGptLatePromptCompletion,
     ChatGptEvenLaterPromptCompletion,
 )
 from swipy_app.swipy_config import BOT_NAME
@@ -34,26 +33,28 @@ for prompt_name, prompt_template in PROMPT_TEMPLATE_ALTERNATIVES.items():
     PROMPT_ALTERNATIVES.extend(
         [
             GptPromptSettings(
-                prompt_name=prompt_name + "-late",
-                engine=CHATGPT_MODEL,
-                completion_class=ChatGptLatePromptCompletion,
-                prompt_template=prompt_template,
-                bot_name=BOT_NAME,
-            ),
-            GptPromptSettings(
+                # "-even-later" refers to the fact the instructions are given very late in the conversation context
+                # (only after the last bot response)
                 prompt_name=prompt_name + "-even-later",
                 engine=CHATGPT_MODEL,
                 completion_class=ChatGptEvenLaterPromptCompletion,
                 prompt_template=prompt_template,
                 bot_name=BOT_NAME,
             ),
-            GptPromptSettings(
-                prompt_name=prompt_name,
-                engine=CHATGPT_MODEL,
-                completion_class=ChatGptCompletion,
-                prompt_template=" ".join(prompt_template),
-                bot_name=BOT_NAME,
-            ),
+            # GptPromptSettings(
+            #     prompt_name=prompt_name + "-late",
+            #     engine=CHATGPT_MODEL,
+            #     completion_class=ChatGptLatePromptCompletion,
+            #     prompt_template=prompt_template,
+            #     bot_name=BOT_NAME,
+            # ),
+            # GptPromptSettings(
+            #     prompt_name=prompt_name,
+            #     engine=CHATGPT_MODEL,
+            #     completion_class=ChatGptCompletion,
+            #     prompt_template=" ".join(prompt_template),
+            #     bot_name=BOT_NAME,
+            # ),
         ]
     )
 PROMPT_ALTERNATIVES.append(
