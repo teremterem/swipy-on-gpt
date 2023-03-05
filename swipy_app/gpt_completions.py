@@ -17,7 +17,7 @@ from swipy_app.swipy_utils import current_time_utc_ms
 @dataclass(frozen=True)
 class GptPromptSettings:
     prompt_name: str
-    prompt_template: str
+    prompt_template: str | tuple[str, ...]
     completion_class: type["BaseDialogGptCompletion"]
     engine: str
     bot_name: str
@@ -216,24 +216,29 @@ class TextDialogGptCompletion(BaseDialogGptCompletion):
 
 
 class ChatGptCompletion(BaseDialogGptCompletion):
-    async def _build_raw_prompt(self, stop_before_utterance: Utterance | None = None) -> Any:
-        prompt = self.settings.prompt_settings.prompt_template.format(
-            USER=self.swipy_user.first_name,
-            BOT=self.settings.prompt_settings.bot_name,
-        )
-        messages = [
-            {
-                "content": prompt,
-                "role": "system",
-            }
-        ]
-        for utterance in self.context_utterances:
+    def _build_system_message(self, prompt_template: str) -> dict[str, str]:
+        sys_message = {
+            "content": prompt_template.format(
+                USER=self.swipy_user.first_name,
+                BOT=self.settings.prompt_settings.bot_name,
+            ),
+            "role": "system",
+        }
+        return sys_message
+
+    # noinspection PyMethodMayBeStatic
+    def _append_messages(self, messages: list[dict[str, str]], utterances_to_append: list[Utterance]) -> None:
+        for utterance in utterances_to_append:
             messages.append(
                 {
                     "content": utterance.text,
                     "role": "assistant" if utterance.is_bot else "user",
                 }
             )
+
+    async def _build_raw_prompt(self, stop_before_utterance: Utterance | None = None) -> Any:
+        messages = [self._build_system_message(self.settings.prompt_settings.prompt_template)]
+        self._append_messages(messages, self.context_utterances)
         return messages
 
     def _convert_raw_prompt_to_str(self) -> str:
@@ -259,3 +264,32 @@ class ChatGptCompletion(BaseDialogGptCompletion):
             gpt_response.choices[0].message.role == "assistant"
         ), f"Expected assistant's response, but got {gpt_response.choices[0].message.role}"
         return gpt_response.choices[0].message.content
+
+
+class ChatGptLatePromptCompletion(ChatGptCompletion):
+    def _idx_to_split_context_by(self) -> int:
+        last_bot_utterance_index = None
+        for idx, utterance in reversed(list(enumerate(self.context_utterances))):
+            if utterance.is_bot:
+                last_bot_utterance_index = idx
+                break
+        return last_bot_utterance_index
+
+    async def _build_raw_prompt(self, stop_before_utterance: Utterance | None = None) -> Any:
+        idx_to_split_context_by = self._idx_to_split_context_by()
+        if idx_to_split_context_by is None:
+            idx_to_split_context_by = 0
+
+        messages = [self._build_system_message(self.settings.prompt_settings.prompt_template[0])]
+        self._append_messages(messages, self.context_utterances[:idx_to_split_context_by])
+        messages.append(self._build_system_message(self.settings.prompt_settings.prompt_template[1]))
+        self._append_messages(messages, self.context_utterances[idx_to_split_context_by:])
+        return messages
+
+
+class ChatGptEvenLaterPromptCompletion(ChatGptLatePromptCompletion):
+    def _idx_to_split_context_by(self) -> int:
+        last_user_utterance_index = super()._idx_to_split_context_by()
+        if last_user_utterance_index is not None:
+            last_user_utterance_index += 1
+        return last_user_utterance_index
