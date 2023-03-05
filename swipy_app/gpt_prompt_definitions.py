@@ -63,6 +63,15 @@ for prompt_name, prompt_template in PROMPT_TEMPLATE_ALTERNATIVES.items():
             ),
         ]
     )
+PROMPT_ALTERNATIVES.append(
+    GptPromptSettings(
+        prompt_name="CHATGPT-NO-PROMPT",
+        engine=CHATGPT_MODEL,
+        completion_class=ChatGptCompletion,
+        prompt_template=None,
+        bot_name=BOT_NAME,
+    )
+)
 
 COMPLETION_CONFIG_ALTERNATIVES = []
 for prompt_config in PROMPT_ALTERNATIVES:

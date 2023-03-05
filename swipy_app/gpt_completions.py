@@ -17,7 +17,7 @@ from swipy_app.swipy_utils import current_time_utc_ms
 @dataclass(frozen=True)
 class GptPromptSettings:
     prompt_name: str
-    prompt_template: str | tuple[str, ...]
+    prompt_template: str | tuple[str, ...] | None
     completion_class: type["BaseDialogGptCompletion"]
     engine: str
     bot_name: str
@@ -190,11 +190,14 @@ class TextDialogGptCompletion(BaseDialogGptCompletion):
 
         utterance_delimiter = "\n\n" if self.settings.prompt_settings.double_newline_between_utterances else "\n"
         dialog = utterance_delimiter.join(prompt_parts)
-        prompt = self.settings.prompt_settings.prompt_template.format(
-            DIALOG=dialog,
-            USER=self.swipy_user.first_name,
-            BOT=self.settings.prompt_settings.bot_name,
-        )
+        if self.settings.prompt_settings.prompt_template:
+            prompt = self.settings.prompt_settings.prompt_template.format(
+                DIALOG=dialog,
+                USER=self.swipy_user.first_name,
+                BOT=self.settings.prompt_settings.bot_name,
+            )
+        else:
+            prompt = dialog
         return prompt
 
     async def _make_openai_call(self) -> str:
@@ -237,7 +240,10 @@ class ChatGptCompletion(BaseDialogGptCompletion):
             )
 
     async def _build_raw_prompt(self, stop_before_utterance: Utterance | None = None) -> Any:
-        messages = [self._build_system_message(self.settings.prompt_settings.prompt_template)]
+        messages = []
+        if self.settings.prompt_settings.prompt_template:
+            messages = [self._build_system_message(self.settings.prompt_settings.prompt_template)]
+
         self._append_messages(messages, self.context_utterances)
         return messages
 
