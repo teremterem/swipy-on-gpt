@@ -138,8 +138,8 @@ class ConversationAdmin(DjangoObjectActions, admin.ModelAdmin):
 class AlternativeCompletionInline(admin.TabularInline):
     model = GptCompletion
     # TODO oleksandr: add more fields to both lists
-    ordering = ["temperature", "prompt_name", "request_timestamp_ms"]
-    fields = ["completion", "prompt_name", "temperature"]
+    ordering = ["temperature", "top_p", "prompt_name", "request_timestamp_ms"]
+    fields = ["completion", "prompt_name", "temperature", "top_p"]
     can_delete = False
     show_change_link = True
 
