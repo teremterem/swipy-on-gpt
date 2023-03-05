@@ -80,11 +80,11 @@ for prompt_config in PROMPT_ALTERNATIVES:
                 temperature=0.0,
                 top_p=1.0,
             ),
-            GptCompletionSettings(
-                prompt_settings=prompt_config,
-                temperature=1.0,
-                top_p=0.0,
-            ),
+            # GptCompletionSettings(
+            #     prompt_settings=prompt_config,
+            #     temperature=1.0,
+            #     top_p=0.0,  # produces exactly the same text as top_p=1.0 and temperature=0.0
+            # ),
         ],
     )
 
