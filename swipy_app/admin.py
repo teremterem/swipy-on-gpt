@@ -1,12 +1,14 @@
 # pylint: disable=unused-argument,too-few-public-methods
 from datetime import datetime
+from functools import partial
 from pprint import pformat
 
 from django.contrib import admin
 from django.utils.html import format_html
 from django_object_actions import DjangoObjectActions, action
 
-from swipy_app.gpt_prompt_definitions import COMPLETION_CONFIG_ALTERNATIVES
+from swipy_app.gpt_completions import GptCompletionSettings
+from swipy_app.gpt_prompt_definitions import GEN_ALT_BUTTONS
 from swipy_app.models import TelegramUpdate, Utterance, GptCompletion, Conversation, SwipyUser
 
 
@@ -107,6 +109,10 @@ class UtteranceInline(admin.TabularInline):
     show_change_link = True
 
 
+def generate_completion_alternatives(alt_list: list["GptCompletionSettings"], request, obj) -> None:
+    obj.generate_alternatives(alt_list)
+
+
 class ConversationAdmin(DjangoObjectActions, admin.ModelAdmin):
     inlines = [UtteranceInline]
     ordering = ["-last_update_timestamp_ms"]
@@ -114,7 +120,7 @@ class ConversationAdmin(DjangoObjectActions, admin.ModelAdmin):
     list_display = ["id", "title", "swipy_user", "last_update_time"]
     list_display_links = list_display
     fields = ["id", "title", "swipy_user", "last_update_time", "summary"]
-    change_actions = ["generate_alternatives"]
+    change_actions = [button_name for button_name, _ in GEN_ALT_BUTTONS]
 
     def has_add_permission(self, request):
         return False
@@ -130,9 +136,13 @@ class ConversationAdmin(DjangoObjectActions, admin.ModelAdmin):
         # TODO oleksandr: get rid of duplicate code
         return datetime.fromtimestamp(conversation.last_update_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
-    @action(label="Generate alternatives")
-    def generate_alternatives(self, request, conversation: Conversation) -> None:
-        conversation.generate_alternatives(COMPLETION_CONFIG_ALTERNATIVES)
+
+for (button_name, button_title), config_alternatives in GEN_ALT_BUTTONS.items():
+    setattr(
+        ConversationAdmin,
+        button_name,
+        action(label=button_title)(partial(generate_completion_alternatives, config_alternatives)),
+    )
 
 
 class AlternativeCompletionInline(admin.TabularInline):
@@ -162,7 +172,7 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
         "conversation",
         "chat_context",
     ]
-    change_actions = ["generate_alternatives"]
+    change_actions = [button_name for button_name, _ in GEN_ALT_BUTTONS]
 
     def has_add_permission(self, request):
         return False
@@ -184,9 +194,13 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
         # TODO oleksandr: get rid of duplicate code
         return datetime.fromtimestamp(utterance.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
-    @action(label="Generate alternatives")
-    def generate_alternatives(self, request, utterance: Utterance) -> None:
-        utterance.generate_alternatives(COMPLETION_CONFIG_ALTERNATIVES)
+
+for (button_name, button_title), config_alternatives in GEN_ALT_BUTTONS.items():
+    setattr(
+        UtteranceAdmin,
+        button_name,
+        action(label=button_title)(partial(generate_completion_alternatives, config_alternatives)),
+    )
 
 
 class ConversationInline(admin.TabularInline):
@@ -216,7 +230,7 @@ class SwipyUserAdmin(DjangoObjectActions, admin.ModelAdmin):
         "chat_telegram_id",
         # "current_conversation",
     ]
-    change_actions = ["generate_alternatives"]
+    change_actions = [button_name for button_name, _ in GEN_ALT_BUTTONS]
 
     def has_add_permission(self, request):
         return False
@@ -227,10 +241,13 @@ class SwipyUserAdmin(DjangoObjectActions, admin.ModelAdmin):
     # def has_change_permission(self, request, obj=None):
     #     return False
 
-    @action(label="Generate alternatives")
-    def generate_alternatives(self, request, swipy_user: SwipyUser) -> None:
-        swipy_user.generate_alternatives(COMPLETION_CONFIG_ALTERNATIVES)
 
+for (button_name, button_title), config_alternatives in GEN_ALT_BUTTONS.items():
+    setattr(
+        SwipyUserAdmin,
+        button_name,
+        action(label=button_title)(partial(generate_completion_alternatives, config_alternatives)),
+    )
 
 admin.site.register(TelegramUpdate, TelegramUpdateAdmin)
 admin.site.register(GptCompletion, GptCompletionAdmin)
