@@ -52,7 +52,7 @@ ACTIVE_LISTENING_CHATGPT_PROMPT_TEMPLATE = (
 GEN_ALT_BUTTONS = {
     ("chatgpt_alts", "ChatGPT alternatives"): _generate_completion_config_alternatives(
         GptPromptSettings(
-            prompt_name="active-listening-CHATGPT-0.7",
+            prompt_name="active-listening-CHATGPT-0.8",
             prompt_template=(
                 PROMPT_TEMPLATE_HEADER,
                 ACTIVE_LISTENING_CHATGPT_PROMPT_TEMPLATE,
@@ -73,7 +73,7 @@ GEN_ALT_BUTTONS = {
     ),
     ("davinci_alts", "Davinci alternatives"): _generate_completion_config_alternatives(
         GptPromptSettings(
-            prompt_name="active-listening-DAVINCI-0.7",
+            prompt_name="active-listening-DAVINCI-0.8",
             prompt_template=" ".join(
                 [
                     PROMPT_TEMPLATE_HEADER,
