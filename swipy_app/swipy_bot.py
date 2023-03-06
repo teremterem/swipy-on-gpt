@@ -55,11 +55,10 @@ async def reply_with_gpt_completion(
             await asyncio.sleep(10)
 
     if not user_requested_new_conv:
-        # await asyncio.sleep(1)  # TODO oleksandr: are you sure about this ?
+        await asyncio.sleep(1)  # TODO oleksandr: start processing in parallel maybe ?
         asyncio.get_event_loop().create_task(_keep_typing_task())
 
     if user_requested_new_conv:
-        # await asyncio.sleep(1)  # TODO oleksandr: are you sure about this ?
         response_text = (
             f"Hi {user_first_name}! My name is {gpt_completion_settings.prompt_settings.bot_name}🤖\n"
             f"\n"
