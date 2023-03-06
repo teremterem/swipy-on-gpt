@@ -37,29 +37,32 @@ DAVINCI_MODEL = "text-davinci-003"
 PROMPT_TEMPLATE_HEADER = (
     "Your name is {BOT} and the name of your user is {USER}. Below is your conversation with {USER}."
 )
-ACTIVE_LISTENING_MANUAL_PROMPT_TEMPLATE = (
+ACTIVE_LISTENING_PROMPT_TEMPLATE = (
     "As a virtual assistant, your role is to employ active listening to encourage users to think out loud. "
     "Your message should be no more than three sentences long and should ask open-ended questions about "
     "topics that seem important to the user. The purpose of these questions is to facilitate critical "
-    "thinking in the user and guide them towards considering different perspectives and options. Avoid "
-    "giving direct advice, as your job is to help the user arrive at conclusions on their own. Ensure "
-    "that your next message follows these instructions, even if previous messages did not."
+    "thinking in the user. Avoid giving direct advice, as your job is to help the user arrive at "
+    "conclusions on their own."
+)
+ACTIVE_LISTENING_CHATGPT_PROMPT_TEMPLATE = (
+    ACTIVE_LISTENING_PROMPT_TEMPLATE
+    + " Ensure that your next message follows these instructions, even if previous messages did not."
 )
 
 GEN_ALT_BUTTONS = {
-    "ChatGPT alternatives": _generate_completion_config_alternatives(
+    ("chatgpt_alts", "ChatGPT alternatives"): _generate_completion_config_alternatives(
         GptPromptSettings(
             prompt_name="active-listening-CHATGPT-0.7",
             prompt_template=(
                 PROMPT_TEMPLATE_HEADER,
-                ACTIVE_LISTENING_MANUAL_PROMPT_TEMPLATE,
+                ACTIVE_LISTENING_CHATGPT_PROMPT_TEMPLATE,
             ),
             engine=CHATGPT_MODEL,
             completion_class=ChatGptEvenLaterPromptCompletion,
             bot_name=BOT_NAME,
         ),
     ),
-    'ChatGPT "no prompt"': _generate_completion_config_alternatives(
+    ("chatgpt_no_prompt", 'ChatGPT "no prompt"'): _generate_completion_config_alternatives(
         GptPromptSettings(
             prompt_name="CHATGPT-NO-PROMPT",
             engine=CHATGPT_MODEL,
@@ -68,13 +71,16 @@ GEN_ALT_BUTTONS = {
             bot_name=BOT_NAME,
         ),
     ),
-    "Davinci alternatives": _generate_completion_config_alternatives(
+    ("davinci_alts", "Davinci alternatives"): _generate_completion_config_alternatives(
         GptPromptSettings(
             prompt_name="active-listening-DAVINCI-0.7",
-            prompt_template=(
-                PROMPT_TEMPLATE_HEADER,
-                ACTIVE_LISTENING_MANUAL_PROMPT_TEMPLATE,
-            ),
+            prompt_template=" ".join(
+                [
+                    PROMPT_TEMPLATE_HEADER,
+                    ACTIVE_LISTENING_PROMPT_TEMPLATE,
+                ]
+            )
+            + "\n\n---\n\n{DIALOG}",
             engine=DAVINCI_MODEL,
             completion_class=TextDialogGptCompletion,
             bot_name=BOT_NAME,
