@@ -77,6 +77,18 @@ GEN_ALT_BUTTONS = {
                 completion_class=ChatGptEvenLaterPromptCompletion,
                 bot_name=BOT_NAME,
             ),
+            GptPromptSettings(
+                prompt_name="active-listening-CHATGPT-0.8-early-prompt",
+                prompt_template=" ".join(
+                    [
+                        PROMPT_HEADER_TEMPLATE,
+                        ACTIVE_LISTENING_CHATGPT_PROMPT_TEMPLATE,
+                    ]
+                ),
+                engine=CHATGPT_MODEL,
+                completion_class=ChatGptCompletion,
+                bot_name=BOT_NAME,
+            ),
         ]
     ),
     ("chatgpt_no_prompt_alts", 'ChatGPT "no prompt"'): _generate_completion_config_alternatives(
