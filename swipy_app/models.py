@@ -63,6 +63,12 @@ class Conversation(models.Model):
                 utterance.generate_alternatives(alternative_completion_factories)
 
 
+class UtteranceConversation(models.Model):
+    utterance = models.ForeignKey("Utterance", on_delete=models.CASCADE)
+    conversation = models.ForeignKey("Conversation", on_delete=models.CASCADE)
+    linked_timestamp_ms = models.BigIntegerField()
+
+
 class Utterance(models.Model):
     class Meta:
         indexes = [
@@ -82,7 +88,7 @@ class Utterance(models.Model):
     conversation_obsolete = models.ForeignKey(
         Conversation, on_delete=models.CASCADE, related_name="utterance_set_obsolete", null=True
     )
-    conversation_set = models.ManyToManyField(Conversation)
+    conversation_set = models.ManyToManyField(Conversation, through=UtteranceConversation)
 
     def generate_alternatives(self, completion_config_alternatives: list["GptCompletionSettings"]) -> None:
         if self.is_bot and not self.gpt_completion:
