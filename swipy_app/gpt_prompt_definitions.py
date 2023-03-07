@@ -119,7 +119,7 @@ GEN_ALT_BUTTONS = {
             ),
         ]
     ),
-    ("old_prompt_alts", "Oldest prompt"): _generate_completion_config_alternatives(
+    ("oldest_prompt_alts", "Oldest prompt"): _generate_completion_config_alternatives(
         [
             GptPromptSettings(
                 prompt_name="ask-everything-0.1",
