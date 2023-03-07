@@ -167,7 +167,7 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
     inlines = [AlternativeCompletionInline]
     ordering = ["-arrival_timestamp_ms"]
     list_filter = ["swipy_user"]
-    list_display = ["id", "arrival_time", "name", "text", "conversation"]
+    list_display = ["id", "arrival_time", "name", "text", "conversation_obsolete"]
     list_display_links = list_display
     fields = [
         "swipy_user",
@@ -178,7 +178,7 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
         "is_bot",
         "gpt_completion",
         "triggering_update",
-        "conversation",
+        "conversation_obsolete",
         "chat_context",
     ]
     change_actions = [button_name for button_name, _ in GEN_ALT_BUTTONS]

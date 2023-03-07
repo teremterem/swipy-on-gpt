@@ -79,7 +79,7 @@ class Utterance(models.Model):
     is_bot = models.BooleanField()
 
     gpt_completion = models.ForeignKey(GptCompletion, on_delete=models.CASCADE, null=True)
-    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE)
+    conversation_obsolete = models.ForeignKey(Conversation, on_delete=models.CASCADE)
 
     def generate_alternatives(self, completion_config_alternatives: list["GptCompletionSettings"]) -> None:
         if self.is_bot and not self.gpt_completion:
