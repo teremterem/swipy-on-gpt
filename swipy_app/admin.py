@@ -179,7 +179,8 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
         "is_bot",
         "gpt_completion",
         "triggering_update",
-        "conversation_set",
+        # TODO oleksandr: find a way to display conversation_set in details view
+        # "conversation_set",
         "chat_context",
     ]
     change_actions = [button_name for button_name, _ in GEN_ALT_BUTTONS]
