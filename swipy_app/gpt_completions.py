@@ -9,7 +9,7 @@ from typing import Any
 import openai
 from asgiref.sync import sync_to_async
 
-from swipy_app.models import GptCompletion, TelegramUpdate, Utterance, SwipyUser
+from swipy_app.models import GptCompletion, TelegramUpdate, Utterance, SwipyUser, UtteranceConversation
 from swipy_app.swipy_config import MOCK_GPT, MAX_CONVERSATION_LENGTH
 from swipy_app.swipy_utils import current_time_utc_ms
 
@@ -89,25 +89,32 @@ class BaseDialogGptCompletion(ABC):
         conversation_id: int,
         stop_before_utterance: Utterance | None = None,
     ) -> list[Utterance]:
-        utterances = Utterance.objects.filter(conversation_id=conversation_id).order_by("-arrival_timestamp_ms")
+        # TODO oleksandr: there is no point in descending order and eventual reversal of the list (get rid of both)
+        utt_conv_objects = (
+            UtteranceConversation.objects.filter(conversation_id=conversation_id)
+            .order_by("-arrival_timestamp_ms")
+            .prefetch_related("utterance")
+        )
+
         # TODO oleksandr: replace MAX_CONVERSATION_LENGTH with a more sophisticated logic
         if stop_before_utterance:
             # pretend that the last utterance was the one before the stop_before_utterance
-            utterances = await sync_to_async(list)(utterances)
-            for idx, utterance in enumerate(utterances):
-                if utterance.id == stop_before_utterance.pk:
-                    utterances = utterances[idx + 1 :]
+            utt_conv_objects = await sync_to_async(list)(utt_conv_objects)
+            for idx, utt_conv_object in enumerate(utt_conv_objects):
+                if utt_conv_object.utterance_id == stop_before_utterance.pk:
+                    utt_conv_objects = utt_conv_objects[idx + 1 :]
                     break
-            utterances = utterances[:MAX_CONVERSATION_LENGTH]
+            utt_conv_objects = utt_conv_objects[:MAX_CONVERSATION_LENGTH]
         else:
             # don't pretend, just take the last MAX_CONVERSATION_LENGTH utterances
-            utterances = utterances[:MAX_CONVERSATION_LENGTH]
-            utterances = await sync_to_async(list)(utterances)
+            utt_conv_objects = utt_conv_objects[:MAX_CONVERSATION_LENGTH]
+            utt_conv_objects = await sync_to_async(list)(utt_conv_objects)
 
         utterances = [
-            utterance
-            for utterance in reversed(utterances)
-            if utterance.is_bot or utterance.text != "/start"  # don't include /start (from user) in the prompt
+            utt_conv_object.utterance
+            for utt_conv_object in reversed(utt_conv_objects)
+            # don't include "/start" (if it was the user who sent it)
+            if utt_conv_object.utterance.is_bot or utt_conv_object.utterance.text != "/start"
         ]
         return utterances
 
