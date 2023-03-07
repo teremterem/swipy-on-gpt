@@ -92,8 +92,8 @@ class BaseDialogGptCompletion(ABC):
         # TODO oleksandr: there is no point in descending order and eventual reversal of the list (get rid of both)
         utt_conv_objects = (
             UtteranceConversation.objects.filter(conversation_id=conversation_id)
-            .order_by("-arrival_timestamp_ms")
-            .prefetch_related("utterance")
+            .select_related("utterance")
+            .order_by("utterance__arrival_timestamp_ms")
         )
 
         # TODO oleksandr: replace MAX_CONVERSATION_LENGTH with a more sophisticated logic

@@ -95,7 +95,6 @@ async def reply_with_gpt_completion(
     utterance = await Utterance.objects.acreate(
         arrival_timestamp_ms=current_time_utc_ms(),
         swipy_user=tg_update_in_db.swipy_user,
-        conversation_id=conversation_id,
         telegram_message_id=response_msg.message_id,  # TODO oleksandr: store complete message json in db ?
         triggering_update=tg_update_in_db,
         name=gpt_completion_settings.prompt_settings.bot_name,
@@ -103,7 +102,13 @@ async def reply_with_gpt_completion(
         is_bot=True,
         gpt_completion=gpt_completion_in_db,
     )
+    await UtteranceConversation.objects.acreate(
+        linked_timestamp_ms=utterance.arrival_timestamp_ms,
+        utterance=utterance,
+        conversation_id=conversation_id,
+    )
     if gpt_completion_in_db:
+        # TODO oleksandr: replace this with alternative_to_utt_conv object ?
         gpt_completion_in_db.alternative_to_utterance = utterance
         await sync_to_async(gpt_completion_in_db.save)(update_fields=["alternative_to_utterance"])
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation (maybe not here)
