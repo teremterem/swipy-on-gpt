@@ -82,6 +82,9 @@ class Utterance(models.Model):
     gpt_completion = models.ForeignKey(GptCompletion, on_delete=models.CASCADE, null=True)
     conversation_set = models.ManyToManyField(Conversation, through="UtteranceConversation")
 
+    def __str__(self) -> str:
+        return f"=== {self.name}: ===\n\n{self.text}"
+
     def generate_alternatives(self, completion_config_alternatives: list["GptCompletionSettings"]) -> None:
         if self.is_bot and not self.gpt_completion:
             # It is a bot utterance, but it doesn't have a completion object associated with it. That's an indication

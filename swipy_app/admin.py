@@ -9,7 +9,7 @@ from django_object_actions import DjangoObjectActions, action
 
 from swipy_app.gpt_completions import GptCompletionSettings
 from swipy_app.gpt_prompt_definitions import GEN_ALT_BUTTONS
-from swipy_app.models import TelegramUpdate, Utterance, GptCompletion, Conversation, SwipyUser
+from swipy_app.models import TelegramUpdate, Utterance, GptCompletion, Conversation, SwipyUser, UtteranceConversation
 
 
 class TelegramUpdateAdmin(admin.ModelAdmin):
@@ -100,10 +100,10 @@ class GptCompletionAdmin(admin.ModelAdmin):
         return datetime.fromtimestamp(obj.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
-class UtteranceInline(admin.TabularInline):
-    model = Utterance
-    ordering = ["arrival_timestamp_ms"]
-    fields = ["name", "text"]
+class ConversationUtteranceInline(admin.TabularInline):
+    model = UtteranceConversation
+    ordering = ["utterance__arrival_timestamp_ms"]
+    fields = ["utterance"]
     can_delete = False
     show_change_link = True
 
@@ -113,8 +113,7 @@ def generate_completion_alternatives(alt_list: list["GptCompletionSettings"], re
 
 
 class ConversationAdmin(DjangoObjectActions, admin.ModelAdmin):
-    # TODO oleksandr: find a way to display many-to-many utterances in inline mode
-    # inlines = [UtteranceInline]
+    inlines = [ConversationUtteranceInline]
     ordering = ["-last_update_timestamp_ms"]
     list_filter = ["swipy_user"]
     list_display = ["id", "title", "swipy_user", "last_update_time"]
@@ -145,6 +144,14 @@ for (button_name, button_title), config_alternatives in GEN_ALT_BUTTONS.items():
     )
 
 
+class UtteranceConversationInline(admin.TabularInline):
+    model = UtteranceConversation
+    ordering = ["-conversation__last_update_timestamp_ms"]
+    fields = ["conversation"]
+    can_delete = False
+    show_change_link = True
+
+
 class AlternativeCompletionInline(admin.TabularInline):
     model = GptCompletion
     ordering = [
@@ -164,7 +171,7 @@ class AlternativeCompletionInline(admin.TabularInline):
 
 
 class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
-    inlines = [AlternativeCompletionInline]
+    inlines = [UtteranceConversationInline, AlternativeCompletionInline]
     ordering = ["-arrival_timestamp_ms"]
     list_filter = ["swipy_user"]
     # TODO oleksandr: find a way to display conversation_set in list view
@@ -179,8 +186,6 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
         "is_bot",
         "gpt_completion",
         "triggering_update",
-        # TODO oleksandr: find a way to display conversation_set in details view
-        # "conversation_set",
         "chat_context",
     ]
     change_actions = [button_name for button_name, _ in GEN_ALT_BUTTONS]
