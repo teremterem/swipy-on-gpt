@@ -133,6 +133,18 @@ GEN_ALT_BUTTONS = {
                 completion_class=ChatGptEvenLaterPromptCompletion,
                 bot_name=BOT_NAME,
             ),
+            GptPromptSettings(
+                prompt_name="ask-everything-CHATGPT-0.1-early-prompt",
+                prompt_template=" ".join(
+                    [
+                        ASK_EVERYTHING_0_1_PROMPT_HEADER_TEMPLATE,
+                        ASK_EVERYTHING_0_1_PROMPT_TEMPLATE,
+                    ]
+                ),
+                engine=CHATGPT_MODEL,
+                completion_class=ChatGptCompletion,
+                bot_name=BOT_NAME,
+            ),
         ]
     ),
 }
