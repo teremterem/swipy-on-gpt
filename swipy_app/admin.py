@@ -167,7 +167,8 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
     inlines = [AlternativeCompletionInline]
     ordering = ["-arrival_timestamp_ms"]
     list_filter = ["swipy_user"]
-    list_display = ["id", "arrival_time", "name", "text", "conversation_set"]
+    # TODO oleksandr: find a way to display conversation_set in list view
+    list_display = ["id", "arrival_time", "name", "text"]
     list_display_links = list_display
     fields = [
         "swipy_user",
