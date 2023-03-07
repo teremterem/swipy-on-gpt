@@ -116,7 +116,8 @@ GEN_ALT_BUTTONS = {
                         ASK_EVERYTHING_0_1_PROMPT_HEADER_TEMPLATE,
                         ASK_EVERYTHING_0_1_PROMPT_TEMPLATE,
                     ]
-                ),
+                )
+                + "\n\n{DIALOG}",
                 double_newline_between_utterances=False,
                 engine=DAVINCI_MODEL,
                 completion_class=TextDialogGptCompletion,
