@@ -147,9 +147,18 @@ for (button_name, button_title), config_alternatives in GEN_ALT_BUTTONS.items():
 
 class AlternativeCompletionInline(admin.TabularInline):
     model = GptCompletion
-    # TODO oleksandr: add more fields to both lists
-    ordering = ["temperature", "top_p", "prompt_name", "request_timestamp_ms"]
-    fields = ["completion", "prompt_name", "temperature", "top_p"]
+    ordering = [
+        "prompt_name",
+        "temperature",
+        "top_p",
+        "request_timestamp_ms",
+    ]
+    fields = [
+        "prompt_name",
+        "temperature",
+        # "top_p",
+        "completion",
+    ]
     can_delete = False
     show_change_link = True
 
