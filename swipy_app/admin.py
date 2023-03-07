@@ -148,9 +148,9 @@ for (button_name, button_title), config_alternatives in GEN_ALT_BUTTONS.items():
 class AlternativeCompletionInline(admin.TabularInline):
     model = GptCompletion
     ordering = [
+        "prompt_name",
         "temperature",
         "top_p",
-        "prompt_name",
         "request_timestamp_ms",
     ]
     fields = [
