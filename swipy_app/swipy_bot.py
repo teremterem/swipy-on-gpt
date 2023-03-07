@@ -9,7 +9,7 @@ from telegram.ext.filters import TEXT
 
 from swipy_app.gpt_completions import GptCompletionSettings
 from swipy_app.gpt_prompt_definitions import MAIN_COMPLETION_CONFIG
-from swipy_app.models import Utterance, TelegramUpdate
+from swipy_app.models import Utterance, TelegramUpdate, UtteranceConversation
 from swipy_app.swipy_config import TELEGRAM_TOKEN
 from swipy_app.swipy_utils import current_time_utc_ms
 
@@ -33,15 +33,19 @@ async def reply_with_gpt_completion(
 
     conversation_id = await tg_update_in_db.swipy_user.get_current_conversation_id()
 
-    await Utterance.objects.acreate(
+    utterance = await Utterance.objects.acreate(
         arrival_timestamp_ms=current_time_utc_ms(),
         swipy_user=tg_update_in_db.swipy_user,
-        conversation_id=conversation_id,
         telegram_message_id=update.effective_message.message_id,
         triggering_update=tg_update_in_db,
         name=user_first_name,
         text=update.effective_message.text,
         is_bot=False,
+    )
+    await UtteranceConversation.objects.acreate(
+        linked_timestamp_ms=utterance.arrival_timestamp_ms,
+        utterance=utterance,
+        conversation_id=conversation_id,
     )
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user too ?
@@ -101,8 +105,9 @@ async def reply_with_gpt_completion(
     )
     if gpt_completion_in_db:
         gpt_completion_in_db.alternative_to_utterance = utterance
-        await sync_to_async(gpt_completion.gpt_completion_in_db.save)(update_fields=["alternative_to_utterance"])
-    # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation
+        await sync_to_async(gpt_completion_in_db.save)(update_fields=["alternative_to_utterance"])
+    # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation (maybe not here)
+    # TODO oleksandr: update last_update_timestamp_ms in swipy_user too ? (maybe not here)
 
 
 # noinspection PyUnusedLocal
