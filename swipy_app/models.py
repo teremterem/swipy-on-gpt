@@ -63,15 +63,10 @@ class Conversation(models.Model):
                 utterance.generate_alternatives(alternative_completion_factories)
 
 
-class UtteranceConversation(models.Model):
-    utterance = models.ForeignKey("Utterance", on_delete=models.CASCADE)
-    conversation = models.ForeignKey("Conversation", on_delete=models.CASCADE)
-    linked_timestamp_ms = models.BigIntegerField()
-
-
 class Utterance(models.Model):
     class Meta:
         indexes = [
+            # TODO oleksandr: this index might be useless now, replace it ?
             models.Index(fields=["swipy_user", "arrival_timestamp_ms"]),
         ]
 
@@ -85,10 +80,7 @@ class Utterance(models.Model):
     is_bot = models.BooleanField()
 
     gpt_completion = models.ForeignKey(GptCompletion, on_delete=models.CASCADE, null=True)
-    conversation_obsolete = models.ForeignKey(
-        Conversation, on_delete=models.CASCADE, related_name="utterance_set_obsolete", null=True
-    )
-    conversation_set = models.ManyToManyField(Conversation, through=UtteranceConversation)
+    conversation_set = models.ManyToManyField(Conversation, through="UtteranceConversation")
 
     def generate_alternatives(self, completion_config_alternatives: list["GptCompletionSettings"]) -> None:
         if self.is_bot and not self.gpt_completion:
@@ -134,6 +126,16 @@ class Utterance(models.Model):
                 if completion.gpt_completion_in_db:
                     completion.gpt_completion_in_db.alternative_to_utterance = self
                     completion.gpt_completion_in_db.save(update_fields=["alternative_to_utterance"])
+
+
+class UtteranceConversation(models.Model):
+    class Meta:
+        unique_together = (("utterance", "conversation"),)
+        # TODO oleksandr: any other indices ?
+
+    utterance = models.ForeignKey("Utterance", on_delete=models.CASCADE)
+    conversation = models.ForeignKey("Conversation", on_delete=models.CASCADE)
+    linked_timestamp_ms = models.BigIntegerField()
 
 
 class SwipyUser(models.Model):

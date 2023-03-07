@@ -44,6 +44,7 @@ async def reply_with_gpt_completion(
         is_bot=False,
     )
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation
+    # TODO oleksandr: update last_update_timestamp_ms in swipy_user too ?
 
     keep_typing = True
 
