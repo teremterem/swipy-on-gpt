@@ -101,7 +101,6 @@ class GptCompletionAdmin(admin.ModelAdmin):
 
 
 class UtteranceInline(admin.TabularInline):
-    # TODO oleksandr: make read-only
     model = Utterance
     ordering = ["arrival_timestamp_ms"]
     fields = ["name", "text"]
@@ -114,7 +113,8 @@ def generate_completion_alternatives(alt_list: list["GptCompletionSettings"], re
 
 
 class ConversationAdmin(DjangoObjectActions, admin.ModelAdmin):
-    inlines = [UtteranceInline]
+    # TODO oleksandr: find a way to display many-to-many utterances in inline mode
+    # inlines = [UtteranceInline]
     ordering = ["-last_update_timestamp_ms"]
     list_filter = ["swipy_user"]
     list_display = ["id", "title", "swipy_user", "last_update_time"]
