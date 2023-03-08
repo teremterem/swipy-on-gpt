@@ -7,7 +7,9 @@ def copy_alt_to_utterance_to_alt_to_utt_conv(apps, schema_editor):
     GptCompletion = apps.get_model("swipy_app", "GptCompletion")
     for gpt_completion in GptCompletion.objects.all():
         if gpt_completion.alternative_to_utterance:
-            gpt_completion.alternative_to_utt_conv = gpt_completion.alternative_to_utterance.utterance_conversation
+            gpt_completion.alternative_to_utt_conv = (
+                gpt_completion.alternative_to_utterance.utteranceconversation_set.all()[0]
+            )
             gpt_completion.save(update_fields=["alternative_to_utt_conv"])
 
 
