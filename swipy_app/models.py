@@ -139,6 +139,7 @@ class UtteranceConversation(models.Model):
     utterance = models.ForeignKey("Utterance", on_delete=models.CASCADE)
     conversation = models.ForeignKey("Conversation", on_delete=models.CASCADE)
     linked_timestamp_ms = models.BigIntegerField()
+    gpt_completion = models.ForeignKey(GptCompletion, on_delete=models.CASCADE, null=True)
 
     def __str__(self) -> str:
         return f"=== {self.utterance.name}: ===\n\n{self.utterance.text}"
