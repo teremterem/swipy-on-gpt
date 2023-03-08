@@ -114,7 +114,7 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
         gpt_completion_in_db = None
 
         response_msg = await update.effective_chat.send_message(
-            text="Sure, what would you like? 😊",
+            text="Sure, what would you like?",
             reply_markup=ReplyKeyboardMarkup(
                 main_menu,
                 resize_keyboard=True,
