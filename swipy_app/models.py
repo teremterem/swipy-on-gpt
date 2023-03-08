@@ -33,6 +33,12 @@ class GptCompletion(models.Model):
         null=True,
         related_name="alternative_completion_set",
     )
+    alternative_to_utt_conv = models.ForeignKey(
+        "UtteranceConversation",
+        on_delete=models.CASCADE,
+        null=True,
+        related_name="alternative_gpt_completion_set",
+    )
 
     prompt = models.TextField(null=True, blank=True)
     completion = models.TextField(null=True, blank=True)
