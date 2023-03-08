@@ -2,13 +2,12 @@
 import asyncio
 
 from asgiref.sync import sync_to_async
-from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import Update, ReplyKeyboardMarkup
 from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from telegram.ext.filters import TEXT
 
-from swipy_app.gpt_completions import GptCompletionSettings
-from swipy_app.gpt_prompt_definitions import MAIN_COMPLETION_CONFIG
+from swipy_app.gpt_prompt_definitions import MAIN_COMPLETION_CONFIG, NO_PROMPT_COMPLETION_CONFIG
 from swipy_app.models import Utterance, TelegramUpdate, UtteranceConversation
 from swipy_app.swipy_config import TELEGRAM_TOKEN
 from swipy_app.swipy_utils import current_time_utc_ms
@@ -21,6 +20,7 @@ BTN_I_JUST_WANT_TO_CHAT = "I just wanna chat 😊"
 BTN_SMTH_IS_BOTHERING_ME = "Something’s bothering me 😔"
 BTN_HELP_ME_FIGHT_PROCRAST = "Help me fight procrastination ✅"
 BTN_SOMETHING_ELSE = "Something else 🤔"
+BTN_MAIN_MENU = "Main menu 🏠"
 BTN_EXPAND_ON_THIS = "Expand on this 📚"
 
 ALL_BTN_SET = {
@@ -28,21 +28,23 @@ ALL_BTN_SET = {
     BTN_SMTH_IS_BOTHERING_ME,
     BTN_HELP_ME_FIGHT_PROCRAST,
     BTN_SOMETHING_ELSE,
+    BTN_MAIN_MENU,
     BTN_EXPAND_ON_THIS,
 }
 
 
-async def reply_with_gpt_completion(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
-    gpt_completion_settings: GptCompletionSettings,
-) -> None:
+async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # pylint: disable=too-many-locals
-    user_first_name = update.effective_user.first_name  # TODO oleksandr: update db user info upon every tg update ?
-    tg_update_in_db = UPDATE_DB_MODELS_VOLATILE_CACHE.pop(id(update))
-
     user_requested_new_conv = update.effective_message.text == "/start"
     reply_button_was_pressed = update.effective_message.text in ALL_BTN_SET
+
+    if reply_button_was_pressed and update.effective_message.text == BTN_EXPAND_ON_THIS:
+        gpt_completion_settings = NO_PROMPT_COMPLETION_CONFIG
+    else:
+        gpt_completion_settings = MAIN_COMPLETION_CONFIG
+
+    user_first_name = update.effective_user.first_name  # TODO oleksandr: update db user info upon every tg update ?
+    tg_update_in_db = UPDATE_DB_MODELS_VOLATILE_CACHE.pop(id(update))
 
     if user_requested_new_conv:
         # start a new conversation
@@ -111,17 +113,19 @@ async def reply_with_gpt_completion(
         gpt_completion_in_db = gpt_completion.gpt_completion_in_db
 
         keep_typing = False
+
+        buttons = []
+        if not reply_button_was_pressed:
+            buttons.append([BTN_EXPAND_ON_THIS])
+        buttons.append([BTN_MAIN_MENU])
+
         response_msg = await update.effective_chat.send_message(
             text=response_text,
             reply_markup=ReplyKeyboardMarkup(
-                [
-                    [BTN_EXPAND_ON_THIS],
-                ],
+                buttons,
                 resize_keyboard=True,
                 one_time_keyboard=True,
-            )
-            if not reply_button_was_pressed
-            else ReplyKeyboardRemove(),
+            ),
         )
 
     utterance = await Utterance.objects.acreate(
@@ -147,16 +151,12 @@ async def reply_with_gpt_completion(
 
 
 # noinspection PyUnusedLocal
-async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await reply_with_gpt_completion(update, context, MAIN_COMPLETION_CONFIG)
-
-
 # TODO oleksandr: rename to telegram_application ?
 application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
 # TODO oleksandr: do you even need this kind of differentiation ?
-application.add_handler(CommandHandler("start", reply_to_user))
-application.add_handler(MessageHandler(TEXT, reply_to_user))
+application.add_handler(CommandHandler("start", reply_with_gpt_completion))
+application.add_handler(MessageHandler(TEXT, reply_with_gpt_completion))
 
 if __name__ == "__main__":
     application.run_polling()
