@@ -79,7 +79,6 @@ class Utterance(models.Model):
     text = models.TextField()
     is_bot = models.BooleanField()
 
-    gpt_completion = models.ForeignKey(GptCompletion, on_delete=models.CASCADE, null=True)
     conversation_set = models.ManyToManyField(Conversation, through="UtteranceConversation")
 
     def __str__(self) -> str:

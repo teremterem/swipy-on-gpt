@@ -184,9 +184,7 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
         "name",
         "text",
         "is_bot",
-        "gpt_completion",
         "triggering_update",
-        "chat_context",
     ]
     change_actions = [button_name for button_name, _ in GEN_ALT_BUTTONS]
 
@@ -198,12 +196,6 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
-
-    @admin.display(description="Chat context")
-    def chat_context(self, utterance: Utterance) -> str | None:
-        if utterance.gpt_completion is None:
-            return None
-        return format_html('<pre style="white-space: pre-wrap">{}</pre>', utterance.gpt_completion.prompt)
 
     @admin.display(description="Arrival time")
     def arrival_time(self, utterance: Utterance) -> str:
@@ -221,6 +213,9 @@ class UtteranceConversationAdmin(admin.ModelAdmin):  # (DjangoObjectActions, adm
         "chat_context",
         "utterance",
         "conversation",
+        "gpt_completion",
+        "arrival_time",
+        "linked_time",
     ]
 
     # change_actions = [button_name for button_name, _ in GEN_ALT_BUTTONS]
@@ -236,11 +231,9 @@ class UtteranceConversationAdmin(admin.ModelAdmin):  # (DjangoObjectActions, adm
 
     @admin.display(description="Chat context")
     def chat_context(self, utt_conv_object: UtteranceConversation) -> str | None:
-        if utt_conv_object.utterance.gpt_completion is None:
+        if utt_conv_object.gpt_completion is None:
             return None
-        return format_html(
-            '<pre style="white-space: pre-wrap">{}</pre>', utt_conv_object.utterance.gpt_completion.prompt
-        )
+        return format_html('<pre style="white-space: pre-wrap">{}</pre>', utt_conv_object.gpt_completion.prompt)
 
     @admin.display(description="Arrival time")
     def arrival_time(self, utt_conv_object: UtteranceConversation) -> str:
@@ -248,6 +241,11 @@ class UtteranceConversationAdmin(admin.ModelAdmin):  # (DjangoObjectActions, adm
         return datetime.fromtimestamp(utt_conv_object.utterance.arrival_timestamp_ms / 1000).strftime(
             "%Y-%m-%d %H:%M:%S"
         )
+
+    @admin.display(description="Linked time")
+    def linked_time(self, utt_conv_object: UtteranceConversation) -> str:
+        # TODO oleksandr: get rid of duplicate code
+        return datetime.fromtimestamp(utt_conv_object.linked_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
 for (button_name, button_title), config_alternatives in GEN_ALT_BUTTONS.items():
