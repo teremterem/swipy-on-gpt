@@ -141,7 +141,7 @@ class UtteranceConversation(models.Model):
     gpt_completion = models.ForeignKey(GptCompletion, on_delete=models.CASCADE, null=True)
 
     def __str__(self) -> str:
-        return f"=== {self.utterance.name}: ===\n\n{self.utterance.text}"
+        return f"=== {self.utterance.name}: ===\n\n{self.utterance.text}"[:100]
 
 
 class SwipyUser(models.Model):
