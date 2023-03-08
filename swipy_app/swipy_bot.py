@@ -2,7 +2,7 @@
 import asyncio
 
 from asgiref.sync import sync_to_async
-from telegram import Update, ReplyKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from telegram.ext.filters import TEXT
@@ -17,16 +17,33 @@ from swipy_app.swipy_utils import current_time_utc_ms
 #  https://stackoverflow.com/questions/30596484/python-asyncio-context
 UPDATE_DB_MODELS_VOLATILE_CACHE: dict[int, TelegramUpdate] = {}
 
+BTN_I_JUST_WANT_TO_CHAT = "I just wanna chat 😊"
+BTN_SMTH_IS_BOTHERING_ME = "Something’s bothering me 😔"
+BTN_HELP_ME_FIGHT_PROCRAST = "Help me fight procrastination ✅"
+BTN_SOMETHING_ELSE = "Something else 🤔"
+BTN_EXPAND_ON_THIS = "Expand on this 📚"
+
+ALL_BTN_SET = {
+    BTN_I_JUST_WANT_TO_CHAT,
+    BTN_SMTH_IS_BOTHERING_ME,
+    BTN_HELP_ME_FIGHT_PROCRAST,
+    BTN_SOMETHING_ELSE,
+    BTN_EXPAND_ON_THIS,
+}
+
 
 async def reply_with_gpt_completion(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
     gpt_completion_settings: GptCompletionSettings,
 ) -> None:
+    # pylint: disable=too-many-locals
     user_first_name = update.effective_user.first_name  # TODO oleksandr: update db user info upon every tg update ?
     tg_update_in_db = UPDATE_DB_MODELS_VOLATILE_CACHE.pop(id(update))
 
     user_requested_new_conv = update.effective_message.text == "/start"
+    reply_button_was_pressed = update.effective_message.text in ALL_BTN_SET
+
     if user_requested_new_conv:
         # start a new conversation
         await tg_update_in_db.swipy_user.detach_current_conversation()
@@ -70,10 +87,10 @@ async def reply_with_gpt_completion(
             ),
             reply_markup=ReplyKeyboardMarkup(
                 [
-                    ["I just wanna chat 😊"],
-                    ["Something’s bothering me 😔"],
-                    ["Help me fight procrastination ✅"],
-                    ["Something else 🤔"],
+                    [BTN_I_JUST_WANT_TO_CHAT],
+                    [BTN_SMTH_IS_BOTHERING_ME],
+                    [BTN_HELP_ME_FIGHT_PROCRAST],
+                    [BTN_SOMETHING_ELSE],
                 ],
                 resize_keyboard=True,
                 one_time_keyboard=True,
@@ -97,11 +114,13 @@ async def reply_with_gpt_completion(
             text=response_text,
             reply_markup=ReplyKeyboardMarkup(
                 [
-                    ["Expand on this 📚"],
+                    [BTN_EXPAND_ON_THIS],
                 ],
                 resize_keyboard=True,
                 one_time_keyboard=True,
-            ),
+            )
+            if not reply_button_was_pressed
+            else ReplyKeyboardRemove(),
         )
 
     utterance = await Utterance.objects.acreate(
