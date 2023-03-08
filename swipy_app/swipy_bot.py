@@ -22,8 +22,9 @@ BTN_HELP_ME_FIGHT_PROCRAST = "Help me fight procrastination ✅"
 BTN_SOMETHING_ELSE = "Something else 🤔"
 BTN_MAIN_MENU = "Main menu 🏠"
 BTN_EXPAND_ON_THIS = "Expand on this 📚"
-BTN_USEFUL = "Useful 🌟"
+BTN_THANKS = "Thanks 🌟"
 BTN_NOT_USEFUL = "Not useful 💔"
+BTN_PROCEED_WITH_SUBJECT = "Let's proceed with this subject 📚"
 
 ALL_BTN_SET = {
     BTN_I_JUST_WANT_TO_CHAT,
@@ -32,8 +33,9 @@ ALL_BTN_SET = {
     BTN_SOMETHING_ELSE,
     BTN_MAIN_MENU,
     BTN_EXPAND_ON_THIS,
-    BTN_USEFUL,
+    BTN_THANKS,
     BTN_NOT_USEFUL,
+    BTN_PROCEED_WITH_SUBJECT,
 }
 
 
@@ -42,6 +44,8 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
     user_requested_new_conv = update.effective_message.text == "/start"
     any_reply_button_was_pressed = update.effective_message.text in ALL_BTN_SET
     expand_on_this_was_requested = update.effective_message.text == BTN_EXPAND_ON_THIS
+    main_menu_was_requested = update.effective_message.text == BTN_MAIN_MENU
+    thanks_was_requested = update.effective_message.text == BTN_THANKS
 
     if expand_on_this_was_requested:
         gpt_completion_settings = NO_PROMPT_COMPLETION_CONFIG
@@ -83,6 +87,13 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
             await update.effective_chat.send_chat_action(ChatAction.TYPING)
             await asyncio.sleep(10)
 
+    main_menu = [
+        [BTN_I_JUST_WANT_TO_CHAT],
+        [BTN_SMTH_IS_BOTHERING_ME],
+        [BTN_HELP_ME_FIGHT_PROCRAST],
+        [BTN_SOMETHING_ELSE],
+    ]
+
     if user_requested_new_conv:
         gpt_completion_in_db = None
 
@@ -93,12 +104,19 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
                 f"How can I help you? 😊"
             ),
             reply_markup=ReplyKeyboardMarkup(
-                [
-                    [BTN_I_JUST_WANT_TO_CHAT],
-                    [BTN_SMTH_IS_BOTHERING_ME],
-                    [BTN_HELP_ME_FIGHT_PROCRAST],
-                    [BTN_SOMETHING_ELSE],
-                ],
+                main_menu,
+                resize_keyboard=True,
+                one_time_keyboard=True,
+            ),
+        )
+
+    elif main_menu_was_requested:
+        gpt_completion_in_db = None
+
+        response_msg = await update.effective_chat.send_message(
+            text="Sure, what would you like? 😊",
+            reply_markup=ReplyKeyboardMarkup(
+                main_menu,
                 resize_keyboard=True,
                 one_time_keyboard=True,
             ),
@@ -122,9 +140,11 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
         buttons = []
         if not any_reply_button_was_pressed:
             buttons.append([BTN_EXPAND_ON_THIS])
-        if expand_on_this_was_requested:
-            buttons.append([BTN_USEFUL])
+        elif expand_on_this_was_requested:
+            buttons.append([BTN_THANKS])
             buttons.append([BTN_NOT_USEFUL])
+        elif thanks_was_requested:
+            buttons.append([BTN_PROCEED_WITH_SUBJECT])
         buttons.append([BTN_MAIN_MENU])
 
         response_msg = await update.effective_chat.send_message(
