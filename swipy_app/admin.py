@@ -211,6 +211,45 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
         return datetime.fromtimestamp(utterance.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
+class UtteranceConversationAdmin(admin.ModelAdmin):  # (DjangoObjectActions, admin.ModelAdmin):
+    # inlines = [UtteranceConversationInline, AlternativeCompletionInline]
+    ordering = ["-utterance__arrival_timestamp_ms"]
+    list_filter = ["utterance__swipy_user"]
+    list_display = ["id", "arrival_time", "conversation", "utterance"]
+    list_display_links = list_display
+    fields = [
+        "chat_context",
+        "utterance",
+        "conversation",
+    ]
+
+    # change_actions = [button_name for button_name, _ in GEN_ALT_BUTTONS]
+
+    def has_add_permission(self, request):
+        return False
+
+    # def has_delete_permission(self, request, obj=None):
+    #     return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description="Chat context")
+    def chat_context(self, utt_conv_object: UtteranceConversation) -> str | None:
+        if utt_conv_object.utterance.gpt_completion is None:
+            return None
+        return format_html(
+            '<pre style="white-space: pre-wrap">{}</pre>', utt_conv_object.utterance.gpt_completion.prompt
+        )
+
+    @admin.display(description="Arrival time")
+    def arrival_time(self, utt_conv_object: UtteranceConversation) -> str:
+        # TODO oleksandr: get rid of duplicate code
+        return datetime.fromtimestamp(utt_conv_object.utterance.arrival_timestamp_ms / 1000).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+
+
 for (button_name, button_title), config_alternatives in GEN_ALT_BUTTONS.items():
     setattr(
         UtteranceAdmin,
@@ -269,4 +308,5 @@ admin.site.register(TelegramUpdate, TelegramUpdateAdmin)
 admin.site.register(GptCompletion, GptCompletionAdmin)
 admin.site.register(Conversation, ConversationAdmin)
 admin.site.register(Utterance, UtteranceAdmin)
+admin.site.register(UtteranceConversation, UtteranceConversationAdmin)
 admin.site.register(SwipyUser, SwipyUserAdmin)
