@@ -112,14 +112,13 @@ def generate_completion_alternatives(alt_list: list["GptCompletionSettings"], re
     obj.generate_alternatives(alt_list)
 
 
-class ConversationAdmin(DjangoObjectActions, admin.ModelAdmin):
+class ConversationAdmin(admin.ModelAdmin):
     inlines = [ConversationUtteranceInline]
     ordering = ["-last_update_timestamp_ms"]
     list_filter = ["swipy_user"]
     list_display = ["id", "title", "swipy_user", "last_update_time"]
     list_display_links = list_display
     fields = ["id", "title", "swipy_user", "last_update_time", "summary"]
-    change_actions = [button_name for button_name, _ in GEN_ALT_BUTTONS]
 
     def has_add_permission(self, request):
         return False
@@ -134,14 +133,6 @@ class ConversationAdmin(DjangoObjectActions, admin.ModelAdmin):
     def last_update_time(self, conversation: Conversation) -> str:
         # TODO oleksandr: get rid of duplicate code
         return datetime.fromtimestamp(conversation.last_update_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
-
-
-for (button_name, button_title), config_alternatives in GEN_ALT_BUTTONS.items():
-    setattr(
-        ConversationAdmin,
-        button_name,
-        action(label=button_title)(partial(generate_completion_alternatives, config_alternatives)),
-    )
 
 
 class UtteranceConversationInline(admin.TabularInline):
@@ -265,7 +256,7 @@ class ConversationInline(admin.TabularInline):
     show_change_link = True
 
 
-class SwipyUserAdmin(DjangoObjectActions, admin.ModelAdmin):
+class SwipyUserAdmin(admin.ModelAdmin):
     inlines = [ConversationInline]
     ordering = ["full_name", "chat_telegram_id"]
     list_display = ["id", "full_name", "chat_telegram_id", "current_conversation"]
@@ -282,7 +273,6 @@ class SwipyUserAdmin(DjangoObjectActions, admin.ModelAdmin):
         "chat_telegram_id",
         # "current_conversation",
     ]
-    change_actions = [button_name for button_name, _ in GEN_ALT_BUTTONS]
 
     def has_add_permission(self, request):
         return False
@@ -293,13 +283,6 @@ class SwipyUserAdmin(DjangoObjectActions, admin.ModelAdmin):
     # def has_change_permission(self, request, obj=None):
     #     return False
 
-
-for (button_name, button_title), config_alternatives in GEN_ALT_BUTTONS.items():
-    setattr(
-        SwipyUserAdmin,
-        button_name,
-        action(label=button_title)(partial(generate_completion_alternatives, config_alternatives)),
-    )
 
 admin.site.register(TelegramUpdate, TelegramUpdateAdmin)
 admin.site.register(GptCompletion, GptCompletionAdmin)
