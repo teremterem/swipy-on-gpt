@@ -22,7 +22,7 @@ BTN_HELP_ME_FIGHT_PROCRAST = "Help me fight procrastination ✅"
 BTN_SOMETHING_ELSE = "Something else 🤔"
 BTN_MAIN_MENU = "Main menu 🏠"
 BTN_EXPAND_ON_THIS = "Expand on this 📚"
-BTN_THANKS = "Thanks 🌟"
+BTN_USEFUL = "Useful 🌟"
 BTN_NOT_USEFUL = "Not useful 💔"
 
 ALL_BTN_SET = {
@@ -32,7 +32,7 @@ ALL_BTN_SET = {
     BTN_SOMETHING_ELSE,
     BTN_MAIN_MENU,
     BTN_EXPAND_ON_THIS,
-    BTN_THANKS,
+    BTN_USEFUL,
     BTN_NOT_USEFUL,
 }
 
@@ -123,7 +123,7 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
         if not any_reply_button_was_pressed:
             buttons.append([BTN_EXPAND_ON_THIS])
         if expand_on_this_was_requested:
-            buttons.append([BTN_THANKS])
+            buttons.append([BTN_USEFUL])
             buttons.append([BTN_NOT_USEFUL])
         buttons.append([BTN_MAIN_MENU])
 
