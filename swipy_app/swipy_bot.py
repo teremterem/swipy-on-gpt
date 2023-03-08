@@ -22,6 +22,8 @@ BTN_HELP_ME_FIGHT_PROCRAST = "Help me fight procrastination ✅"
 BTN_SOMETHING_ELSE = "Something else 🤔"
 BTN_MAIN_MENU = "Main menu 🏠"
 BTN_EXPAND_ON_THIS = "Expand on this 📚"
+BTN_THANKS = "Thanks 🌟"
+BTN_NOT_USEFUL = "Not useful 💔"
 
 ALL_BTN_SET = {
     BTN_I_JUST_WANT_TO_CHAT,
@@ -30,6 +32,8 @@ ALL_BTN_SET = {
     BTN_SOMETHING_ELSE,
     BTN_MAIN_MENU,
     BTN_EXPAND_ON_THIS,
+    BTN_THANKS,
+    BTN_NOT_USEFUL,
 }
 
 
@@ -118,6 +122,9 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
         buttons = []
         if not any_reply_button_was_pressed:
             buttons.append([BTN_EXPAND_ON_THIS])
+        if expand_on_this_was_requested:
+            buttons.append([BTN_THANKS])
+            buttons.append([BTN_NOT_USEFUL])
         buttons.append([BTN_MAIN_MENU])
 
         response_msg = await update.effective_chat.send_message(
@@ -150,56 +157,56 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation (maybe not here)
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user too ? (maybe not here)
 
-    if expand_on_this_was_requested:
-        # TODO TODO TODO TODO TODO
-        # TODO TODO TODO TODO TODO oleksandr: resolve code duplication
-        # TODO TODO TODO TODO TODO
-
-        keep_typing = True
-
-        asyncio.get_event_loop().create_task(_keep_typing_task())
-
-        gpt_completion_settings = MAIN_COMPLETION_CONFIG
-
-        gpt_completion = await gpt_completion_settings.fulfil_completion(
-            swipy_user=tg_update_in_db.swipy_user,
-            conversation_id=conversation_id,
-            tg_update_in_db=tg_update_in_db,
-        )
-        response_text = gpt_completion.completion.strip()  # TODO oleksandr: minor: is stripping necessary ?
-        gpt_completion_in_db = gpt_completion.gpt_completion_in_db
-
-        keep_typing = False
-
-        response_msg = await update.effective_chat.send_message(
-            text=response_text,
-            reply_markup=ReplyKeyboardMarkup(
-                [[BTN_MAIN_MENU]],
-                resize_keyboard=True,
-                one_time_keyboard=True,
-            ),
-        )
-
-        utterance = await Utterance.objects.acreate(
-            arrival_timestamp_ms=current_time_utc_ms(),
-            swipy_user=tg_update_in_db.swipy_user,
-            telegram_message_id=response_msg.message_id,  # TODO oleksandr: store complete message json in db ?
-            triggering_update=tg_update_in_db,
-            name=gpt_completion_settings.prompt_settings.bot_name,
-            text=response_msg.text,
-            is_bot=True,
-        )
-        utt_conv_object = await UtteranceConversation.objects.acreate(
-            linked_timestamp_ms=utterance.arrival_timestamp_ms,
-            utterance=utterance,
-            conversation_id=conversation_id,
-            gpt_completion=gpt_completion_in_db,
-        )
-        if gpt_completion_in_db:
-            gpt_completion_in_db.alternative_to_utt_conv = utt_conv_object
-            await sync_to_async(gpt_completion_in_db.save)(update_fields=["alternative_to_utt_conv"])
-        # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation (maybe not here)
-        # TODO oleksandr: update last_update_timestamp_ms in swipy_user too ? (maybe not here)
+    # if expand_on_this_was_requested:
+    #     # TODO TODO TODO TODO TODO
+    #     # TODO TODO TODO TODO TODO oleksandr: resolve code duplication
+    #     # TODO TODO TODO TODO TODO
+    #
+    #     keep_typing = True
+    #
+    #     asyncio.get_event_loop().create_task(_keep_typing_task())
+    #
+    #     gpt_completion_settings = MAIN_COMPLETION_CONFIG
+    #
+    #     gpt_completion = await gpt_completion_settings.fulfil_completion(
+    #         swipy_user=tg_update_in_db.swipy_user,
+    #         conversation_id=conversation_id,
+    #         tg_update_in_db=tg_update_in_db,
+    #     )
+    #     response_text = gpt_completion.completion.strip()  # TODO oleksandr: minor: is stripping necessary ?
+    #     gpt_completion_in_db = gpt_completion.gpt_completion_in_db
+    #
+    #     keep_typing = False
+    #
+    #     response_msg = await update.effective_chat.send_message(
+    #         text=response_text,
+    #         reply_markup=ReplyKeyboardMarkup(
+    #             [[BTN_MAIN_MENU]],
+    #             resize_keyboard=True,
+    #             one_time_keyboard=True,
+    #         ),
+    #     )
+    #
+    #     utterance = await Utterance.objects.acreate(
+    #         arrival_timestamp_ms=current_time_utc_ms(),
+    #         swipy_user=tg_update_in_db.swipy_user,
+    #         telegram_message_id=response_msg.message_id,  # TODO oleksandr: store complete message json in db ?
+    #         triggering_update=tg_update_in_db,
+    #         name=gpt_completion_settings.prompt_settings.bot_name,
+    #         text=response_msg.text,
+    #         is_bot=True,
+    #     )
+    #     utt_conv_object = await UtteranceConversation.objects.acreate(
+    #         linked_timestamp_ms=utterance.arrival_timestamp_ms,
+    #         utterance=utterance,
+    #         conversation_id=conversation_id,
+    #         gpt_completion=gpt_completion_in_db,
+    #     )
+    #     if gpt_completion_in_db:
+    #         gpt_completion_in_db.alternative_to_utt_conv = utt_conv_object
+    #         await sync_to_async(gpt_completion_in_db.save)(update_fields=["alternative_to_utt_conv"])
+    #     # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation (maybe not here)
+    #     # TODO oleksandr: update last_update_timestamp_ms in swipy_user too ? (maybe not here)
 
 
 # noinspection PyUnusedLocal
