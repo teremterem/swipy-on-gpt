@@ -93,7 +93,7 @@ class BaseDialogGptCompletion(ABC):
         utt_conv_objects = (
             UtteranceConversation.objects.filter(conversation_id=conversation_id)
             .select_related("utterance")
-            .order_by("utterance__arrival_timestamp_ms")
+            .order_by("-utterance__arrival_timestamp_ms")
         )
 
         # TODO oleksandr: replace MAX_CONVERSATION_LENGTH with a more sophisticated logic
