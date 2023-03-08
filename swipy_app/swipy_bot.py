@@ -70,9 +70,10 @@ async def reply_with_gpt_completion(
             ),
             reply_markup=ReplyKeyboardMarkup(
                 [
+                    ["I just wanna chat 😊"],
                     ["Something’s bothering me 😔"],
                     ["Help me fight procrastination ✅"],
-                    ["I want something else 🤔"],
+                    ["Something else 🤔"],
                 ],
                 resize_keyboard=True,
                 one_time_keyboard=True,
