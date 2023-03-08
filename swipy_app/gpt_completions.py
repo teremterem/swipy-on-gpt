@@ -45,13 +45,13 @@ class GptCompletionSettings:
         swipy_user: SwipyUser,
         conversation_id: int,
         tg_update_in_db: TelegramUpdate | None = None,
-        stop_before_utterance: Utterance | None = None,
+        stop_before_utt_conv: UtteranceConversation | None = None,
     ):
         completion = self.new_completion(swipy_user)
         await completion.fulfil(
             conversation_id=conversation_id,
             tg_update_in_db=tg_update_in_db,
-            stop_before_utterance=stop_before_utterance,
+            stop_before_utt_conv=stop_before_utt_conv,
         )
         return completion
 

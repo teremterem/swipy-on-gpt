@@ -100,12 +100,12 @@ async def reply_with_gpt_completion(
         name=gpt_completion_settings.prompt_settings.bot_name,
         text=response_msg.text,
         is_bot=True,
-        gpt_completion=gpt_completion_in_db,
     )
     utt_conv_object = await UtteranceConversation.objects.acreate(
         linked_timestamp_ms=utterance.arrival_timestamp_ms,
         utterance=utterance,
         conversation_id=conversation_id,
+        gpt_completion=gpt_completion_in_db,
     )
     if gpt_completion_in_db:
         gpt_completion_in_db.alternative_to_utt_conv = utt_conv_object
