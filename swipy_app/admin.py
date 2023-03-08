@@ -41,7 +41,7 @@ class TelegramUpdateAdmin(admin.ModelAdmin):
 class GptCompletionAdmin(admin.ModelAdmin):
     ordering = ["-request_timestamp_ms"]
     list_filter = ["swipy_user"]
-    list_display = ["id", "arrival_time", "completion", "alternative_to_utterance"]
+    list_display = ["id", "arrival_time", "completion", "alternative_to_utt_conv"]
     list_display_links = list_display
     fields = [
         "request_time",
@@ -50,7 +50,7 @@ class GptCompletionAdmin(admin.ModelAdmin):
         "prompt_pre",
         "completion_pre",
         "pretty_full_api_response",
-        "alternative_to_utterance",
+        "alternative_to_utt_conv",
         "prompt_name",
         "engine",
         "max_tokens",

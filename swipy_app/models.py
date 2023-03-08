@@ -140,6 +140,9 @@ class UtteranceConversation(models.Model):
     conversation = models.ForeignKey("Conversation", on_delete=models.CASCADE)
     linked_timestamp_ms = models.BigIntegerField()
 
+    def __str__(self) -> str:
+        return f"=== {self.utterance.name}: ===\n\n{self.utterance.text}"
+
 
 class SwipyUser(models.Model):
     # TODO oleksandr: shouldn't it be user_telegram_id plus chat_telegram_id ?
