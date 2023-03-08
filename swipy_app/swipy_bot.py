@@ -98,7 +98,8 @@ async def reply_with_gpt_completion(
         )
 
     else:
-        await asyncio.sleep(1)  # TODO oleksandr: start processing in parallel maybe ?
+        if not reply_button_was_pressed:
+            await asyncio.sleep(1)  # TODO oleksandr: start processing in parallel maybe ?
         asyncio.get_event_loop().create_task(_keep_typing_task())
 
         gpt_completion = await gpt_completion_settings.fulfil_completion(
