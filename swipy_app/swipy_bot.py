@@ -2,7 +2,7 @@
 import asyncio
 
 from asgiref.sync import sync_to_async
-from telegram import Update
+from telegram import Update, ReplyKeyboardMarkup
 from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from telegram.ext.filters import TEXT
@@ -59,18 +59,30 @@ async def reply_with_gpt_completion(
             await update.effective_chat.send_chat_action(ChatAction.TYPING)
             await asyncio.sleep(10)
 
-    if not user_requested_new_conv:
+    if user_requested_new_conv:
+        gpt_completion_in_db = None
+
+        response_msg = await update.effective_chat.send_message(
+            text=(
+                f"Hi {user_first_name}! My name is {gpt_completion_settings.prompt_settings.bot_name}🤖\n"
+                f"\n"
+                f"How can I help you? 😊"
+            ),
+            reply_markup=ReplyKeyboardMarkup(
+                [
+                    ["Something’s bothering me 😔"],
+                    ["Help me fight procrastination ✅"],
+                    ["I want something else 🤔"],
+                ],
+                resize_keyboard=True,
+                one_time_keyboard=True,
+            ),
+        )
+
+    else:
         await asyncio.sleep(1)  # TODO oleksandr: start processing in parallel maybe ?
         asyncio.get_event_loop().create_task(_keep_typing_task())
 
-    if user_requested_new_conv:
-        response_text = (
-            f"Hi {user_first_name}! My name is {gpt_completion_settings.prompt_settings.bot_name}🤖\n"
-            f"\n"
-            f"How can I help you? 😊"
-        )
-        gpt_completion_in_db = None
-    else:
         gpt_completion = await gpt_completion_settings.fulfil_completion(
             swipy_user=tg_update_in_db.swipy_user,
             conversation_id=conversation_id,
@@ -79,18 +91,17 @@ async def reply_with_gpt_completion(
         response_text = gpt_completion.completion.strip()  # TODO oleksandr: minor: is stripping necessary ?
         gpt_completion_in_db = gpt_completion.gpt_completion_in_db
 
-    keep_typing = False
-    response_msg = await update.effective_chat.send_message(
-        text=response_text,
-        # reply_markup=InlineKeyboardMarkup(
-        #     [
-        #         [
-        #             InlineKeyboardButton(text="👍", callback_data="like"),
-        #             InlineKeyboardButton(text="👎", callback_data="dislike"),
-        #         ]
-        #     ],
-        # ),
-    )
+        keep_typing = False
+        response_msg = await update.effective_chat.send_message(
+            text=response_text,
+            reply_markup=ReplyKeyboardMarkup(
+                [
+                    ["Expand on this 📚"],
+                ],
+                resize_keyboard=True,
+                one_time_keyboard=True,
+            ),
+        )
 
     utterance = await Utterance.objects.acreate(
         arrival_timestamp_ms=current_time_utc_ms(),
