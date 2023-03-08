@@ -58,9 +58,9 @@ class Conversation(models.Model):
         return f"{self.pk} - {self.title}"
 
     def generate_alternatives(self, alternative_completion_factories: list["GptCompletionSettings"]) -> None:
-        for utterance in self.utterance_conversation_set.all():
-            if utterance.is_bot:
-                utterance.generate_alternatives(alternative_completion_factories)
+        for utt_conv_object in self.utteranceconversation_set.all():
+            if utt_conv_object.utterance.is_bot:
+                utt_conv_object.generate_alternatives(alternative_completion_factories)
 
 
 class Utterance(models.Model):
