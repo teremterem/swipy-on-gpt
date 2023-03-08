@@ -170,7 +170,7 @@ class AlternativeCompletionInline(admin.TabularInline):
     show_change_link = True
 
 
-class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
+class UtteranceAdmin(admin.ModelAdmin):
     inlines = [UtteranceConversationInline]
     ordering = ["-arrival_timestamp_ms"]
     list_filter = ["swipy_user"]
@@ -186,7 +186,6 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
         "is_bot",
         "triggering_update",
     ]
-    change_actions = [button_name for button_name, _ in GEN_ALT_BUTTONS]
 
     def has_add_permission(self, request):
         return False
@@ -203,11 +202,11 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
         return datetime.fromtimestamp(utterance.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
-class UtteranceConversationAdmin(admin.ModelAdmin):  # (DjangoObjectActions, admin.ModelAdmin):
+class UtteranceConversationAdmin(DjangoObjectActions, admin.ModelAdmin):
     inlines = [AlternativeCompletionInline]
     ordering = ["-utterance__arrival_timestamp_ms"]
     list_filter = ["utterance__swipy_user"]
-    list_display = ["id", "arrival_time", "conversation", "utterance"]
+    list_display = ["arrival_time", "utterance", "conversation"]
     list_display_links = list_display
     fields = [
         "chat_context",
@@ -216,9 +215,9 @@ class UtteranceConversationAdmin(admin.ModelAdmin):  # (DjangoObjectActions, adm
         "gpt_completion",
         "arrival_time",
         "linked_time",
+        "id",
     ]
-
-    # change_actions = [button_name for button_name, _ in GEN_ALT_BUTTONS]
+    change_actions = [button_name for button_name, _ in GEN_ALT_BUTTONS]
 
     def has_add_permission(self, request):
         return False
@@ -250,7 +249,7 @@ class UtteranceConversationAdmin(admin.ModelAdmin):  # (DjangoObjectActions, adm
 
 for (button_name, button_title), config_alternatives in GEN_ALT_BUTTONS.items():
     setattr(
-        UtteranceAdmin,
+        UtteranceConversationAdmin,
         button_name,
         action(label=button_title)(partial(generate_completion_alternatives, config_alternatives)),
     )

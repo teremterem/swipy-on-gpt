@@ -102,15 +102,14 @@ async def reply_with_gpt_completion(
         is_bot=True,
         gpt_completion=gpt_completion_in_db,
     )
-    await UtteranceConversation.objects.acreate(
+    utt_conv_object = await UtteranceConversation.objects.acreate(
         linked_timestamp_ms=utterance.arrival_timestamp_ms,
         utterance=utterance,
         conversation_id=conversation_id,
     )
     if gpt_completion_in_db:
-        # TODO oleksandr: replace this with alternative_to_utt_conv object ?
-        gpt_completion_in_db.alternative_to_utterance = utterance
-        await sync_to_async(gpt_completion_in_db.save)(update_fields=["alternative_to_utterance"])
+        gpt_completion_in_db.alternative_to_utt_conv = utt_conv_object
+        await sync_to_async(gpt_completion_in_db.save)(update_fields=["alternative_to_utt_conv"])
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation (maybe not here)
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user too ? (maybe not here)
 

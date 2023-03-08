@@ -73,7 +73,7 @@ class BaseDialogGptCompletion(ABC):
         self.completion: str | None = None
 
     @abstractmethod
-    async def _build_raw_prompt(self, stop_before_utterance: Utterance | None = None) -> Any:
+    async def _build_raw_prompt(self, stop_before_utt_conv: UtteranceConversation | None = None) -> Any:
         pass
 
     @abstractmethod
@@ -87,7 +87,7 @@ class BaseDialogGptCompletion(ABC):
     async def _prepare_context_utterances(
         self,
         conversation_id: int,
-        stop_before_utterance: Utterance | None = None,
+        stop_before_utt_conv: Utterance | None = None,
     ) -> list[Utterance]:
         # TODO oleksandr: there is no point in descending order and eventual reversal of the list (get rid of both)
         utt_conv_objects = (
@@ -97,11 +97,11 @@ class BaseDialogGptCompletion(ABC):
         )
 
         # TODO oleksandr: replace MAX_CONVERSATION_LENGTH with a more sophisticated logic
-        if stop_before_utterance:
+        if stop_before_utt_conv:
             # pretend that the last utterance was the one before the stop_before_utterance
             utt_conv_objects = await sync_to_async(list)(utt_conv_objects)
             for idx, utt_conv_object in enumerate(utt_conv_objects):
-                if utt_conv_object.utterance_id == stop_before_utterance.pk:
+                if utt_conv_object.id == stop_before_utt_conv.pk:
                     utt_conv_objects = utt_conv_objects[idx + 1 :]
                     break
             utt_conv_objects = utt_conv_objects[:MAX_CONVERSATION_LENGTH]
@@ -122,13 +122,13 @@ class BaseDialogGptCompletion(ABC):
         self,
         conversation_id: int,
         tg_update_in_db: TelegramUpdate | None = None,
-        stop_before_utterance: Utterance | None = None,
+        stop_before_utt_conv: UtteranceConversation | None = None,
     ) -> None:
         self.context_utterances = await self._prepare_context_utterances(
             conversation_id=conversation_id,
-            stop_before_utterance=stop_before_utterance,
+            stop_before_utt_conv=stop_before_utt_conv,
         )
-        self.prompt_raw = await self._build_raw_prompt(stop_before_utterance=stop_before_utterance)
+        self.prompt_raw = await self._build_raw_prompt(stop_before_utt_conv=stop_before_utt_conv)
         self.prompt_str = self._convert_raw_prompt_to_str()
 
         self.gpt_completion_in_db = await GptCompletion.objects.acreate(
@@ -178,7 +178,7 @@ class TextDialogGptCompletion(BaseDialogGptCompletion):
     def utterance_prefix(self, utterer_name) -> str:
         return f"*{utterer_name}:*"
 
-    async def _build_raw_prompt(self, stop_before_utterance: Utterance | None = None) -> Any:
+    async def _build_raw_prompt(self, stop_before_utt_conv: UtteranceConversation | None = None) -> Any:
         prompt_parts = []
 
         for utterance in self.context_utterances:
@@ -189,7 +189,7 @@ class TextDialogGptCompletion(BaseDialogGptCompletion):
             prompt_parts.append(f"{utterance_prefix} {utterance.text}")
 
         if self.settings.prompt_settings.append_bot_name_at_the_end:
-            if stop_before_utterance and not stop_before_utterance.is_bot:
+            if stop_before_utt_conv and not stop_before_utt_conv.utterance.is_bot:
                 # we are trying to mimic the user, not the bot
                 prompt_parts.append(self.user_prefix)
             else:
@@ -246,7 +246,7 @@ class ChatGptCompletion(BaseDialogGptCompletion):
                 }
             )
 
-    async def _build_raw_prompt(self, stop_before_utterance: Utterance | None = None) -> Any:
+    async def _build_raw_prompt(self, stop_before_utt_conv: UtteranceConversation | None = None) -> Any:
         messages = []
         if self.settings.prompt_settings.prompt_template:
             messages = [self._build_system_message(self.settings.prompt_settings.prompt_template)]
@@ -288,7 +288,7 @@ class ChatGptLatePromptCompletion(ChatGptCompletion):
                 break
         return last_bot_utterance_index
 
-    async def _build_raw_prompt(self, stop_before_utterance: Utterance | None = None) -> Any:
+    async def _build_raw_prompt(self, stop_before_utt_conv: UtteranceConversation | None = None) -> Any:
         idx_to_split_context_by = self._idx_to_split_context_by()
         if idx_to_split_context_by is None:
             idx_to_split_context_by = 0

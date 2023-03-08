@@ -58,7 +58,7 @@ class Conversation(models.Model):
         return f"{self.pk} - {self.title}"
 
     def generate_alternatives(self, alternative_completion_factories: list["GptCompletionSettings"]) -> None:
-        for utterance in self.utterance_set.all():
+        for utterance in self.utterance_conversation_set.all():
             if utterance.is_bot:
                 utterance.generate_alternatives(alternative_completion_factories)
 
@@ -84,15 +84,29 @@ class Utterance(models.Model):
     def __str__(self) -> str:
         return f"=== {self.name}: ===\n\n{self.text}"
 
+
+class UtteranceConversation(models.Model):
+    class Meta:
+        unique_together = (("utterance", "conversation"),)
+        # TODO oleksandr: any other indices ?
+
+    utterance = models.ForeignKey("Utterance", on_delete=models.CASCADE)
+    conversation = models.ForeignKey("Conversation", on_delete=models.CASCADE)
+    linked_timestamp_ms = models.BigIntegerField()
+    gpt_completion = models.ForeignKey(GptCompletion, on_delete=models.CASCADE, null=True)
+
+    def __str__(self) -> str:
+        return f"=== {self.utterance.name}: ===\n\n{self.utterance.text}"[:100]
+
     def generate_alternatives(self, completion_config_alternatives: list["GptCompletionSettings"]) -> None:
-        if self.is_bot and not self.gpt_completion:
+        if self.utterance.is_bot and not self.gpt_completion:
             # It is a bot utterance, but it doesn't have a completion object associated with it. That's an indication
             # that we should not generate alternatives for it. The utterance in this position might not be meant for
             # generation, but rather a hardcoded response should be returned. An example of this may be a greeting.
             return
 
         existing_alternatives = {}
-        for existing_alternative in self.alternative_completion_set.all():
+        for existing_alternative in self.alternative_gpt_completion_set.all():
             key = _CompletionSettingsTuple(
                 prompt_name=existing_alternative.prompt_name,
                 engine=existing_alternative.engine,
@@ -117,31 +131,17 @@ class Utterance(models.Model):
             missing_count = 2 if completion_config.temperature else 1
             missing_count -= existing_alternatives.get(key, 0)
             for _ in range(missing_count):
-                completion = completion_config.new_completion(self.swipy_user)
+                completion = completion_config.new_completion(self.utterance.swipy_user)
                 try:
                     async_to_sync(completion.fulfil)(
                         conversation_id=self.conversation_id,
-                        stop_before_utterance=self,
+                        stop_before_utt_conv=self,
                     )
                 except Exception as ex:  # pylint: disable=broad-except
                     log.exception("Failed to generate alternative for utterance %s: %s", self.pk, ex)
                 if completion.gpt_completion_in_db:
-                    completion.gpt_completion_in_db.alternative_to_utterance = self
-                    completion.gpt_completion_in_db.save(update_fields=["alternative_to_utterance"])
-
-
-class UtteranceConversation(models.Model):
-    class Meta:
-        unique_together = (("utterance", "conversation"),)
-        # TODO oleksandr: any other indices ?
-
-    utterance = models.ForeignKey("Utterance", on_delete=models.CASCADE)
-    conversation = models.ForeignKey("Conversation", on_delete=models.CASCADE)
-    linked_timestamp_ms = models.BigIntegerField()
-    gpt_completion = models.ForeignKey(GptCompletion, on_delete=models.CASCADE, null=True)
-
-    def __str__(self) -> str:
-        return f"=== {self.utterance.name}: ===\n\n{self.utterance.text}"[:100]
+                    completion.gpt_completion_in_db.alternative_to_utt_conv = self
+                    completion.gpt_completion_in_db.save(update_fields=["alternative_to_utt_conv"])
 
 
 class SwipyUser(models.Model):
