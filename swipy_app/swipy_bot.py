@@ -145,7 +145,8 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
             buttons.append([BTN_NOT_USEFUL])
         elif thanks_was_requested:
             buttons.append([BTN_PROCEED_WITH_SUBJECT])
-        buttons.append([BTN_MAIN_MENU])
+        if not expand_on_this_was_requested:
+            buttons.append([BTN_MAIN_MENU])
 
         response_msg = await update.effective_chat.send_message(
             text=response_text,
