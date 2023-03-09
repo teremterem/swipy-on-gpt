@@ -9,7 +9,7 @@ from django_object_actions import DjangoObjectActions, action
 
 from swipy_app.gpt_completions import GptCompletionSettings
 from swipy_app.gpt_prompt_definitions import GEN_ALT_BUTTONS
-from swipy_app.models import TelegramUpdate, Utterance, GptCompletion, Conversation, SwipyUser
+from swipy_app.models import TelegramUpdate, Utterance, GptCompletion, Conversation, SwipyUser, UtteranceConversation
 
 
 class TelegramUpdateAdmin(admin.ModelAdmin):
@@ -41,7 +41,7 @@ class TelegramUpdateAdmin(admin.ModelAdmin):
 class GptCompletionAdmin(admin.ModelAdmin):
     ordering = ["-request_timestamp_ms"]
     list_filter = ["swipy_user"]
-    list_display = ["id", "arrival_time", "completion", "alternative_to_utterance"]
+    list_display = ["id", "arrival_time", "completion", "alternative_to_utt_conv"]
     list_display_links = list_display
     fields = [
         "request_time",
@@ -50,7 +50,7 @@ class GptCompletionAdmin(admin.ModelAdmin):
         "prompt_pre",
         "completion_pre",
         "pretty_full_api_response",
-        "alternative_to_utterance",
+        "alternative_to_utt_conv",
         "prompt_name",
         "engine",
         "max_tokens",
@@ -100,11 +100,10 @@ class GptCompletionAdmin(admin.ModelAdmin):
         return datetime.fromtimestamp(obj.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
-class UtteranceInline(admin.TabularInline):
-    # TODO oleksandr: make read-only
-    model = Utterance
-    ordering = ["arrival_timestamp_ms"]
-    fields = ["name", "text"]
+class ConversationUtteranceInline(admin.TabularInline):
+    model = UtteranceConversation
+    ordering = ["utterance__arrival_timestamp_ms"]
+    fields = ["utterance"]
     can_delete = False
     show_change_link = True
 
@@ -113,14 +112,13 @@ def generate_completion_alternatives(alt_list: list["GptCompletionSettings"], re
     obj.generate_alternatives(alt_list)
 
 
-class ConversationAdmin(DjangoObjectActions, admin.ModelAdmin):
-    inlines = [UtteranceInline]
+class ConversationAdmin(admin.ModelAdmin):
+    inlines = [ConversationUtteranceInline]
     ordering = ["-last_update_timestamp_ms"]
     list_filter = ["swipy_user"]
     list_display = ["id", "title", "swipy_user", "last_update_time"]
     list_display_links = list_display
     fields = ["id", "title", "swipy_user", "last_update_time", "summary"]
-    change_actions = [button_name for button_name, _ in GEN_ALT_BUTTONS]
 
     def has_add_permission(self, request):
         return False
@@ -137,12 +135,12 @@ class ConversationAdmin(DjangoObjectActions, admin.ModelAdmin):
         return datetime.fromtimestamp(conversation.last_update_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
-for (button_name, button_title), config_alternatives in GEN_ALT_BUTTONS.items():
-    setattr(
-        ConversationAdmin,
-        button_name,
-        action(label=button_title)(partial(generate_completion_alternatives, config_alternatives)),
-    )
+class UtteranceConversationInline(admin.TabularInline):
+    model = UtteranceConversation
+    ordering = ["-conversation__last_update_timestamp_ms"]
+    fields = ["conversation"]
+    can_delete = False
+    show_change_link = True
 
 
 class AlternativeCompletionInline(admin.TabularInline):
@@ -163,11 +161,12 @@ class AlternativeCompletionInline(admin.TabularInline):
     show_change_link = True
 
 
-class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
-    inlines = [AlternativeCompletionInline]
+class UtteranceAdmin(admin.ModelAdmin):
+    inlines = [UtteranceConversationInline]
     ordering = ["-arrival_timestamp_ms"]
     list_filter = ["swipy_user"]
-    list_display = ["id", "arrival_time", "name", "text", "conversation"]
+    # TODO oleksandr: find a way to display conversation_set in list view ?
+    list_display = ["id", "arrival_time", "name", "text"]
     list_display_links = list_display
     fields = [
         "swipy_user",
@@ -176,10 +175,38 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
         "name",
         "text",
         "is_bot",
-        "gpt_completion",
         "triggering_update",
-        "conversation",
+    ]
+
+    def has_add_permission(self, request):
+        return False
+
+    # def has_delete_permission(self, request, obj=None):
+    #     return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description="Arrival time")
+    def arrival_time(self, utterance: Utterance) -> str:
+        # TODO oleksandr: get rid of duplicate code
+        return datetime.fromtimestamp(utterance.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+
+
+class UtteranceConversationAdmin(DjangoObjectActions, admin.ModelAdmin):
+    inlines = [AlternativeCompletionInline]
+    ordering = ["-utterance__arrival_timestamp_ms"]
+    list_filter = ["utterance__swipy_user"]
+    list_display = ["arrival_time", "utterance", "conversation"]
+    list_display_links = list_display
+    fields = [
         "chat_context",
+        "utterance",
+        "conversation",
+        "gpt_completion",
+        "arrival_time",
+        "linked_time",
+        "id",
     ]
     change_actions = [button_name for button_name, _ in GEN_ALT_BUTTONS]
 
@@ -193,20 +220,27 @@ class UtteranceAdmin(DjangoObjectActions, admin.ModelAdmin):
         return False
 
     @admin.display(description="Chat context")
-    def chat_context(self, utterance: Utterance) -> str | None:
-        if utterance.gpt_completion is None:
+    def chat_context(self, utt_conv_object: UtteranceConversation) -> str | None:
+        if utt_conv_object.gpt_completion is None:
             return None
-        return format_html('<pre style="white-space: pre-wrap">{}</pre>', utterance.gpt_completion.prompt)
+        return format_html('<pre style="white-space: pre-wrap">{}</pre>', utt_conv_object.gpt_completion.prompt)
 
     @admin.display(description="Arrival time")
-    def arrival_time(self, utterance: Utterance) -> str:
+    def arrival_time(self, utt_conv_object: UtteranceConversation) -> str:
         # TODO oleksandr: get rid of duplicate code
-        return datetime.fromtimestamp(utterance.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+        return datetime.fromtimestamp(utt_conv_object.utterance.arrival_timestamp_ms / 1000).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+
+    @admin.display(description="Linked time")
+    def linked_time(self, utt_conv_object: UtteranceConversation) -> str:
+        # TODO oleksandr: get rid of duplicate code
+        return datetime.fromtimestamp(utt_conv_object.linked_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
 for (button_name, button_title), config_alternatives in GEN_ALT_BUTTONS.items():
     setattr(
-        UtteranceAdmin,
+        UtteranceConversationAdmin,
         button_name,
         action(label=button_title)(partial(generate_completion_alternatives, config_alternatives)),
     )
@@ -222,7 +256,7 @@ class ConversationInline(admin.TabularInline):
     show_change_link = True
 
 
-class SwipyUserAdmin(DjangoObjectActions, admin.ModelAdmin):
+class SwipyUserAdmin(admin.ModelAdmin):
     inlines = [ConversationInline]
     ordering = ["full_name", "chat_telegram_id"]
     list_display = ["id", "full_name", "chat_telegram_id", "current_conversation"]
@@ -239,7 +273,6 @@ class SwipyUserAdmin(DjangoObjectActions, admin.ModelAdmin):
         "chat_telegram_id",
         # "current_conversation",
     ]
-    change_actions = [button_name for button_name, _ in GEN_ALT_BUTTONS]
 
     def has_add_permission(self, request):
         return False
@@ -251,15 +284,9 @@ class SwipyUserAdmin(DjangoObjectActions, admin.ModelAdmin):
     #     return False
 
 
-for (button_name, button_title), config_alternatives in GEN_ALT_BUTTONS.items():
-    setattr(
-        SwipyUserAdmin,
-        button_name,
-        action(label=button_title)(partial(generate_completion_alternatives, config_alternatives)),
-    )
-
 admin.site.register(TelegramUpdate, TelegramUpdateAdmin)
 admin.site.register(GptCompletion, GptCompletionAdmin)
 admin.site.register(Conversation, ConversationAdmin)
 admin.site.register(Utterance, UtteranceAdmin)
+admin.site.register(UtteranceConversation, UtteranceConversationAdmin)
 admin.site.register(SwipyUser, SwipyUserAdmin)

@@ -160,4 +160,11 @@ GEN_ALT_BUTTONS = {
         ]
     ),
 }
-MAIN_COMPLETION_CONFIG = list(GEN_ALT_BUTTONS.values())[0][0]
+
+MAIN_COMPLETION_CONFIG = GEN_ALT_BUTTONS[("chatgpt_alts", "ChatGPT alternatives")][0]
+assert MAIN_COMPLETION_CONFIG.prompt_settings.prompt_name == "active-listening-CHATGPT-0.8"
+assert MAIN_COMPLETION_CONFIG.temperature == 0.0
+
+NO_PROMPT_COMPLETION_CONFIG = GEN_ALT_BUTTONS[("chatgpt_no_prompt_alts", 'ChatGPT "no prompt"')][0]
+assert NO_PROMPT_COMPLETION_CONFIG.prompt_settings.prompt_name == "CHATGPT-NO-PROMPT"
+assert NO_PROMPT_COMPLETION_CONFIG.temperature == 0.0
