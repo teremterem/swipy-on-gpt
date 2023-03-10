@@ -20,5 +20,7 @@ class SwipyL10n:
     )
     PROMPT_CONFIG_NAME_SUFFIX: str = ""
 
+    MAX_CONVERSATION_LENGTH: int = 40
+
 
 SwipyEng = SwipyL10n()

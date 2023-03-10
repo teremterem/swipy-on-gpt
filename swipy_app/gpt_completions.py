@@ -10,7 +10,8 @@ import openai
 from asgiref.sync import sync_to_async
 
 from swipy_app.models import GptCompletion, TelegramUpdate, Utterance, SwipyUser, UtteranceConversation
-from swipy_app.swipy_config import MOCK_GPT, MAX_CONVERSATION_LENGTH
+from swipy_app.swipy_config import MOCK_GPT
+from swipy_app.swipy_locales import SwipyEng
 from swipy_app.swipy_utils import current_time_utc_ms
 
 
@@ -96,7 +97,7 @@ class BaseDialogGptCompletion(ABC):
             .order_by("-utterance__arrival_timestamp_ms")
         )
 
-        # TODO oleksandr: replace MAX_CONVERSATION_LENGTH with a more sophisticated logic
+        # TODO oleksandr: replace SwipyEng.MAX_CONVERSATION_LENGTH with a more sophisticated logic
         if stop_before_utt_conv:
             # pretend that the last utterance was the one before the stop_before_utterance
             utt_conv_objects = await sync_to_async(list)(utt_conv_objects)
@@ -104,10 +105,10 @@ class BaseDialogGptCompletion(ABC):
                 if utt_conv_object.id == stop_before_utt_conv.pk:
                     utt_conv_objects = utt_conv_objects[idx + 1 :]
                     break
-            utt_conv_objects = utt_conv_objects[:MAX_CONVERSATION_LENGTH]
+            utt_conv_objects = utt_conv_objects[: SwipyEng.MAX_CONVERSATION_LENGTH]
         else:
-            # don't pretend, just take the last MAX_CONVERSATION_LENGTH utterances
-            utt_conv_objects = utt_conv_objects[:MAX_CONVERSATION_LENGTH]
+            # don't pretend, just take the last SwipyEng.MAX_CONVERSATION_LENGTH utterances
+            utt_conv_objects = utt_conv_objects[: SwipyEng.MAX_CONVERSATION_LENGTH]
             utt_conv_objects = await sync_to_async(list)(utt_conv_objects)
 
         utterances = [
