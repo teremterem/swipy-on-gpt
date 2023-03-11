@@ -17,5 +17,8 @@ class SwipyL10n:
     BTN_NOT_HELPFUL: str = "Not helpful 💔"
     BTN_PROCEED_WITH_SUBJECT: str = "Let's proceed with this subject 📚"
 
+    MSG_START_TEMPLATE = "Hi {USER}! My name is {BOT}🤖\n\nHow can I help you? 😊"
+    MSG_MAIN_MENU = "Sure, what would you like?"
+
 
 DefaultLang = SwipyL10n()

@@ -92,10 +92,9 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
         gpt_completion_in_db = None
 
         response_msg = await update.effective_chat.send_message(
-            text=(
-                f"Hi {user_first_name}! My name is {gpt_completion_settings.prompt_settings.bot_name}🤖\n"
-                f"\n"
-                f"How can I help you? 😊"
+            text=DefaultLang.MSG_START_TEMPLATE.format(
+                USER=user_first_name,
+                BOT=gpt_completion_settings.prompt_settings.bot_name,
             ),
             reply_markup=ReplyKeyboardMarkup(
                 main_menu,
@@ -108,7 +107,7 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
         gpt_completion_in_db = None
 
         response_msg = await update.effective_chat.send_message(
-            text="Sure, what would you like?",
+            text=DefaultLang.MSG_MAIN_MENU,
             reply_markup=ReplyKeyboardMarkup(
                 main_menu,
                 resize_keyboard=True,
