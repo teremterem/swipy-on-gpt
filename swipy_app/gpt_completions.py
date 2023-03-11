@@ -111,12 +111,7 @@ class BaseDialogGptCompletion(ABC):
             utt_conv_objects = utt_conv_objects[: self.lang.MAX_CONVERSATION_LENGTH]
             utt_conv_objects = await sync_to_async(list)(utt_conv_objects)
 
-        utterances = [
-            utt_conv_object.utterance
-            for utt_conv_object in reversed(utt_conv_objects)
-            # don't include "/start" (if it was the user who sent it)
-            if utt_conv_object.utterance.is_bot or utt_conv_object.utterance.text != "/start"
-        ]
+        utterances = [utt_conv_object.utterance for utt_conv_object in reversed(utt_conv_objects)]
         return utterances
 
     async def fulfil(
