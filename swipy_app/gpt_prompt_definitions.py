@@ -8,7 +8,7 @@ from swipy_app.gpt_completions import (
     TextDialogGptCompletion,
 )
 from swipy_app.swipy_config import BOT_NAME
-from swipy_app.swipy_locales import SwipyEng
+from swipy_app.swipy_l10n import SwipyEng
 
 
 def _generate_completion_config_alternatives(

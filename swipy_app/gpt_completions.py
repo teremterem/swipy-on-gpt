@@ -11,7 +11,7 @@ from asgiref.sync import sync_to_async
 
 from swipy_app.models import GptCompletion, TelegramUpdate, Utterance, SwipyUser, UtteranceConversation
 from swipy_app.swipy_config import MOCK_GPT
-from swipy_app.swipy_locales import SwipyEng
+from swipy_app.swipy_l10n import SwipyEng
 from swipy_app.swipy_utils import current_time_utc_ms
 
 
