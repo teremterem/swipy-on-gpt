@@ -44,9 +44,9 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
     # TODO oleksandr: get language from db
     lang = LANGUAGES.get("en", DEFAULT_LANG)
 
+    any_reply_button_was_pressed = update.effective_message.text in get_all_btn_set(lang)
     start_requested = update.effective_message.text == "/start"
     language_selected = update.effective_message.text in {lang.BTN_ENGLISH, lang.BTN_UKRAINIAN}
-    any_reply_button_was_pressed = update.effective_message.text in get_all_btn_set(lang)
     expand_on_this_was_requested = update.effective_message.text == lang.BTN_EXPAND_ON_THIS
     main_menu_was_requested = update.effective_message.text == lang.BTN_MAIN_MENU
     thanks_was_requested = update.effective_message.text == lang.BTN_THANKS
