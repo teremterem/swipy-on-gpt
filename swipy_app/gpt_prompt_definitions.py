@@ -8,7 +8,6 @@ from swipy_app.gpt_completions import (
     TextDialogGptCompletion,
 )
 from swipy_app.swipy_config import BOT_NAME
-from swipy_app.swipy_l10n import DefaultLang
 
 
 def _generate_completion_config_alternatives(
@@ -42,9 +41,21 @@ CHATGPT_U_MODEL = "gpt-3.5-turbo"  # TODO oleksandr: compare with "gpt-3.5-turbo
 # CHATGPT_MODEL = "gpt-3.5-turbo-0301"
 DAVINCI_MODEL = "text-davinci-003"
 
-ACTIVE_LISTENING_CHATGPT_PROMPT_TEMPLATE = (
-    DefaultLang.ACTIVE_LISTENING_PROMPT_TEMPLATE + DefaultLang.ENSURE_INSTRUCTIONS_FOLLOWED
+PROMPT_HEADER_TEMPLATE: str = (
+    "Your name is {BOT} and the name of your user is {USER}. Below is your conversation with {USER}."
 )
+ACTIVE_LISTENING_PROMPT_TEMPLATE: str = (
+    "As a virtual assistant, your role is to employ active listening to encourage users to think out loud. "
+    "Your message should be no more than three sentences long and should ask open-ended questions about "
+    "topics that seem important to the user. The purpose of these questions is to facilitate critical "
+    "thinking in the user. Avoid giving direct advice, as your job is to help the user arrive at "
+    "conclusions on their own."
+)
+ENSURE_INSTRUCTIONS_FOLLOWED: str = (
+    " Ensure that your next message follows these instructions, even if previous messages did not."
+)
+
+ACTIVE_LISTENING_CHATGPT_PROMPT_TEMPLATE = ACTIVE_LISTENING_PROMPT_TEMPLATE + ENSURE_INSTRUCTIONS_FOLLOWED
 
 ASK_EVERYTHING_0_1_PROMPT_HEADER_TEMPLATE = (
     "Your name is {BOT} and the user's name is {USER}. Here is your dialog with {USER}."
@@ -60,9 +71,9 @@ GEN_ALT_BUTTONS = {
         [
             GptPromptSettings(
                 # _U - receives updates
-                prompt_name="active-listening-CHATGPT_U-0.8" + DefaultLang.PROMPT_CONFIG_NAME_SUFFIX,
+                prompt_name="active-listening-CHATGPT_U-0.8",
                 prompt_template=(
-                    DefaultLang.PROMPT_HEADER_TEMPLATE,
+                    PROMPT_HEADER_TEMPLATE,
                     ACTIVE_LISTENING_CHATGPT_PROMPT_TEMPLATE,
                 ),
                 engine=CHATGPT_U_MODEL,
@@ -71,10 +82,10 @@ GEN_ALT_BUTTONS = {
             ),
             GptPromptSettings(
                 # _U - receives updates
-                prompt_name="active-listening-CHATGPT_U-0.8-early-prompt" + DefaultLang.PROMPT_CONFIG_NAME_SUFFIX,
+                prompt_name="active-listening-CHATGPT_U-0.8-early-prompt",
                 prompt_template=" ".join(
                     [
-                        DefaultLang.PROMPT_HEADER_TEMPLATE,
+                        PROMPT_HEADER_TEMPLATE,
                         ACTIVE_LISTENING_CHATGPT_PROMPT_TEMPLATE,
                     ]
                 ),
@@ -102,8 +113,8 @@ GEN_ALT_BUTTONS = {
                 prompt_name="active-listening-DAVINCI-0.8",
                 prompt_template=" ".join(
                     [
-                        DefaultLang.PROMPT_HEADER_TEMPLATE,
-                        DefaultLang.ACTIVE_LISTENING_PROMPT_TEMPLATE,
+                        PROMPT_HEADER_TEMPLATE,
+                        ACTIVE_LISTENING_PROMPT_TEMPLATE,
                     ]
                 )
                 + "\n\n---\n\n{DIALOG}",
