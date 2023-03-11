@@ -10,7 +10,7 @@ from telegram.ext.filters import TEXT
 from swipy_app.gpt_prompt_definitions import MAIN_COMPLETION_CONFIG, NO_PROMPT_COMPLETION_CONFIG
 from swipy_app.models import Utterance, TelegramUpdate, UtteranceConversation
 from swipy_app.swipy_config import TELEGRAM_TOKEN
-from swipy_app.swipy_l10n import SwipyL10n, LANGUAGES, DEFAULT_LANG
+from swipy_app.swipy_l10n import SwipyL10n
 from swipy_app.swipy_utils import current_time_utc_ms
 
 # TODO oleksandr: is this a dirty hack ? use this instead ?
@@ -36,13 +36,23 @@ def get_all_btn_set(lang: SwipyL10n) -> set[str]:
     return all_btn_set
 
 
+def get_main_menu(lang: SwipyL10n) -> list[list[str]]:
+    menu = [
+        [lang.BTN_I_JUST_WANT_TO_CHAT],
+        [lang.BTN_SMTH_IS_BOTHERING_ME],
+        [lang.BTN_HELP_ME_FIGHT_PROCRAST],
+        [lang.BTN_SOMETHING_ELSE],
+        [lang.BTN_LANGUAGE],
+    ]
+    return menu
+
+
 async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # pylint: disable=too-many-locals,too-many-statements,too-many-branches
     user_first_name = update.effective_user.first_name  # TODO oleksandr: update db user info upon every tg update ?
     tg_update_in_db = UPDATE_DB_MODELS_VOLATILE_CACHE.pop(id(update))
 
-    # TODO oleksandr: get language from db
-    lang = LANGUAGES.get("en", DEFAULT_LANG)
+    lang = tg_update_in_db.swipy_user.get_lang()
 
     any_reply_button_was_pressed = update.effective_message.text in get_all_btn_set(lang)
     start_requested = update.effective_message.text == "/start"
@@ -88,14 +98,6 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
             await update.effective_chat.send_chat_action(ChatAction.TYPING)
             await asyncio.sleep(10)
 
-    main_menu = [
-        [lang.BTN_I_JUST_WANT_TO_CHAT],
-        [lang.BTN_SMTH_IS_BOTHERING_ME],
-        [lang.BTN_HELP_ME_FIGHT_PROCRAST],
-        [lang.BTN_SOMETHING_ELSE],
-        [lang.BTN_LANGUAGE],
-    ]
-
     if start_requested:
         gpt_completion_in_db = None
 
@@ -114,13 +116,20 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
     elif language_selected:
         gpt_completion_in_db = None
 
+        if update.effective_message.text == lang.BTN_ENGLISH:
+            tg_update_in_db.swipy_user.language_code = "en"
+        elif update.effective_message.text == lang.BTN_UKRAINIAN:
+            tg_update_in_db.swipy_user.language_code = "uk"
+        await sync_to_async(tg_update_in_db.swipy_user.save)(update_fields=["language_code"])
+        lang = tg_update_in_db.swipy_user.get_lang()
+
         response_msg = await update.effective_chat.send_message(
             text=lang.MSG_START_TEMPLATE.format(
                 USER=user_first_name,
                 BOT=gpt_completion_settings.prompt_settings.bot_name,
             ),
             reply_markup=ReplyKeyboardMarkup(
-                main_menu,
+                get_main_menu(lang),
                 resize_keyboard=True,
                 one_time_keyboard=True,
             ),
@@ -132,7 +141,7 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
         response_msg = await update.effective_chat.send_message(
             text=lang.MSG_MAIN_MENU,
             reply_markup=ReplyKeyboardMarkup(
-                main_menu,
+                get_main_menu(lang),
                 resize_keyboard=True,
                 one_time_keyboard=True,
             ),
