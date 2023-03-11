@@ -7,6 +7,7 @@ from typing import Any
 
 import openai
 from asgiref.sync import sync_to_async
+from transformers import GPT2TokenizerFast
 
 from swipy_app.models import GptCompletion, TelegramUpdate, Utterance, SwipyUser, UtteranceConversation
 from swipy_app.swipy_config import MOCK_GPT
@@ -71,6 +72,7 @@ class BaseDialogGptCompletion(ABC):
         self.prompt_raw: Any | None = None
         self.prompt_str: str | None = None
         self.completion: str | None = None
+        self.approx_token_number: int | None = None
 
     @abstractmethod
     async def _build_raw_prompt(self, stop_before_utt_conv: UtteranceConversation | None = None) -> Any:
@@ -138,6 +140,7 @@ class BaseDialogGptCompletion(ABC):
             top_p=self.settings.top_p,
             frequency_penalty=self.settings.frequency_penalty,
             presence_penalty=self.settings.presence_penalty,
+            approx_token_number=self.approx_token_number,
         )
 
         try:
@@ -249,10 +252,14 @@ class ChatGptCompletion(BaseDialogGptCompletion):
         self._append_messages(messages, self.context_utterances)
         return messages
 
+    def _build_chatml_turn(self, role: str, content: str) -> str:
+        turn = f"<|im_start|>{role}\n{content}<|im_end|>"
+        return turn
+
     def _convert_raw_prompt_to_str(self) -> str:
         prompt_str_parts = []
         for prompt in self.prompt_raw:
-            prompt_str_parts.append(f"<|im_start|>{prompt['role']}\n{prompt['content']}<|im_end|>")
+            prompt_str_parts.append(self._build_chatml_turn(role=prompt["role"], content=prompt["content"]))
         return "\n".join(prompt_str_parts)
 
     async def _make_openai_call(self) -> str:
@@ -277,6 +284,9 @@ class ChatGptCompletion(BaseDialogGptCompletion):
         return gpt_response.choices[0].message.content
 
 
+TOKENIZER = GPT2TokenizerFast.from_pretrained("gpt2")
+
+
 class ChatGptLatePromptCompletion(ChatGptCompletion):
     def _idx_to_split_context_by(self) -> int:
         last_bot_utterance_index = None
@@ -296,6 +306,68 @@ class ChatGptLatePromptCompletion(ChatGptCompletion):
         messages.append(self._build_system_message(self.settings.prompt_settings.prompt_template[1]))
         self._append_messages(messages, self.context_utterances[idx_to_split_context_by:])
         return messages
+
+    def _get_token_limit(self) -> int:
+        token_limit = 3584 - self.settings.max_tokens  # minus maximum number of tokens for the response
+        return token_limit
+
+    def _calculate_static_token_number(self) -> int:
+        static_prompt = (
+            f"\n{self._build_chatml_turn(role='system', content=self.settings.prompt_settings.prompt_template[0])}"
+            f"\n{self._build_chatml_turn(role='system', content=self.settings.prompt_settings.prompt_template[1])}"
+        )
+        static_token_num = len(TOKENIZER(static_prompt)["input_ids"])
+        return static_token_num
+
+    def _calculate_utterance_token_number(self, role: str, content: str) -> int:
+        turn = f"\n{self._build_chatml_turn(role=role, content=content)}"
+        turn_token_num = len(TOKENIZER(turn)["input_ids"])
+        return turn_token_num
+
+    # noinspection PyMethodMayBeStatic
+    async def _prepare_context_utterances(
+        self,
+        conversation_id: int,
+        stop_before_utt_conv: Utterance | None = None,
+    ) -> list[Utterance]:
+        conv_hard_limit = 1000
+        token_limit = self._get_token_limit()
+        self.approx_token_number = self._calculate_static_token_number()
+        token_number = self.approx_token_number
+
+        # TODO oleksandr: there is no point in descending order and eventual reversal of the list (get rid of both)
+        utt_conv_objects = (
+            UtteranceConversation.objects.filter(conversation_id=conversation_id)
+            .select_related("utterance")
+            .order_by("-utterance__arrival_timestamp_ms")
+        )
+
+        if stop_before_utt_conv:
+            # pretend that the last utterance was the one before the stop_before_utterance
+            utt_conv_objects = await sync_to_async(list)(utt_conv_objects)
+            for idx, utt_conv_object in enumerate(utt_conv_objects):
+                if utt_conv_object.id == stop_before_utt_conv.pk:
+                    utt_conv_objects = utt_conv_objects[idx + 1 :]
+                    break
+            utt_conv_objects = utt_conv_objects[:conv_hard_limit]
+        else:
+            # don't pretend, just take the last conv_hard_limit utterances
+            utt_conv_objects = utt_conv_objects[:conv_hard_limit]
+            utt_conv_objects = await sync_to_async(list)(utt_conv_objects)
+
+        utterances = []
+        for utt_conv_object in utt_conv_objects:
+            token_number += self._calculate_utterance_token_number(
+                role="assistant" if utt_conv_object.utterance.is_bot else "user",
+                content=utt_conv_object.utterance.content,
+            )
+            if token_number > token_limit:
+                break
+            self.approx_token_number = token_number
+            utterances.append(utt_conv_object.utterance)
+
+        utterances.reverse()
+        return utterances
 
 
 class ChatGptEvenLaterPromptCompletion(ChatGptLatePromptCompletion):

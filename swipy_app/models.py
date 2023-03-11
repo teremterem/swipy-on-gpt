@@ -38,6 +38,7 @@ class GptCompletion(models.Model):
     prompt = models.TextField(null=True, blank=True)
     completion = models.TextField(null=True, blank=True)
     full_api_response = models.JSONField(null=True, blank=True)
+    approx_token_number = models.IntegerField(null=True)
 
     prompt_name = models.TextField(null=True, blank=True)
     engine = models.TextField()
