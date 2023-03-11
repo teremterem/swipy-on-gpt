@@ -150,6 +150,7 @@ class SwipyUser(models.Model):
     first_name = models.TextField(null=True, blank=True)
     full_name = models.TextField(null=True, blank=True)
     current_conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, null=True, blank=True)
+    language_code = models.TextField()
 
     def __str__(self) -> str:
         return str(self.full_name)
