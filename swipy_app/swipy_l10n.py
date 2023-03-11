@@ -19,9 +19,9 @@ class SwipyL10n:
     BTN_PROCEED_WITH_SUBJECT: str = "Let's proceed with this subject 📚"
 
     MSG_START_TEMPLATE: str = "Hi {USER}! My name is {BOT}🤖\n\nHow can I help you? 😊"
-    MSG_MAIN_MENU: str = "Sure, what would you like?"
+    MSG_MAIN_MENU: str = "Sure, how can I help you? 😊"
 
-    MSG_CHOOSE_LANGUAGE: str = "Choose your language / Оберіть мову 🌐"
+    MSG_CHOOSE_LANGUAGE: str = "Choose language / Оберіть мову 🌐"
     BTN_ENGLISH: str = "English 🇬🇧"
     BTN_UKRAINIAN: str = "Українська 🇺🇦"
 
@@ -39,8 +39,8 @@ LANGUAGES = {
         BTN_THANKS="Дякую 🌟",
         BTN_NOT_HELPFUL="Не допомогло 💔",
         BTN_PROCEED_WITH_SUBJECT="Продовжуймо цю тему 📚",
-        MSG_START_TEMPLATE="Привіт {USER}! Мене звати {BOT}🤖\n\nЯк я можу тобі допомогти? 😊",
-        MSG_MAIN_MENU="Звичайно, що тебе цікавить?",
+        MSG_START_TEMPLATE="Привіт {USER}!\nМене звати {BOT}🤖\n\nЯк я можу тобі допомогти? 😊",
+        MSG_MAIN_MENU="Звичайно, як я можу тобі допомогти? 😊",
     ),
 }
 DEFAULT_LANG = LANGUAGES["en"]

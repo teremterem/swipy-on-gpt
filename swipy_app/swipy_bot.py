@@ -17,6 +17,8 @@ from swipy_app.swipy_utils import current_time_utc_ms
 #  https://stackoverflow.com/questions/30596484/python-asyncio-context
 UPDATE_DB_MODELS_VOLATILE_CACHE: dict[int, TelegramUpdate] = {}
 
+CMD_START = "/start"
+
 
 def get_all_btn_set(lang: SwipyL10n) -> set[str]:
     all_btn_set = {
@@ -32,6 +34,7 @@ def get_all_btn_set(lang: SwipyL10n) -> set[str]:
         lang.BTN_PROCEED_WITH_SUBJECT,
         lang.BTN_ENGLISH,
         lang.BTN_UKRAINIAN,
+        CMD_START,
     }
     return all_btn_set
 
@@ -55,7 +58,7 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
     lang = tg_update_in_db.swipy_user.get_lang()
 
     any_reply_button_was_pressed = update.effective_message.text in get_all_btn_set(lang)
-    start_requested = update.effective_message.text == "/start"
+    language_change_requested = update.effective_message.text in {CMD_START, lang.BTN_LANGUAGE}
     language_selected = update.effective_message.text in {lang.BTN_ENGLISH, lang.BTN_UKRAINIAN}
     expand_on_this_was_requested = update.effective_message.text == lang.BTN_EXPAND_ON_THIS
     main_menu_was_requested = update.effective_message.text == lang.BTN_MAIN_MENU
@@ -98,7 +101,7 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
             await update.effective_chat.send_chat_action(ChatAction.TYPING)
             await asyncio.sleep(10)
 
-    if start_requested:
+    if language_change_requested:
         gpt_completion_in_db = None
 
         response_msg = await update.effective_chat.send_message(
