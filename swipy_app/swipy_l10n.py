@@ -39,7 +39,7 @@ LANGUAGES = {
         BTN_THANKS="Дякую 🌟",
         BTN_NOT_HELPFUL="Не допомогло 💔",
         BTN_PROCEED_WITH_SUBJECT="Продовжуймо цю тему 📚",
-        MSG_START_TEMPLATE="Привіт {USER}!\nМене звати {BOT}🤖\n\nЯк я можу тобі допомогти? 😊",
+        MSG_START_TEMPLATE="Привіт {USER}!\n\nМене звати {BOT}🤖\n\nЯк я можу тобі допомогти? 😊",
         MSG_MAIN_MENU="Звичайно, як я можу тобі допомогти? 😊",
     ),
 }
