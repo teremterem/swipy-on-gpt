@@ -29,7 +29,7 @@ class GptPromptSettings:
 @dataclass(frozen=True)
 class GptCompletionSettings:
     prompt_settings: GptPromptSettings
-    max_tokens: int = 512  # OpenAI's default is 16
+    max_tokens: int = 1024  # OpenAI's default is 16
     temperature: float = 1.0  # Possible range - from 0.0 to 2.0
     top_p: float = 1.0  # Possible range - from 0.0 to 1.0
     frequency_penalty: float = 0.0  # Possible range - from -2.0 to 2.0

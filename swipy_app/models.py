@@ -110,7 +110,7 @@ class UtteranceConversation(models.Model):
             key = _CompletionSettingsTuple(
                 prompt_name=existing_alternative.prompt_name,
                 engine=existing_alternative.engine,
-                max_tokens=existing_alternative.max_tokens,
+                # max_tokens=existing_alternative.max_tokens,
                 temperature=existing_alternative.temperature,
                 top_p=existing_alternative.top_p,
                 frequency_penalty=existing_alternative.frequency_penalty,
@@ -122,7 +122,7 @@ class UtteranceConversation(models.Model):
             key = _CompletionSettingsTuple(
                 prompt_name=completion_config.prompt_settings.prompt_name,
                 engine=completion_config.prompt_settings.engine,
-                max_tokens=completion_config.max_tokens,
+                # max_tokens=completion_config.max_tokens,
                 temperature=completion_config.temperature,
                 top_p=completion_config.top_p,
                 frequency_penalty=completion_config.frequency_penalty,
@@ -192,7 +192,7 @@ _CompletionSettingsTuple = namedtuple(
     [
         "prompt_name",
         "engine",
-        "max_tokens",
+        # "max_tokens",
         "temperature",
         "top_p",
         "frequency_penalty",
