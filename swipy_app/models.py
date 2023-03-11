@@ -6,6 +6,7 @@ from collections import namedtuple
 from asgiref.sync import sync_to_async, async_to_sync
 from django.db import models
 
+from swipy_app.swipy_l10n import LANGUAGES, DEFAULT_LANG, SwipyL10n
 from swipy_app.swipy_utils import current_time_utc_ms
 
 if typing.TYPE_CHECKING:
@@ -151,6 +152,10 @@ class SwipyUser(models.Model):
     full_name = models.TextField(null=True, blank=True)
     current_conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, null=True, blank=True)
     language_code = models.TextField()
+
+    def get_lang(self) -> SwipyL10n:
+        lang = LANGUAGES.get(self.language_code, DEFAULT_LANG)
+        return lang
 
     def __str__(self) -> str:
         return str(self.full_name)
