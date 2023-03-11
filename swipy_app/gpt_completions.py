@@ -3,7 +3,6 @@ import random
 import traceback
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from pprint import pformat
 from typing import Any
 
 import openai
@@ -251,7 +250,10 @@ class ChatGptCompletion(BaseDialogGptCompletion):
         return messages
 
     def _convert_raw_prompt_to_str(self) -> str:
-        return pformat(self.prompt_raw, sort_dicts=False)
+        prompt_str_parts = []
+        for prompt in self.prompt_raw:
+            prompt_str_parts.append(f"<|im_start|>{prompt['role']}\n{prompt['content']}<|im_end|>")
+        return "\n".join(prompt_str_parts)
 
     async def _make_openai_call(self) -> str:
         assert self.context_utterances, "Expected at least one utterance in the context, cannot call GPT without it"
