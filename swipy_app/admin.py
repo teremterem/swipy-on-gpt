@@ -3,6 +3,7 @@ from datetime import datetime
 from functools import partial
 from pprint import pformat
 
+from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
 from django_object_actions import DjangoObjectActions, action
@@ -266,13 +267,21 @@ class SwipyUserAdmin(admin.ModelAdmin):
         "full_name",
         "chat_telegram_id",
         "current_conversation",
+        "language_code",
     ]
     readonly_fields = [
         "first_name",
         "full_name",
         "chat_telegram_id",
         # "current_conversation",
+        # "language_code",
     ]
+
+    # turn language_code into a dropdown with two options
+    def formfield_for_dbfield(self, db_field, **kwargs):
+        if db_field.name == "language_code":
+            kwargs["widget"] = forms.Select(choices=[("en", "en"), ("uk", "uk")])
+        return super().formfield_for_dbfield(db_field, **kwargs)
 
     def has_add_permission(self, request):
         return False
