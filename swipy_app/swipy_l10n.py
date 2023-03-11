@@ -11,7 +11,7 @@ class SwipyL10n:
     BTN_SMTH_IS_BOTHERING_ME: str = "Something’s bothering me 😔"
     BTN_HELP_ME_FIGHT_PROCRAST: str = "Help me fight procrastination ✅"
     BTN_SOMETHING_ELSE: str = "Something else 🤔"
-    BTN_LANGUAGE: str = "Language / Мова 🌐"
+    BTN_CHANGE_LANGUAGE: str = "Change language / Змінити мову 🌐"
     BTN_MAIN_MENU: str = "Main menu 🏠"
     BTN_EXPAND_ON_THIS: str = "Expand on this 📚"
     BTN_THANKS: str = "Thanks 🌟"
@@ -21,7 +21,7 @@ class SwipyL10n:
     MSG_START_TEMPLATE: str = "Hi {USER}! My name is {BOT}🤖\n\nHow can I help you? 😊"
     MSG_MAIN_MENU: str = "Sure, how can I help you? 😊"
 
-    MSG_CHOOSE_LANGUAGE: str = "Choose language / Оберіть мову 🌐"
+    MSG_CHOOSE_LANGUAGE: str = "Choose language / Обери мову 🌐"
     BTN_ENGLISH: str = "English 🇬🇧"
     BTN_UKRAINIAN: str = "Українська 🇺🇦"
 

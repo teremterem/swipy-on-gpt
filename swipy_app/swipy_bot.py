@@ -26,7 +26,7 @@ def get_all_btn_set(lang: SwipyL10n) -> set[str]:
         lang.BTN_SMTH_IS_BOTHERING_ME,
         lang.BTN_HELP_ME_FIGHT_PROCRAST,
         lang.BTN_SOMETHING_ELSE,
-        lang.BTN_LANGUAGE,
+        lang.BTN_CHANGE_LANGUAGE,
         lang.BTN_MAIN_MENU,
         lang.BTN_EXPAND_ON_THIS,
         lang.BTN_THANKS,
@@ -45,7 +45,7 @@ def get_main_menu(lang: SwipyL10n) -> list[list[str]]:
         [lang.BTN_SMTH_IS_BOTHERING_ME],
         [lang.BTN_HELP_ME_FIGHT_PROCRAST],
         [lang.BTN_SOMETHING_ELSE],
-        [lang.BTN_LANGUAGE],
+        [lang.BTN_CHANGE_LANGUAGE],
     ]
     return menu
 
@@ -58,7 +58,7 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
     lang = tg_update_in_db.swipy_user.get_lang()
 
     any_reply_button_was_pressed = update.effective_message.text in get_all_btn_set(lang)
-    language_change_requested = update.effective_message.text in {CMD_START, lang.BTN_LANGUAGE}
+    language_change_requested = update.effective_message.text in {CMD_START, lang.BTN_CHANGE_LANGUAGE}
     language_selected = update.effective_message.text in {lang.BTN_ENGLISH, lang.BTN_UKRAINIAN}
     expand_on_this_was_requested = update.effective_message.text == lang.BTN_EXPAND_ON_THIS
     main_menu_was_requested = update.effective_message.text == lang.BTN_MAIN_MENU
@@ -68,12 +68,6 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
         gpt_completion_settings = NO_PROMPT_COMPLETION_CONFIG
     else:
         gpt_completion_settings = MAIN_COMPLETION_CONFIG
-
-    if language_selected:
-        # start a new conversation
-        await tg_update_in_db.swipy_user.detach_current_conversation()
-
-    conversation_id = await tg_update_in_db.swipy_user.get_current_conversation_id()
 
     utterance = await Utterance.objects.acreate(
         arrival_timestamp_ms=current_time_utc_ms(),
@@ -87,7 +81,7 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
     await UtteranceConversation.objects.acreate(
         linked_timestamp_ms=utterance.arrival_timestamp_ms,
         utterance=utterance,
-        conversation_id=conversation_id,
+        conversation_id=await tg_update_in_db.swipy_user.get_current_conversation_id(),
     )
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user too ?
@@ -124,6 +118,10 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
         elif update.effective_message.text == lang.BTN_UKRAINIAN:
             tg_update_in_db.swipy_user.language_code = "uk"
         await sync_to_async(tg_update_in_db.swipy_user.save)(update_fields=["language_code"])
+
+        # start a new conversation
+        await tg_update_in_db.swipy_user.detach_current_conversation()
+
         lang = tg_update_in_db.swipy_user.get_lang()
 
         response_msg = await update.effective_chat.send_message(
@@ -157,7 +155,7 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
 
         gpt_completion = await gpt_completion_settings.fulfil_completion(
             swipy_user=tg_update_in_db.swipy_user,
-            conversation_id=conversation_id,
+            conversation_id=await tg_update_in_db.swipy_user.get_current_conversation_id(),
             tg_update_in_db=tg_update_in_db,
         )
         response_text = gpt_completion.completion.strip()  # TODO oleksandr: minor: is stripping necessary ?
@@ -197,7 +195,7 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
     utt_conv_object = await UtteranceConversation.objects.acreate(
         linked_timestamp_ms=utterance.arrival_timestamp_ms,
         utterance=utterance,
-        conversation_id=conversation_id,
+        conversation_id=await tg_update_in_db.swipy_user.get_current_conversation_id(),
         gpt_completion=gpt_completion_in_db,
     )
     if gpt_completion_in_db:
