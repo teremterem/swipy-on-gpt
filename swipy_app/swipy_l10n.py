@@ -23,7 +23,7 @@ class SwipyL10n:
 
 SwipyEng = SwipyL10n()
 SwipyUkr = SwipyL10n(
-    MAX_CONVERSATION_LENGTH=16,
+    MAX_CONVERSATION_LENGTH=14,
     BTN_I_JUST_WANT_TO_CHAT="Хочу просто поговорити 😊",
     BTN_SMTH_IS_BOTHERING_ME="Мене щось турбує 😔",
     BTN_HELP_ME_FIGHT_PROCRAST="Допоможи з прокрастинацією ✅",
