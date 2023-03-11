@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 
 
-# TODO oleksandr: replace with Django l10n
+# TODO oleksandr: replace with Django l10n ?
 @dataclass(frozen=True)
 class SwipyL10n:
     PROMPT_HEADER_TEMPLATE: str = (
