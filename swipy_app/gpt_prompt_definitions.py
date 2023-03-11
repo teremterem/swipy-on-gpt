@@ -8,7 +8,7 @@ from swipy_app.gpt_completions import (
     TextDialogGptCompletion,
 )
 from swipy_app.swipy_config import BOT_NAME
-from swipy_app.swipy_l10n import SwipyEng
+from swipy_app.swipy_l10n import DefaultLang
 
 
 def _generate_completion_config_alternatives(
@@ -43,7 +43,7 @@ CHATGPT_U_MODEL = "gpt-3.5-turbo"  # TODO oleksandr: compare with "gpt-3.5-turbo
 DAVINCI_MODEL = "text-davinci-003"
 
 ACTIVE_LISTENING_CHATGPT_PROMPT_TEMPLATE = (
-    SwipyEng.ACTIVE_LISTENING_PROMPT_TEMPLATE + SwipyEng.ENSURE_INSTRUCTIONS_FOLLOWED
+    DefaultLang.ACTIVE_LISTENING_PROMPT_TEMPLATE + DefaultLang.ENSURE_INSTRUCTIONS_FOLLOWED
 )
 
 ASK_EVERYTHING_0_1_PROMPT_HEADER_TEMPLATE = (
@@ -60,9 +60,9 @@ GEN_ALT_BUTTONS = {
         [
             GptPromptSettings(
                 # _U - receives updates
-                prompt_name="active-listening-CHATGPT_U-0.8" + SwipyEng.PROMPT_CONFIG_NAME_SUFFIX,
+                prompt_name="active-listening-CHATGPT_U-0.8" + DefaultLang.PROMPT_CONFIG_NAME_SUFFIX,
                 prompt_template=(
-                    SwipyEng.PROMPT_HEADER_TEMPLATE,
+                    DefaultLang.PROMPT_HEADER_TEMPLATE,
                     ACTIVE_LISTENING_CHATGPT_PROMPT_TEMPLATE,
                 ),
                 engine=CHATGPT_U_MODEL,
@@ -71,10 +71,10 @@ GEN_ALT_BUTTONS = {
             ),
             GptPromptSettings(
                 # _U - receives updates
-                prompt_name="active-listening-CHATGPT_U-0.8-early-prompt" + SwipyEng.PROMPT_CONFIG_NAME_SUFFIX,
+                prompt_name="active-listening-CHATGPT_U-0.8-early-prompt" + DefaultLang.PROMPT_CONFIG_NAME_SUFFIX,
                 prompt_template=" ".join(
                     [
-                        SwipyEng.PROMPT_HEADER_TEMPLATE,
+                        DefaultLang.PROMPT_HEADER_TEMPLATE,
                         ACTIVE_LISTENING_CHATGPT_PROMPT_TEMPLATE,
                     ]
                 ),
@@ -102,8 +102,8 @@ GEN_ALT_BUTTONS = {
                 prompt_name="active-listening-DAVINCI-0.8",
                 prompt_template=" ".join(
                     [
-                        SwipyEng.PROMPT_HEADER_TEMPLATE,
-                        SwipyEng.ACTIVE_LISTENING_PROMPT_TEMPLATE,
+                        DefaultLang.PROMPT_HEADER_TEMPLATE,
+                        DefaultLang.ACTIVE_LISTENING_PROMPT_TEMPLATE,
                     ]
                 )
                 + "\n\n---\n\n{DIALOG}",
