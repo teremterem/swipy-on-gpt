@@ -7,11 +7,13 @@ from typing import Any
 
 import openai
 from asgiref.sync import sync_to_async
-from transformers import GPT2TokenizerFast
+from transformers import GPT2Tokenizer
 
 from swipy_app.models import GptCompletion, TelegramUpdate, Utterance, SwipyUser, UtteranceConversation
 from swipy_app.swipy_config import MOCK_GPT
 from swipy_app.swipy_utils import current_time_utc_ms
+
+TOKENIZER = GPT2Tokenizer.from_pretrained("gpt2")
 
 
 @dataclass(frozen=True)
@@ -253,14 +255,14 @@ class ChatGptCompletion(BaseDialogGptCompletion):
         return messages
 
     def _build_chatml_turn(self, role: str, content: str) -> str:
-        turn = f"<|im_start|>{role}\n{content}<|im_end|>"
+        turn = f"<|im_start|>{role}\n{content}<|im_end|>\n"
         return turn
 
     def _convert_raw_prompt_to_str(self) -> str:
         prompt_str_parts = []
         for prompt in self.prompt_raw:
             prompt_str_parts.append(self._build_chatml_turn(role=prompt["role"], content=prompt["content"]))
-        return "\n".join(prompt_str_parts)
+        return "".join(prompt_str_parts)
 
     async def _make_openai_call(self) -> str:
         assert self.context_utterances, "Expected at least one utterance in the context, cannot call GPT without it"
@@ -282,9 +284,6 @@ class ChatGptCompletion(BaseDialogGptCompletion):
             gpt_response.choices[0].message.role == "assistant"
         ), f"Expected assistant's response, but got {gpt_response.choices[0].message.role}"
         return gpt_response.choices[0].message.content
-
-
-TOKENIZER = GPT2TokenizerFast.from_pretrained("gpt2")
 
 
 class ChatGptLatePromptCompletion(ChatGptCompletion):
@@ -312,15 +311,21 @@ class ChatGptLatePromptCompletion(ChatGptCompletion):
         return token_limit
 
     def _calculate_static_token_number(self) -> int:
+        # TODO oleksandr: reimplement using this ?
+        #  https://platform.openai.com/docs/guides/chat/introduction
+        #  `Counting tokens for chat API calls`
         static_prompt = (
-            f"\n{self._build_chatml_turn(role='system', content=self.settings.prompt_settings.prompt_template[0])}"
-            f"\n{self._build_chatml_turn(role='system', content=self.settings.prompt_settings.prompt_template[1])}"
+            f"{self._build_chatml_turn(role='system', content=self.settings.prompt_settings.prompt_template[0])}"
+            f"{self._build_chatml_turn(role='system', content=self.settings.prompt_settings.prompt_template[1])}"
         )
         static_token_num = len(TOKENIZER(static_prompt)["input_ids"])
         return static_token_num
 
     def _calculate_utterance_token_number(self, role: str, content: str) -> int:
-        turn = f"\n{self._build_chatml_turn(role=role, content=content)}"
+        # TODO oleksandr: reimplement using this ?
+        #  https://platform.openai.com/docs/guides/chat/introduction
+        #  `Counting tokens for chat API calls`
+        turn = self._build_chatml_turn(role=role, content=content)
         turn_token_num = len(TOKENIZER(turn)["input_ids"])
         return turn_token_num
 
