@@ -369,6 +369,7 @@ class ChatGptLatePromptCompletion(ChatGptCompletion):
     ) -> list[Utterance]:
         conv_hard_limit = 1000
         token_limit = self._get_token_limit()
+        # print(token_limit)  # TODO oleksandr: replace with logging DEBUG
         self.estimated_prompt_token_number = self._calculate_static_token_number()
         token_number = self.estimated_prompt_token_number
 
@@ -398,6 +399,7 @@ class ChatGptLatePromptCompletion(ChatGptCompletion):
                 role="assistant" if utt_conv_object.utterance.is_bot else "user",
                 content=utt_conv_object.utterance.text,
             )
+            # print(token_number)  # TODO oleksandr: replace with logging DEBUG
             if token_number > token_limit:
                 break
             self.estimated_prompt_token_number = token_number
