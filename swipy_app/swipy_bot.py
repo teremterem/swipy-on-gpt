@@ -3,7 +3,7 @@ import asyncio
 from typing import Sequence, Union
 
 from asgiref.sync import sync_to_async
-from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton
+from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton, Message
 from telegram._utils.types import ReplyMarkup
 from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
@@ -52,8 +52,22 @@ def get_main_menu(lang: SwipyL10n) -> list[list[str]]:
     return menu
 
 
+async def reboot_old_conversation(reply_to_message: Message) -> None:
+    utterance = await sync_to_async(Utterance.objects.filter(telegram_message_id=reply_to_message.message_id).first)()
+    print()
+    print()
+    print()
+    print(utterance)
+    print()
+    print()
+    print()
+
+
 async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # pylint: disable=too-many-locals,too-many-statements,too-many-branches
+    if update.effective_message.reply_to_message:
+        await reboot_old_conversation(update.effective_message.reply_to_message)
+
     user_first_name = update.effective_user.first_name  # TODO oleksandr: update db user info upon every tg update ?
     tg_update_in_db = UPDATE_DB_MODELS_VOLATILE_CACHE.pop(id(update))
 
