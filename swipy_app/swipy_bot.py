@@ -9,7 +9,7 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Messa
 from telegram.ext.filters import TEXT
 
 from swipy_app.gpt_prompt_definitions import MAIN_COMPLETION_CONFIG, NO_PROMPT_COMPLETION_CONFIG
-from swipy_app.models import Utterance, TelegramUpdate, UtteranceConversation
+from swipy_app.models import Utterance, TelegramUpdate, UtteranceConversation, SentMessage
 from swipy_app.swipy_config import TELEGRAM_TOKEN
 from swipy_app.swipy_l10n import SwipyL10n
 from swipy_app.swipy_utils import current_time_utc_ms
@@ -221,6 +221,12 @@ async def send_and_save_message(
     response_msg = await update.effective_chat.send_message(
         text=text,
         reply_markup=reply_markup,
+    )
+    await SentMessage.objects.acreate(
+        triggering_update=update,
+        swipy_user=tg_update_in_db.swipy_user,
+        sent_timestamp_ms=current_time_utc_ms(),
+        payload=response_msg.to_dict(),
     )
     return response_msg
 
