@@ -359,7 +359,7 @@ class ChatGptLatePromptCompletion(ChatGptCompletion):
         for utt_conv_object in utt_conv_objects:
             token_number += self._calculate_utterance_token_number(
                 role="assistant" if utt_conv_object.utterance.is_bot else "user",
-                content=utt_conv_object.utterance.content,
+                content=utt_conv_object.utterance.text,
             )
             if token_number > token_limit:
                 break
