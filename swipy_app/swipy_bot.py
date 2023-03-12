@@ -1,8 +1,9 @@
 # pylint: disable=unused-argument
 import asyncio
+from typing import Sequence, Union
 
 from asgiref.sync import sync_to_async
-from telegram import Update, ReplyKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton
 from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from telegram.ext.filters import TEXT
@@ -98,16 +99,14 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
     if language_change_requested:
         gpt_completion_in_db = None
 
-        response_msg = await update.effective_chat.send_message(
+        response_msg = send_and_save_message(
+            tg_update_in_db=tg_update_in_db,
+            update=update,
             text=lang.MSG_CHOOSE_LANGUAGE,
-            reply_markup=ReplyKeyboardMarkup(
-                [
-                    [lang.BTN_ENGLISH],
-                    [lang.BTN_UKRAINIAN],
-                ],
-                resize_keyboard=True,
-                one_time_keyboard=True,
-            ),
+            reply_markup=[
+                [lang.BTN_ENGLISH],
+                [lang.BTN_UKRAINIAN],
+            ],
         )
 
     elif language_selected:
@@ -124,28 +123,24 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
 
         lang = tg_update_in_db.swipy_user.get_lang()
 
-        response_msg = await update.effective_chat.send_message(
+        response_msg = send_and_save_message(
+            tg_update_in_db=tg_update_in_db,
+            update=update,
             text=lang.MSG_START_TEMPLATE.format(
                 USER=user_first_name,
                 BOT=gpt_completion_settings.prompt_settings.bot_name,
             ),
-            reply_markup=ReplyKeyboardMarkup(
-                get_main_menu(lang),
-                resize_keyboard=True,
-                one_time_keyboard=True,
-            ),
+            reply_markup=get_main_menu(lang),
         )
 
     elif main_menu_was_requested:
         gpt_completion_in_db = None
 
-        response_msg = await update.effective_chat.send_message(
+        response_msg = send_and_save_message(
+            tg_update_in_db=tg_update_in_db,
+            update=update,
             text=lang.MSG_MAIN_MENU,
-            reply_markup=ReplyKeyboardMarkup(
-                get_main_menu(lang),
-                resize_keyboard=True,
-                one_time_keyboard=True,
-            ),
+            reply_markup=get_main_menu(lang),
         )
 
     else:
@@ -174,13 +169,11 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
         if not expand_on_this_was_requested:
             buttons.append([lang.BTN_MAIN_MENU])
 
-        response_msg = await update.effective_chat.send_message(
+        response_msg = send_and_save_message(
+            tg_update_in_db=tg_update_in_db,
+            update=update,
             text=response_text,
-            reply_markup=ReplyKeyboardMarkup(
-                buttons,
-                resize_keyboard=True,
-                one_time_keyboard=True,
-            ),
+            reply_markup=buttons,
         )
 
     utterance = await Utterance.objects.acreate(
@@ -203,6 +196,33 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
         await sync_to_async(gpt_completion_in_db.save)(update_fields=["alternative_to_utt_conv"])
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation (maybe not here)
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user too ? (maybe not here)
+
+
+async def send_and_save_message(
+    tg_update_in_db: TelegramUpdate,
+    update: Update,
+    text: str,
+    reply_markup: ReplyKeyboardMarkup
+    | ReplyKeyboardRemove
+    | Sequence[Sequence[Union[str, KeyboardButton]]]
+    | None = None,
+    resize_keyboard: bool = True,
+    one_time_keyboard: bool = True,
+):
+    # pylint: disable=too-many-arguments
+    if reply_markup:
+        if not isinstance(reply_markup, (ReplyKeyboardMarkup, ReplyKeyboardRemove)):
+            reply_markup = ReplyKeyboardMarkup(
+                keyboard=reply_markup,
+                resize_keyboard=resize_keyboard,
+                one_time_keyboard=one_time_keyboard,
+            )
+
+    response_msg = await update.effective_chat.send_message(
+        text=text,
+        reply_markup=reply_markup,
+    )
+    return response_msg
 
 
 # noinspection PyUnusedLocal
