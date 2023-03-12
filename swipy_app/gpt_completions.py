@@ -326,6 +326,7 @@ class ChatGptLatePromptCompletion(ChatGptCompletion):
                         num_tokens += -1  # role is always required and always 1 token
             if prime:
                 num_tokens += 2  # every reply is primed with <im_start>assistant
+            # TODO oleksandr: why is num_tokens off by 1 compared to info from openai response?
             return num_tokens
 
         raise NotImplementedError(
@@ -356,7 +357,7 @@ class ChatGptLatePromptCompletion(ChatGptCompletion):
                     "role": role,
                 },
             ],
-            prime=True,
+            prime=False,
         )
         return token_num
 
