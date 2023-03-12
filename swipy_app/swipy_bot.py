@@ -65,6 +65,7 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
     expand_on_this_was_requested = update.effective_message.text == lang.BTN_EXPAND_ON_THIS
     main_menu_was_requested = update.effective_message.text == lang.BTN_MAIN_MENU
     thanks_was_requested = update.effective_message.text == lang.BTN_THANKS
+    help_fight_procrast_was_requested = update.effective_message.text == lang.BTN_HELP_ME_FIGHT_PROCRAST
 
     if expand_on_this_was_requested:
         gpt_completion_settings = NO_PROMPT_COMPLETION_CONFIG
@@ -87,15 +88,6 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
     )
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user too ?
-
-    keep_typing = True
-
-    async def _keep_typing_task():
-        for _ in range(10):
-            if not keep_typing:
-                break
-            await update.effective_chat.send_chat_action(ChatAction.TYPING)
-            await asyncio.sleep(10)
 
     if language_change_requested:
         gpt_completion_in_db = None
@@ -144,7 +136,28 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
             reply_markup=get_main_menu(lang),
         )
 
+    elif help_fight_procrast_was_requested:
+        gpt_completion_in_db = None
+
+        response_msg = await send_and_save_message(
+            tg_update_in_db=tg_update_in_db,
+            update=update,
+            text=lang.MSG_HELP_FIGHT_PROCRAST,
+            reply_markup=[
+                [lang.BTN_MAIN_MENU],
+            ],
+        )
+
     else:
+        keep_typing = True
+
+        async def _keep_typing_task():
+            for _ in range(10):
+                if not keep_typing:
+                    break
+                await update.effective_chat.send_chat_action(ChatAction.TYPING)
+                await asyncio.sleep(10)
+
         if not any_reply_button_was_pressed:
             await asyncio.sleep(1)  # TODO oleksandr: start processing in parallel maybe ?
         asyncio.get_event_loop().create_task(_keep_typing_task())

@@ -20,6 +20,10 @@ class SwipyL10n:
 
     MSG_START_TEMPLATE: str = "Hi {USER}! My name is {BOT}🤖\n\nHow can I help you? 😊"
     MSG_MAIN_MENU: str = "Sure, how can I help you? 😊"
+    MSG_HELP_FIGHT_PROCRAST: str = (
+        "Sure, I'd be happy to help! Can you tell me more about what you're procrastinating on and why you're "
+        "finding it difficult to get started?"
+    )
 
     MSG_CHOOSE_LANGUAGE: str = "Choose language / Обери мову 🌐"
     BTN_ENGLISH: str = "English 🇬🇧"
@@ -41,6 +45,9 @@ LANGUAGES = {
         BTN_PROCEED_WITH_SUBJECT="Продовжуймо цю тему 📚",
         MSG_START_TEMPLATE="Привіт {USER}!\n\nМене звати {BOT}🤖\n\nЯк я можу тобі допомогти? 😊",
         MSG_MAIN_MENU="Звичайно, як я можу тобі допомогти? 😊",
+        MSG_HELP_FIGHT_PROCRAST=(
+            "Звичайно, радий допомогти! Чи можеш розповісти мені, з чим саме ти затягуєш і чому тобі важко розпочати?"
+        ),
     ),
 }
 DEFAULT_LANG = LANGUAGES["en"]
