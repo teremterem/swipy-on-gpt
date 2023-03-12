@@ -10,7 +10,7 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Messa
 from telegram.ext.filters import TEXT
 
 from swipy_app.gpt_prompt_definitions import MAIN_COMPLETION_CONFIG, NO_PROMPT_COMPLETION_CONFIG
-from swipy_app.models import Utterance, TelegramUpdate, UtteranceConversation, SentMessage
+from swipy_app.models import Utterance, TelegramUpdate, UtteranceConversation, SentMessage, SwipyUser
 from swipy_app.swipy_config import TELEGRAM_TOKEN
 from swipy_app.swipy_l10n import SwipyL10n
 from swipy_app.swipy_utils import current_time_utc_ms
@@ -94,7 +94,6 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
 
         response_msg = await send_and_save_message(
             tg_update_in_db=tg_update_in_db,
-            update=update,
             text=lang.MSG_CHOOSE_LANGUAGE,
             reply_markup=[
                 [lang.BTN_ENGLISH],
@@ -118,7 +117,6 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
 
         response_msg = await send_and_save_message(
             tg_update_in_db=tg_update_in_db,
-            update=update,
             text=lang.MSG_START_TEMPLATE.format(
                 USER=user_first_name,
                 BOT=gpt_completion_settings.prompt_settings.bot_name,
@@ -131,7 +129,6 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
 
         response_msg = await send_and_save_message(
             tg_update_in_db=tg_update_in_db,
-            update=update,
             text=lang.MSG_MAIN_MENU,
             reply_markup=get_main_menu(lang),
         )
@@ -141,7 +138,6 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
 
         response_msg = await send_and_save_message(
             tg_update_in_db=tg_update_in_db,
-            update=update,
             text=lang.MSG_HELP_FIGHT_PROCRAST,
             reply_markup=[
                 [lang.BTN_MAIN_MENU],
@@ -185,7 +181,6 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
 
         response_msg = await send_and_save_message(
             tg_update_in_db=tg_update_in_db,
-            update=update,
             text=response_text,
             reply_markup=buttons,
         )
@@ -213,14 +208,19 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
 
 
 async def send_and_save_message(
-    tg_update_in_db: TelegramUpdate,
-    update: Update,
+    tg_update_in_db: TelegramUpdate | None,
     text: str,
     reply_markup: ReplyMarkup | Sequence[Sequence[Union[str, KeyboardButton]]] | None = None,
     resize_keyboard: bool = True,
     one_time_keyboard: bool = True,
+    swipy_user: SwipyUser | None = None,
+    chat_id: Union[int, str] | None = None,
 ):
     # pylint: disable=too-many-arguments
+    if not swipy_user:
+        swipy_user = tg_update_in_db.swipy_user
+    if not chat_id:
+        chat_id = swipy_user.chat_telegram_id
     if reply_markup:
         if not isinstance(reply_markup, (ReplyKeyboardMarkup, ReplyKeyboardRemove)):
             reply_markup = ReplyKeyboardMarkup(
@@ -229,13 +229,14 @@ async def send_and_save_message(
                 one_time_keyboard=one_time_keyboard,
             )
 
-    response_msg = await update.effective_chat.send_message(
+    response_msg = await application.bot.send_message(
+        chat_id=chat_id,
         text=text,
         reply_markup=reply_markup,
     )
     await SentMessage.objects.acreate(
         triggering_update=tg_update_in_db,
-        swipy_user=tg_update_in_db.swipy_user,
+        swipy_user=swipy_user,
         sent_timestamp_ms=current_time_utc_ms(),
         response_payload=response_msg.to_dict(),
         part_of_req_payload=reply_markup.to_dict() if reply_markup else None,

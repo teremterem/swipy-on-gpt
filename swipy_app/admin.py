@@ -3,6 +3,7 @@ from datetime import datetime
 from functools import partial
 from pprint import pformat
 
+from asgiref.sync import async_to_sync
 from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
@@ -19,6 +20,7 @@ from swipy_app.models import (
     UtteranceConversation,
     SentMessage,
 )
+from swipy_app.swipy_bot import send_and_save_message
 
 
 class SentMessageInline(admin.TabularInline):
@@ -319,7 +321,7 @@ class ConversationInline(admin.TabularInline):
     show_change_link = True
 
 
-class SwipyUserAdmin(admin.ModelAdmin):
+class SwipyUserAdmin(DjangoObjectActions, admin.ModelAdmin):
     inlines = [ConversationInline]
     ordering = ["full_name", "chat_telegram_id"]
     list_display = ["id", "full_name", "chat_telegram_id", "current_conversation"]
@@ -338,12 +340,24 @@ class SwipyUserAdmin(admin.ModelAdmin):
         # "current_conversation",
         # "language_code",
     ]
+    change_actions = ["wake_up"]
 
     # turn language_code into a dropdown with two options
     def formfield_for_dbfield(self, db_field, **kwargs):
         if db_field.name == "language_code":
             kwargs["widget"] = forms.Select(choices=[("en", "en"), ("uk", "uk")])
         return super().formfield_for_dbfield(db_field, **kwargs)
+
+    def wake_up(self, request, obj):
+        async_to_sync(send_and_save_message)(
+            tg_update_in_db=None,
+            swipy_user=obj,
+            text=obj.get_lang().MSG_CHOOSE_LANGUAGE,
+            reply_markup=[
+                [obj.get_lang().BTN_ENGLISH],
+                [obj.get_lang().BTN_UKRAINIAN],
+            ],
+        )
 
     def has_add_permission(self, request):
         return False
