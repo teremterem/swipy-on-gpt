@@ -89,6 +89,15 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user.current_conversation
     # TODO oleksandr: update last_update_timestamp_ms in swipy_user too ?
 
+    keep_typing = True
+
+    async def _keep_typing_task():
+        for _ in range(10):
+            if not keep_typing:
+                break
+            await update.effective_chat.send_chat_action(ChatAction.TYPING)
+            await asyncio.sleep(10)
+
     if language_change_requested:
         gpt_completion_in_db = None
 
@@ -136,6 +145,11 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
     elif help_fight_procrast_was_requested:
         gpt_completion_in_db = None
 
+        asyncio.get_event_loop().create_task(_keep_typing_task())
+        await asyncio.sleep(1)
+
+        keep_typing = False
+
         response_msg = await send_and_save_message(
             tg_update_in_db=tg_update_in_db,
             text=lang.MSG_HELP_FIGHT_PROCRAST,
@@ -145,15 +159,6 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
         )
 
     else:
-        keep_typing = True
-
-        async def _keep_typing_task():
-            for _ in range(10):
-                if not keep_typing:
-                    break
-                await update.effective_chat.send_chat_action(ChatAction.TYPING)
-                await asyncio.sleep(10)
-
         if not any_reply_button_was_pressed:
             await asyncio.sleep(1)  # TODO oleksandr: start processing in parallel maybe ?
         asyncio.get_event_loop().create_task(_keep_typing_task())
