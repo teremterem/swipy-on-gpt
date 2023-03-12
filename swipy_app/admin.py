@@ -51,6 +51,7 @@ class GptCompletionAdmin(admin.ModelAdmin):
         "prompt_pre",
         "completion_pre",
         "pretty_full_api_response",
+        "approx_token_number",
         "alternative_to_utt_conv",
         "prompt_name",
         "engine",
