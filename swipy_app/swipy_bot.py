@@ -99,7 +99,7 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
     if language_change_requested:
         gpt_completion_in_db = None
 
-        response_msg = send_and_save_message(
+        response_msg = await send_and_save_message(
             tg_update_in_db=tg_update_in_db,
             update=update,
             text=lang.MSG_CHOOSE_LANGUAGE,
@@ -123,7 +123,7 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
 
         lang = tg_update_in_db.swipy_user.get_lang()
 
-        response_msg = send_and_save_message(
+        response_msg = await send_and_save_message(
             tg_update_in_db=tg_update_in_db,
             update=update,
             text=lang.MSG_START_TEMPLATE.format(
@@ -136,7 +136,7 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
     elif main_menu_was_requested:
         gpt_completion_in_db = None
 
-        response_msg = send_and_save_message(
+        response_msg = await send_and_save_message(
             tg_update_in_db=tg_update_in_db,
             update=update,
             text=lang.MSG_MAIN_MENU,
@@ -169,7 +169,7 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
         if not expand_on_this_was_requested:
             buttons.append([lang.BTN_MAIN_MENU])
 
-        response_msg = send_and_save_message(
+        response_msg = await send_and_save_message(
             tg_update_in_db=tg_update_in_db,
             update=update,
             text=response_text,
