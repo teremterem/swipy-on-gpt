@@ -223,7 +223,7 @@ async def send_and_save_message(
         reply_markup=reply_markup,
     )
     await SentMessage.objects.acreate(
-        triggering_update=update,
+        triggering_update=tg_update_in_db,
         swipy_user=tg_update_in_db.swipy_user,
         sent_timestamp_ms=current_time_utc_ms(),
         payload=response_msg.to_dict(),
