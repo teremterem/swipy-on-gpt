@@ -28,7 +28,8 @@ class SentMessage(models.Model):
     swipy_user = models.ForeignKey("SwipyUser", on_delete=models.CASCADE, null=True)
     triggering_update = models.ForeignKey(TelegramUpdate, on_delete=models.CASCADE, null=True)
 
-    payload = models.JSONField()
+    part_of_req_payload = models.JSONField(null=True, blank=True)
+    response_payload = models.JSONField()
 
 
 class GptCompletion(models.Model):

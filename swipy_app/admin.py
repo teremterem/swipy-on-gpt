@@ -50,9 +50,9 @@ class TelegramUpdateAdmin(admin.ModelAdmin):
 class SentMessageAdmin(admin.ModelAdmin):
     ordering = ["-sent_timestamp_ms"]
     list_filter = ["swipy_user"]
-    list_display = ["id", "sent_time", "pretty_payload", "swipy_user"]
-    list_display_links = ["id", "sent_time"]
-    fields = ["swipy_user", "sent_time", "pretty_payload", "sent_timestamp_ms"]
+    list_display = ["sent_time", "pretty_response_payload", "pretty_part_of_req_payload", "swipy_user"]
+    list_display_links = ["sent_time"]
+    fields = ["swipy_user", "sent_time", "pretty_response_payload", "pretty_part_of_req_payload", "sent_timestamp_ms"]
 
     def has_add_permission(self, request):
         return False
@@ -63,9 +63,17 @@ class SentMessageAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
         return False
 
-    @admin.display(description="Payload")
-    def pretty_payload(self, obj):
-        return format_html('<pre style="white-space: pre-wrap">{}</pre>', pformat(obj.payload, sort_dicts=False))
+    @admin.display(description="Part of req. payload")
+    def pretty_part_of_req_payload(self, obj):
+        return format_html(
+            '<pre style="white-space: pre-wrap">{}</pre>', pformat(obj.part_of_req_payload, sort_dicts=False)
+        )
+
+    @admin.display(description="Response payload")
+    def pretty_response_payload(self, obj):
+        return format_html(
+            '<pre style="white-space: pre-wrap">{}</pre>', pformat(obj.response_payload, sort_dicts=False)
+        )
 
     @admin.display(description="Arrival time")
     def sent_time(self, obj):

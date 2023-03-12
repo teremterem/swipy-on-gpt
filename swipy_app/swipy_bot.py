@@ -4,6 +4,7 @@ from typing import Sequence, Union
 
 from asgiref.sync import sync_to_async
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton
+from telegram._utils.types import ReplyMarkup
 from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from telegram.ext.filters import TEXT
@@ -202,10 +203,7 @@ async def send_and_save_message(
     tg_update_in_db: TelegramUpdate,
     update: Update,
     text: str,
-    reply_markup: ReplyKeyboardMarkup
-    | ReplyKeyboardRemove
-    | Sequence[Sequence[Union[str, KeyboardButton]]]
-    | None = None,
+    reply_markup: ReplyMarkup | Sequence[Sequence[Union[str, KeyboardButton]]] | None = None,
     resize_keyboard: bool = True,
     one_time_keyboard: bool = True,
 ):
@@ -226,7 +224,8 @@ async def send_and_save_message(
         triggering_update=tg_update_in_db,
         swipy_user=tg_update_in_db.swipy_user,
         sent_timestamp_ms=current_time_utc_ms(),
-        payload=response_msg.to_dict(),
+        response_payload=response_msg.to_dict(),
+        part_of_req_payload=reply_markup.to_dict() if reply_markup else None,
     )
     return response_msg
 
