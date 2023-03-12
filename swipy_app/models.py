@@ -23,6 +23,14 @@ class TelegramUpdate(models.Model):
     payload = models.JSONField()
 
 
+class SentMessage(models.Model):
+    sent_timestamp_ms = models.BigIntegerField()
+    swipy_user = models.ForeignKey("SwipyUser", on_delete=models.CASCADE, null=True)
+    triggering_update = models.ForeignKey(TelegramUpdate, on_delete=models.CASCADE, null=True)
+
+    payload = models.JSONField()
+
+
 class GptCompletion(models.Model):
     request_timestamp_ms = models.BigIntegerField()
     arrival_timestamp_ms = models.BigIntegerField(null=True)
