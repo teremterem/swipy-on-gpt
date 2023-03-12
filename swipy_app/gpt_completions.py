@@ -305,7 +305,7 @@ class ChatGptLatePromptCompletion(ChatGptCompletion):
         return messages
 
     def _get_token_limit(self) -> int:
-        token_limit = 3584 - self.settings.max_tokens  # minus maximum number of tokens for the response
+        token_limit = 3840 - self.settings.max_tokens  # minus maximum number of tokens for the response
         return token_limit
 
     def num_tokens_from_messages(self, messages: list[dict[str, str]], prime=True):
