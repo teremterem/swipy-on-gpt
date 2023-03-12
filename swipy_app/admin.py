@@ -52,7 +52,14 @@ class SentMessageAdmin(admin.ModelAdmin):
     list_filter = ["swipy_user"]
     list_display = ["sent_time", "pretty_response_payload", "pretty_part_of_req_payload", "swipy_user"]
     list_display_links = ["sent_time"]
-    fields = ["swipy_user", "sent_time", "pretty_response_payload", "pretty_part_of_req_payload", "sent_timestamp_ms"]
+    fields = [
+        "swipy_user",
+        "sent_time",
+        "pretty_response_payload",
+        "pretty_part_of_req_payload",
+        "sent_timestamp_ms",
+        "triggering_update",
+    ]
 
     def has_add_permission(self, request):
         return False
