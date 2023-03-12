@@ -10,7 +10,15 @@ from django_object_actions import DjangoObjectActions, action
 
 from swipy_app.gpt_completions import GptCompletionSettings
 from swipy_app.gpt_prompt_definitions import GEN_ALT_BUTTONS
-from swipy_app.models import TelegramUpdate, Utterance, GptCompletion, Conversation, SwipyUser, UtteranceConversation
+from swipy_app.models import (
+    TelegramUpdate,
+    Utterance,
+    GptCompletion,
+    Conversation,
+    SwipyUser,
+    UtteranceConversation,
+    SentMessage,
+)
 
 
 class TelegramUpdateAdmin(admin.ModelAdmin):
@@ -37,6 +45,32 @@ class TelegramUpdateAdmin(admin.ModelAdmin):
     def arrival_time(self, obj):
         # TODO oleksandr: get rid of duplicate code
         return datetime.fromtimestamp(obj.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+
+
+class SentMessageAdmin(admin.ModelAdmin):
+    ordering = ["-sent_timestamp_ms"]
+    list_filter = ["swipy_user"]
+    list_display = ["id", "sent_time", "pretty_payload", "swipy_user"]
+    list_display_links = ["id", "sent_time"]
+    fields = ["swipy_user", "sent_time", "pretty_payload", "sent_timestamp_ms"]
+
+    def has_add_permission(self, request):
+        return False
+
+    # def has_delete_permission(self, request, obj=None):
+    #     return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description="Payload")
+    def pretty_payload(self, obj):
+        return format_html('<pre style="white-space: pre-wrap">{}</pre>', pformat(obj.payload, sort_dicts=False))
+
+    @admin.display(description="Arrival time")
+    def sent_time(self, obj):
+        # TODO oleksandr: get rid of duplicate code
+        return datetime.fromtimestamp(obj.sent_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
 class GptCompletionAdmin(admin.ModelAdmin):
@@ -295,6 +329,7 @@ class SwipyUserAdmin(admin.ModelAdmin):
 
 
 admin.site.register(TelegramUpdate, TelegramUpdateAdmin)
+admin.site.register(SentMessage, SentMessageAdmin)
 admin.site.register(GptCompletion, GptCompletionAdmin)
 admin.site.register(Conversation, ConversationAdmin)
 admin.site.register(Utterance, UtteranceAdmin)
