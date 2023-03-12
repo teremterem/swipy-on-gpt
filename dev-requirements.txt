@@ -224,7 +224,6 @@ notebook-shim==0.2.2
     # via nbclassic
 packaging==23.0
     # via
-    #   -c requirements.txt
     #   black
     #   build
     #   ipykernel
@@ -290,7 +289,6 @@ python-json-logger==2.0.7
     # via jupyter-events
 pyyaml==6.0
     # via
-    #   -c requirements.txt
     #   jupyter-events
     #   pre-commit
 pyzmq==25.0.0
@@ -370,9 +368,7 @@ traitlets==5.9.0
     #   nbformat
     #   notebook
 typing-extensions==4.5.0
-    # via
-    #   -c requirements.txt
-    #   pydantic
+    # via pydantic
 uplink==0.9.7
     # via humanloop
 uri-template==1.2.0

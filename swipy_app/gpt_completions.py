@@ -6,14 +6,12 @@ from dataclasses import dataclass
 from typing import Any
 
 import openai
+import tiktoken
 from asgiref.sync import sync_to_async
-from transformers import GPT2Tokenizer
 
 from swipy_app.models import GptCompletion, TelegramUpdate, Utterance, SwipyUser, UtteranceConversation
 from swipy_app.swipy_config import MOCK_GPT
 from swipy_app.swipy_utils import current_time_utc_ms
-
-TOKENIZER = GPT2Tokenizer.from_pretrained("gpt2")
 
 
 @dataclass(frozen=True)
@@ -74,7 +72,7 @@ class BaseDialogGptCompletion(ABC):
         self.prompt_raw: Any | None = None
         self.prompt_str: str | None = None
         self.completion: str | None = None
-        self.approx_token_number: int | None = None
+        self.estimated_prompt_token_number: int | None = None
 
     @abstractmethod
     async def _build_raw_prompt(self, stop_before_utt_conv: UtteranceConversation | None = None) -> Any:
@@ -142,7 +140,7 @@ class BaseDialogGptCompletion(ABC):
             top_p=self.settings.top_p,
             frequency_penalty=self.settings.frequency_penalty,
             presence_penalty=self.settings.presence_penalty,
-            approx_token_number=self.approx_token_number,
+            estimated_prompt_token_number=self.estimated_prompt_token_number,
         )
 
         try:
@@ -310,24 +308,57 @@ class ChatGptLatePromptCompletion(ChatGptCompletion):
         token_limit = 3584 - self.settings.max_tokens  # minus maximum number of tokens for the response
         return token_limit
 
-    def _calculate_static_token_number(self) -> int:
-        # TODO oleksandr: reimplement using this ?
-        #  https://platform.openai.com/docs/guides/chat/introduction
-        #  `Counting tokens for chat API calls`
-        static_prompt = (
-            f"{self._build_chatml_turn(role='system', content=self.settings.prompt_settings.prompt_template[0])}"
-            f"{self._build_chatml_turn(role='system', content=self.settings.prompt_settings.prompt_template[1])}"
+    def num_tokens_from_messages(self, messages: list[dict[str, str]], prime=True):
+        """Returns the number of tokens used by a list of messages."""
+        model = "gpt-3.5-turbo-0301"  # TODO oleksandr: accept model as a parameter ?
+        try:
+            encoding = tiktoken.encoding_for_model(model)
+        except KeyError:
+            encoding = tiktoken.get_encoding("cl100k_base")
+
+        if model == "gpt-3.5-turbo-0301":  # note: future models may deviate from this
+            num_tokens = 0
+            for message in messages:
+                num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
+                for key, value in message.items():
+                    num_tokens += len(encoding.encode(value))
+                    if key == "name":  # if there's a name, the role is omitted
+                        num_tokens += -1  # role is always required and always 1 token
+            if prime:
+                num_tokens += 2  # every reply is primed with <im_start>assistant
+            return num_tokens
+
+        raise NotImplementedError(
+            f"num_tokens_from_messages() is not presently implemented for model {model}. "
+            f"See https://github.com/openai/openai-python/blob/main/chatml.md for information "
+            f"on how messages are converted to tokens."
         )
-        static_token_num = len(TOKENIZER(static_prompt)["input_ids"])
+
+    def _calculate_static_token_number(self) -> int:
+        static_prompt = [
+            {
+                "content": self.settings.prompt_settings.prompt_template[0],
+                "role": "system",
+            },
+            {
+                "content": self.settings.prompt_settings.prompt_template[1],
+                "role": "system",
+            },
+        ]
+        static_token_num = self.num_tokens_from_messages(static_prompt, prime=True)
         return static_token_num
 
     def _calculate_utterance_token_number(self, role: str, content: str) -> int:
-        # TODO oleksandr: reimplement using this ?
-        #  https://platform.openai.com/docs/guides/chat/introduction
-        #  `Counting tokens for chat API calls`
-        turn = self._build_chatml_turn(role=role, content=content)
-        turn_token_num = len(TOKENIZER(turn)["input_ids"])
-        return turn_token_num
+        token_num = self.num_tokens_from_messages(
+            [
+                {
+                    "content": content,
+                    "role": role,
+                },
+            ],
+            prime=True,
+        )
+        return token_num
 
     # noinspection PyMethodMayBeStatic
     async def _prepare_context_utterances(
@@ -337,8 +368,8 @@ class ChatGptLatePromptCompletion(ChatGptCompletion):
     ) -> list[Utterance]:
         conv_hard_limit = 1000
         token_limit = self._get_token_limit()
-        self.approx_token_number = self._calculate_static_token_number()
-        token_number = self.approx_token_number
+        self.estimated_prompt_token_number = self._calculate_static_token_number()
+        token_number = self.estimated_prompt_token_number
 
         # TODO oleksandr: there is no point in descending order and eventual reversal of the list (get rid of both)
         utt_conv_objects = (
@@ -368,7 +399,7 @@ class ChatGptLatePromptCompletion(ChatGptCompletion):
             )
             if token_number > token_limit:
                 break
-            self.approx_token_number = token_number
+            self.estimated_prompt_token_number = token_number
             utterances.append(utt_conv_object.utterance)
 
         utterances.reverse()
