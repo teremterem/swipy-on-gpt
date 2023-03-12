@@ -22,7 +22,7 @@ from swipy_app.models import (
 
 
 class SentMessageInline(admin.TabularInline):
-    model = "SentMessage"
+    model = SentMessage
     ordering = ["sent_timestamp_ms"]
     fields = [
         "response_payload",
