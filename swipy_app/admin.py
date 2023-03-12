@@ -21,7 +21,19 @@ from swipy_app.models import (
 )
 
 
+class SentMessageInline(admin.TabularInline):
+    model = "SentMessage"
+    ordering = ["sent_timestamp_ms"]
+    fields = [
+        "response_payload",
+        "part_of_req_payload",
+    ]
+    can_delete = False
+    show_change_link = True
+
+
 class TelegramUpdateAdmin(admin.ModelAdmin):
+    inlines = [SentMessageInline]
     ordering = ["-arrival_timestamp_ms"]
     list_filter = ["swipy_user"]
     list_display = ["id", "arrival_time", "pretty_payload", "swipy_user"]
