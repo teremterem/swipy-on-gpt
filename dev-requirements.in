@@ -4,5 +4,5 @@ humanloop==0.3.3
 jupyterlab==3.6.1
 pip-tools==6.12.3
 pre-commit==3.1.1
-pylint==2.16.2
-ypy-websocket==0.8.2  # pinning a dependency of jupyterlab to avoid y-py version conflict
+pylint==2.17.0
+# ypy-websocket==0.8.2  # pinning a dependency of jupyterlab to avoid y-py version conflict

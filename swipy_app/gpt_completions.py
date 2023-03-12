@@ -3,14 +3,14 @@ import random
 import traceback
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from pprint import pformat
 from typing import Any
 
 import openai
+import tiktoken
 from asgiref.sync import sync_to_async
 
 from swipy_app.models import GptCompletion, TelegramUpdate, Utterance, SwipyUser, UtteranceConversation
-from swipy_app.swipy_config import MOCK_GPT, MAX_CONVERSATION_LENGTH
+from swipy_app.swipy_config import MOCK_GPT
 from swipy_app.swipy_utils import current_time_utc_ms
 
 
@@ -28,7 +28,7 @@ class GptPromptSettings:
 @dataclass(frozen=True)
 class GptCompletionSettings:
     prompt_settings: GptPromptSettings
-    max_tokens: int = 512  # OpenAI's default is 16
+    max_tokens: int = 1024  # OpenAI's default is 16
     temperature: float = 1.0  # Possible range - from 0.0 to 2.0
     top_p: float = 1.0  # Possible range - from 0.0 to 1.0
     frequency_penalty: float = 0.0  # Possible range - from -2.0 to 2.0
@@ -64,6 +64,7 @@ class BaseDialogGptCompletion(ABC):
     ):
         self.settings = settings
         self.swipy_user = swipy_user
+        self.lang = swipy_user.get_lang()
 
         self.context_utterances: list[Utterance] | None = None
         self.gpt_completion_in_db: GptCompletion | None = None
@@ -71,6 +72,7 @@ class BaseDialogGptCompletion(ABC):
         self.prompt_raw: Any | None = None
         self.prompt_str: str | None = None
         self.completion: str | None = None
+        self.estimated_prompt_token_number: int | None = None
 
     @abstractmethod
     async def _build_raw_prompt(self, stop_before_utt_conv: UtteranceConversation | None = None) -> Any:
@@ -89,14 +91,13 @@ class BaseDialogGptCompletion(ABC):
         conversation_id: int,
         stop_before_utt_conv: Utterance | None = None,
     ) -> list[Utterance]:
-        # TODO oleksandr: there is no point in descending order and eventual reversal of the list (get rid of both)
         utt_conv_objects = (
             UtteranceConversation.objects.filter(conversation_id=conversation_id)
             .select_related("utterance")
             .order_by("-utterance__arrival_timestamp_ms")
         )
 
-        # TODO oleksandr: replace MAX_CONVERSATION_LENGTH with a more sophisticated logic
+        # TODO oleksandr: replace self.lang.MAX_CONVERSATION_LENGTH with a more sophisticated logic
         if stop_before_utt_conv:
             # pretend that the last utterance was the one before the stop_before_utterance
             utt_conv_objects = await sync_to_async(list)(utt_conv_objects)
@@ -104,18 +105,13 @@ class BaseDialogGptCompletion(ABC):
                 if utt_conv_object.id == stop_before_utt_conv.pk:
                     utt_conv_objects = utt_conv_objects[idx + 1 :]
                     break
-            utt_conv_objects = utt_conv_objects[:MAX_CONVERSATION_LENGTH]
+            utt_conv_objects = utt_conv_objects[: self.lang.MAX_CONVERSATION_LENGTH]
         else:
-            # don't pretend, just take the last MAX_CONVERSATION_LENGTH utterances
-            utt_conv_objects = utt_conv_objects[:MAX_CONVERSATION_LENGTH]
+            # don't pretend, just take the last self.lang.MAX_CONVERSATION_LENGTH utterances
+            utt_conv_objects = utt_conv_objects[: self.lang.MAX_CONVERSATION_LENGTH]
             utt_conv_objects = await sync_to_async(list)(utt_conv_objects)
 
-        utterances = [
-            utt_conv_object.utterance
-            for utt_conv_object in reversed(utt_conv_objects)
-            # don't include "/start" (if it was the user who sent it)
-            if utt_conv_object.utterance.is_bot or utt_conv_object.utterance.text != "/start"
-        ]
+        utterances = [utt_conv_object.utterance for utt_conv_object in reversed(utt_conv_objects)]
         return utterances
 
     async def fulfil(
@@ -143,6 +139,7 @@ class BaseDialogGptCompletion(ABC):
             top_p=self.settings.top_p,
             frequency_penalty=self.settings.frequency_penalty,
             presence_penalty=self.settings.presence_penalty,
+            estimated_prompt_token_number=self.estimated_prompt_token_number,
         )
 
         try:
@@ -254,8 +251,15 @@ class ChatGptCompletion(BaseDialogGptCompletion):
         self._append_messages(messages, self.context_utterances)
         return messages
 
+    def _build_chatml_turn(self, role: str, content: str) -> str:
+        turn = f"<|im_start|>{role}\n{content}<|im_end|>\n"
+        return turn
+
     def _convert_raw_prompt_to_str(self) -> str:
-        return pformat(self.prompt_raw, sort_dicts=False)
+        prompt_str_parts = []
+        for prompt in self.prompt_raw:
+            prompt_str_parts.append(self._build_chatml_turn(role=prompt["role"], content=prompt["content"]))
+        return "".join(prompt_str_parts)
 
     async def _make_openai_call(self) -> str:
         assert self.context_utterances, "Expected at least one utterance in the context, cannot call GPT without it"
@@ -278,6 +282,110 @@ class ChatGptCompletion(BaseDialogGptCompletion):
         ), f"Expected assistant's response, but got {gpt_response.choices[0].message.role}"
         return gpt_response.choices[0].message.content
 
+    def _get_token_limit(self) -> int:
+        token_limit = 3840 - self.settings.max_tokens  # minus maximum number of tokens for the response
+        return token_limit
+
+    def num_tokens_from_messages(self, messages: list[dict[str, str]], prime=True):
+        """Returns the number of tokens used by a list of messages."""
+        model = "gpt-3.5-turbo-0301"  # TODO oleksandr: accept model as a parameter ?
+        try:
+            encoding = tiktoken.encoding_for_model(model)
+        except KeyError:
+            encoding = tiktoken.get_encoding("cl100k_base")
+
+        if model == "gpt-3.5-turbo-0301":  # note: future models may deviate from this
+            num_tokens = 0
+            for message in messages:
+                num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
+                for key, value in message.items():
+                    num_tokens += len(encoding.encode(value))
+                    if key == "name":  # if there's a name, the role is omitted
+                        num_tokens += -1  # role is always required and always 1 token
+            if prime:
+                num_tokens += 2  # every reply is primed with <im_start>assistant
+            # TODO oleksandr: why is num_tokens off by 1 compared to info from openai response?
+            return num_tokens
+
+        raise NotImplementedError(
+            f"num_tokens_from_messages() is not presently implemented for model {model}. "
+            f"See https://github.com/openai/openai-python/blob/main/chatml.md for information "
+            f"on how messages are converted to tokens."
+        )
+
+    def _calculate_static_token_number(self) -> int:
+        static_prompt = (
+            [
+                {
+                    "content": self.settings.prompt_settings.prompt_template,
+                    "role": "system",
+                },
+            ]
+            if self.settings.prompt_settings.prompt_template
+            else []
+        )
+
+        static_token_num = self.num_tokens_from_messages(static_prompt, prime=True)
+        return static_token_num
+
+    def _calculate_utterance_token_number(self, role: str, content: str) -> int:
+        token_num = self.num_tokens_from_messages(
+            [
+                {
+                    "content": content,
+                    "role": role,
+                },
+            ],
+            prime=False,
+        )
+        return token_num
+
+    # noinspection PyMethodMayBeStatic
+    async def _prepare_context_utterances(
+        self,
+        conversation_id: int,
+        stop_before_utt_conv: Utterance | None = None,
+    ) -> list[Utterance]:
+        conv_hard_limit = 1000
+        token_limit = self._get_token_limit()
+        # print(token_limit)  # TODO oleksandr: replace with logging DEBUG
+        self.estimated_prompt_token_number = self._calculate_static_token_number()
+        token_number = self.estimated_prompt_token_number
+
+        utt_conv_objects = (
+            UtteranceConversation.objects.filter(conversation_id=conversation_id)
+            .select_related("utterance")
+            .order_by("-utterance__arrival_timestamp_ms")
+        )
+
+        if stop_before_utt_conv:
+            # pretend that the last utterance was the one before the stop_before_utterance
+            utt_conv_objects = await sync_to_async(list)(utt_conv_objects)
+            for idx, utt_conv_object in enumerate(utt_conv_objects):
+                if utt_conv_object.id == stop_before_utt_conv.pk:
+                    utt_conv_objects = utt_conv_objects[idx + 1 :]
+                    break
+            utt_conv_objects = utt_conv_objects[:conv_hard_limit]
+        else:
+            # don't pretend, just take the last conv_hard_limit utterances
+            utt_conv_objects = utt_conv_objects[:conv_hard_limit]
+            utt_conv_objects = await sync_to_async(list)(utt_conv_objects)
+
+        utterances = []
+        for utt_conv_object in utt_conv_objects:
+            token_number += self._calculate_utterance_token_number(
+                role="assistant" if utt_conv_object.utterance.is_bot else "user",
+                content=utt_conv_object.utterance.text,
+            )
+            # print(token_number)  # TODO oleksandr: replace with logging DEBUG
+            if token_number > token_limit:
+                break
+            self.estimated_prompt_token_number = token_number
+            utterances.append(utt_conv_object.utterance)
+
+        utterances.reverse()
+        return utterances
+
 
 class ChatGptLatePromptCompletion(ChatGptCompletion):
     def _idx_to_split_context_by(self) -> int:
@@ -298,6 +406,20 @@ class ChatGptLatePromptCompletion(ChatGptCompletion):
         messages.append(self._build_system_message(self.settings.prompt_settings.prompt_template[1]))
         self._append_messages(messages, self.context_utterances[idx_to_split_context_by:])
         return messages
+
+    def _calculate_static_token_number(self) -> int:
+        static_prompt = [
+            {
+                "content": self.settings.prompt_settings.prompt_template[0],
+                "role": "system",
+            },
+            {
+                "content": self.settings.prompt_settings.prompt_template[1],
+                "role": "system",
+            },
+        ]
+        static_token_num = self.num_tokens_from_messages(static_prompt, prime=True)
+        return static_token_num
 
 
 class ChatGptEvenLaterPromptCompletion(ChatGptLatePromptCompletion):

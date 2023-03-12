@@ -3,16 +3,39 @@ from datetime import datetime
 from functools import partial
 from pprint import pformat
 
+from asgiref.sync import async_to_sync
+from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
 from django_object_actions import DjangoObjectActions, action
 
 from swipy_app.gpt_completions import GptCompletionSettings
 from swipy_app.gpt_prompt_definitions import GEN_ALT_BUTTONS
-from swipy_app.models import TelegramUpdate, Utterance, GptCompletion, Conversation, SwipyUser, UtteranceConversation
+from swipy_app.models import (
+    TelegramUpdate,
+    Utterance,
+    GptCompletion,
+    Conversation,
+    SwipyUser,
+    UtteranceConversation,
+    SentMessage,
+)
+from swipy_app.swipy_bot import send_and_save_message
+
+
+class SentMessageInline(admin.TabularInline):
+    model = SentMessage
+    ordering = ["sent_timestamp_ms"]
+    fields = [
+        "response_payload",
+        "part_of_req_payload",
+    ]
+    can_delete = False
+    show_change_link = True
 
 
 class TelegramUpdateAdmin(admin.ModelAdmin):
+    inlines = [SentMessageInline]
     ordering = ["-arrival_timestamp_ms"]
     list_filter = ["swipy_user"]
     list_display = ["id", "arrival_time", "pretty_payload", "swipy_user"]
@@ -38,6 +61,47 @@ class TelegramUpdateAdmin(admin.ModelAdmin):
         return datetime.fromtimestamp(obj.arrival_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
+class SentMessageAdmin(admin.ModelAdmin):
+    ordering = ["-sent_timestamp_ms"]
+    list_filter = ["swipy_user"]
+    list_display = ["sent_time", "pretty_response_payload", "pretty_part_of_req_payload", "swipy_user"]
+    list_display_links = ["sent_time"]
+    fields = [
+        "swipy_user",
+        "sent_time",
+        "pretty_response_payload",
+        "pretty_part_of_req_payload",
+        "sent_timestamp_ms",
+        "triggering_update",
+    ]
+
+    def has_add_permission(self, request):
+        return False
+
+    # def has_delete_permission(self, request, obj=None):
+    #     return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description="Part of req. payload")
+    def pretty_part_of_req_payload(self, obj):
+        return format_html(
+            '<pre style="white-space: pre-wrap">{}</pre>', pformat(obj.part_of_req_payload, sort_dicts=False)
+        )
+
+    @admin.display(description="Response payload")
+    def pretty_response_payload(self, obj):
+        return format_html(
+            '<pre style="white-space: pre-wrap">{}</pre>', pformat(obj.response_payload, sort_dicts=False)
+        )
+
+    @admin.display(description="Arrival time")
+    def sent_time(self, obj):
+        # TODO oleksandr: get rid of duplicate code
+        return datetime.fromtimestamp(obj.sent_timestamp_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+
+
 class GptCompletionAdmin(admin.ModelAdmin):
     ordering = ["-request_timestamp_ms"]
     list_filter = ["swipy_user"]
@@ -50,6 +114,7 @@ class GptCompletionAdmin(admin.ModelAdmin):
         "prompt_pre",
         "completion_pre",
         "pretty_full_api_response",
+        "estimated_prompt_token_number",
         "alternative_to_utt_conv",
         "prompt_name",
         "engine",
@@ -256,7 +321,7 @@ class ConversationInline(admin.TabularInline):
     show_change_link = True
 
 
-class SwipyUserAdmin(admin.ModelAdmin):
+class SwipyUserAdmin(DjangoObjectActions, admin.ModelAdmin):
     inlines = [ConversationInline]
     ordering = ["full_name", "chat_telegram_id"]
     list_display = ["id", "full_name", "chat_telegram_id", "current_conversation"]
@@ -266,13 +331,33 @@ class SwipyUserAdmin(admin.ModelAdmin):
         "full_name",
         "chat_telegram_id",
         "current_conversation",
+        "language_code",
     ]
     readonly_fields = [
         "first_name",
         "full_name",
         "chat_telegram_id",
         # "current_conversation",
+        # "language_code",
     ]
+    change_actions = ["wake_up"]
+
+    # turn language_code into a dropdown with two options
+    def formfield_for_dbfield(self, db_field, **kwargs):
+        if db_field.name == "language_code":
+            kwargs["widget"] = forms.Select(choices=[("en", "en"), ("uk", "uk")])
+        return super().formfield_for_dbfield(db_field, **kwargs)
+
+    def wake_up(self, request, obj):
+        async_to_sync(send_and_save_message)(
+            tg_update_in_db=None,
+            swipy_user=obj,
+            text=obj.get_lang().MSG_CHOOSE_LANGUAGE,
+            reply_markup=[
+                [obj.get_lang().BTN_ENGLISH],
+                [obj.get_lang().BTN_UKRAINIAN],
+            ],
+        )
 
     def has_add_permission(self, request):
         return False
@@ -285,6 +370,7 @@ class SwipyUserAdmin(admin.ModelAdmin):
 
 
 admin.site.register(TelegramUpdate, TelegramUpdateAdmin)
+admin.site.register(SentMessage, SentMessageAdmin)
 admin.site.register(GptCompletion, GptCompletionAdmin)
 admin.site.register(Conversation, ConversationAdmin)
 admin.site.register(Utterance, UtteranceAdmin)

@@ -6,6 +6,7 @@ from collections import namedtuple
 from asgiref.sync import sync_to_async, async_to_sync
 from django.db import models
 
+from swipy_app.swipy_l10n import LANGUAGES, DEFAULT_LANG, SwipyL10n
 from swipy_app.swipy_utils import current_time_utc_ms
 
 if typing.TYPE_CHECKING:
@@ -20,6 +21,15 @@ class TelegramUpdate(models.Model):
     update_telegram_id = models.BigIntegerField()
 
     payload = models.JSONField()
+
+
+class SentMessage(models.Model):
+    sent_timestamp_ms = models.BigIntegerField()
+    swipy_user = models.ForeignKey("SwipyUser", on_delete=models.CASCADE, null=True)
+    triggering_update = models.ForeignKey(TelegramUpdate, on_delete=models.CASCADE, null=True)
+
+    part_of_req_payload = models.JSONField(null=True, blank=True)
+    response_payload = models.JSONField()
 
 
 class GptCompletion(models.Model):
@@ -37,6 +47,7 @@ class GptCompletion(models.Model):
     prompt = models.TextField(null=True, blank=True)
     completion = models.TextField(null=True, blank=True)
     full_api_response = models.JSONField(null=True, blank=True)
+    estimated_prompt_token_number = models.IntegerField(null=True)
 
     prompt_name = models.TextField(null=True, blank=True)
     engine = models.TextField()
@@ -110,7 +121,7 @@ class UtteranceConversation(models.Model):
             key = _CompletionSettingsTuple(
                 prompt_name=existing_alternative.prompt_name,
                 engine=existing_alternative.engine,
-                max_tokens=existing_alternative.max_tokens,
+                # max_tokens=existing_alternative.max_tokens,
                 temperature=existing_alternative.temperature,
                 top_p=existing_alternative.top_p,
                 frequency_penalty=existing_alternative.frequency_penalty,
@@ -122,7 +133,7 @@ class UtteranceConversation(models.Model):
             key = _CompletionSettingsTuple(
                 prompt_name=completion_config.prompt_settings.prompt_name,
                 engine=completion_config.prompt_settings.engine,
-                max_tokens=completion_config.max_tokens,
+                # max_tokens=completion_config.max_tokens,
                 temperature=completion_config.temperature,
                 top_p=completion_config.top_p,
                 frequency_penalty=completion_config.frequency_penalty,
@@ -150,6 +161,11 @@ class SwipyUser(models.Model):
     first_name = models.TextField(null=True, blank=True)
     full_name = models.TextField(null=True, blank=True)
     current_conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, null=True, blank=True)
+    language_code = models.TextField()
+
+    def get_lang(self) -> SwipyL10n:
+        lang = LANGUAGES.get(self.language_code, DEFAULT_LANG)
+        return lang
 
     def __str__(self) -> str:
         return str(self.full_name)
@@ -192,7 +208,7 @@ _CompletionSettingsTuple = namedtuple(
     [
         "prompt_name",
         "engine",
-        "max_tokens",
+        # "max_tokens",
         "temperature",
         "top_p",
         "frequency_penalty",
