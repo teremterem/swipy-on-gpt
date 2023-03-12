@@ -52,24 +52,50 @@ def get_main_menu(lang: SwipyL10n) -> list[list[str]]:
     return menu
 
 
-async def reboot_old_conversation(reply_to_message: Message) -> None:
-    utterance = await sync_to_async(Utterance.objects.filter(telegram_message_id=reply_to_message.message_id).first)()
-    print()
-    print()
-    print()
-    print(utterance)
-    print()
-    print()
-    print()
+async def reboot_old_conversation(reply_to_message: Message, tg_update_in_db: TelegramUpdate) -> None:
+    replied_to_utterance = await sync_to_async(
+        Utterance.objects.filter(telegram_message_id=reply_to_message.message_id).first
+    )()
+    if not replied_to_utterance:
+        return
+    replied_to_utt_conv_object = await sync_to_async(
+        # take the oldest link
+        UtteranceConversation.objects.filter(utterance=replied_to_utterance)
+        .order_by("linked_timestamp_ms")
+        .first
+    )()
+    if not replied_to_utt_conv_object:
+        return
+
+    # start a new conversation
+    await tg_update_in_db.swipy_user.detach_current_conversation()
+    conversation = await tg_update_in_db.swipy_user.get_current_conversation()
+
+    new_link_timestamp_ms = current_time_utc_ms()
+
+    utt_conv_objects = await sync_to_async(list)(
+        UtteranceConversation.objects.filter(conversation_id=replied_to_utt_conv_object.conversation_id)
+        .select_related("utterance")
+        .order_by("utterance__arrival_timestamp_ms")
+    )
+    for utt_conv_object in utt_conv_objects:
+        await UtteranceConversation.objects.acreate(
+            conversation=conversation,  # create a link with the new conversation
+            utterance_id=utt_conv_object.utterance_id,
+            linked_timestamp_ms=new_link_timestamp_ms,
+        )
+        if utt_conv_object.utterance == replied_to_utterance:
+            # stop at the replied to utterance
+            break
 
 
 async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # pylint: disable=too-many-locals,too-many-statements,too-many-branches
-    if update.effective_message.reply_to_message:
-        await reboot_old_conversation(update.effective_message.reply_to_message)
-
     user_first_name = update.effective_user.first_name  # TODO oleksandr: update db user info upon every tg update ?
     tg_update_in_db = UPDATE_DB_MODELS_VOLATILE_CACHE.pop(id(update))
+
+    if update.effective_message.reply_to_message:
+        await reboot_old_conversation(update.effective_message.reply_to_message, tg_update_in_db)
 
     lang = tg_update_in_db.swipy_user.get_lang()
 
