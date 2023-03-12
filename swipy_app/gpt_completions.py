@@ -91,7 +91,6 @@ class BaseDialogGptCompletion(ABC):
         conversation_id: int,
         stop_before_utt_conv: Utterance | None = None,
     ) -> list[Utterance]:
-        # TODO oleksandr: there is no point in descending order and eventual reversal of the list (get rid of both)
         utt_conv_objects = (
             UtteranceConversation.objects.filter(conversation_id=conversation_id)
             .select_related("utterance")
@@ -283,27 +282,6 @@ class ChatGptCompletion(BaseDialogGptCompletion):
         ), f"Expected assistant's response, but got {gpt_response.choices[0].message.role}"
         return gpt_response.choices[0].message.content
 
-
-class ChatGptLatePromptCompletion(ChatGptCompletion):
-    def _idx_to_split_context_by(self) -> int:
-        last_bot_utterance_index = None
-        for idx, utterance in reversed(list(enumerate(self.context_utterances))):
-            if utterance.is_bot:
-                last_bot_utterance_index = idx
-                break
-        return last_bot_utterance_index
-
-    async def _build_raw_prompt(self, stop_before_utt_conv: UtteranceConversation | None = None) -> Any:
-        idx_to_split_context_by = self._idx_to_split_context_by()
-        if idx_to_split_context_by is None:
-            idx_to_split_context_by = 0
-
-        messages = [self._build_system_message(self.settings.prompt_settings.prompt_template[0])]
-        self._append_messages(messages, self.context_utterances[:idx_to_split_context_by])
-        messages.append(self._build_system_message(self.settings.prompt_settings.prompt_template[1]))
-        self._append_messages(messages, self.context_utterances[idx_to_split_context_by:])
-        return messages
-
     def _get_token_limit(self) -> int:
         token_limit = 3840 - self.settings.max_tokens  # minus maximum number of tokens for the response
         return token_limit
@@ -336,16 +314,17 @@ class ChatGptLatePromptCompletion(ChatGptCompletion):
         )
 
     def _calculate_static_token_number(self) -> int:
-        static_prompt = [
-            {
-                "content": self.settings.prompt_settings.prompt_template[0],
-                "role": "system",
-            },
-            {
-                "content": self.settings.prompt_settings.prompt_template[1],
-                "role": "system",
-            },
-        ]
+        static_prompt = (
+            [
+                {
+                    "content": self.settings.prompt_settings.prompt_template,
+                    "role": "system",
+                },
+            ]
+            if self.settings.prompt_settings.prompt_template
+            else []
+        )
+
         static_token_num = self.num_tokens_from_messages(static_prompt, prime=True)
         return static_token_num
 
@@ -373,7 +352,6 @@ class ChatGptLatePromptCompletion(ChatGptCompletion):
         self.estimated_prompt_token_number = self._calculate_static_token_number()
         token_number = self.estimated_prompt_token_number
 
-        # TODO oleksandr: there is no point in descending order and eventual reversal of the list (get rid of both)
         utt_conv_objects = (
             UtteranceConversation.objects.filter(conversation_id=conversation_id)
             .select_related("utterance")
@@ -407,6 +385,41 @@ class ChatGptLatePromptCompletion(ChatGptCompletion):
 
         utterances.reverse()
         return utterances
+
+
+class ChatGptLatePromptCompletion(ChatGptCompletion):
+    def _idx_to_split_context_by(self) -> int:
+        last_bot_utterance_index = None
+        for idx, utterance in reversed(list(enumerate(self.context_utterances))):
+            if utterance.is_bot:
+                last_bot_utterance_index = idx
+                break
+        return last_bot_utterance_index
+
+    async def _build_raw_prompt(self, stop_before_utt_conv: UtteranceConversation | None = None) -> Any:
+        idx_to_split_context_by = self._idx_to_split_context_by()
+        if idx_to_split_context_by is None:
+            idx_to_split_context_by = 0
+
+        messages = [self._build_system_message(self.settings.prompt_settings.prompt_template[0])]
+        self._append_messages(messages, self.context_utterances[:idx_to_split_context_by])
+        messages.append(self._build_system_message(self.settings.prompt_settings.prompt_template[1]))
+        self._append_messages(messages, self.context_utterances[idx_to_split_context_by:])
+        return messages
+
+    def _calculate_static_token_number(self) -> int:
+        static_prompt = [
+            {
+                "content": self.settings.prompt_settings.prompt_template[0],
+                "role": "system",
+            },
+            {
+                "content": self.settings.prompt_settings.prompt_template[1],
+                "role": "system",
+            },
+        ]
+        static_token_num = self.num_tokens_from_messages(static_prompt, prime=True)
+        return static_token_num
 
 
 class ChatGptEvenLaterPromptCompletion(ChatGptLatePromptCompletion):
