@@ -350,6 +350,7 @@ class SwipyUserAdmin(DjangoObjectActions, admin.ModelAdmin):
 
     def wake_up(self, request, obj):
         async_to_sync(send_and_save_message)(
+            # TODO oleksandr: make it silent ?
             tg_update_in_db=None,
             swipy_user=obj,
             text=obj.get_lang().MSG_CHOOSE_LANGUAGE,

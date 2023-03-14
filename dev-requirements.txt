@@ -81,10 +81,8 @@ executing==1.2.0
     # via stack-data
 fastjsonschema==2.16.3
     # via nbformat
-filelock==3.9.0
-    # via
-    #   -c requirements.txt
-    #   virtualenv
+filelock==3.9.1
+    # via virtualenv
 fqdn==1.5.1
     # via jsonschema
 humanloop==0.3.3
@@ -192,14 +190,16 @@ mccabe==0.7.0
 mistune==2.0.5
     # via nbconvert
 mypy-extensions==1.0.0
-    # via black
+    # via
+    #   -c requirements.txt
+    #   black
 nbclassic==0.5.3
     # via
     #   jupyterlab
     #   notebook
 nbclient==0.7.2
     # via nbconvert
-nbconvert==7.2.9
+nbconvert==7.2.10
     # via
     #   jupyter-server
     #   nbclassic
@@ -224,6 +224,7 @@ notebook-shim==0.2.2
     # via nbclassic
 packaging==23.0
     # via
+    #   -c requirements.txt
     #   black
     #   build
     #   ipykernel
@@ -269,7 +270,9 @@ pure-eval==0.2.2
 pycparser==2.21
     # via cffi
 pydantic==1.10.6
-    # via humanloop
+    # via
+    #   -c requirements.txt
+    #   humanloop
 pygments==2.14.0
     # via
     #   ipython
@@ -289,9 +292,10 @@ python-json-logger==2.0.7
     # via jupyter-events
 pyyaml==6.0
     # via
+    #   -c requirements.txt
     #   jupyter-events
     #   pre-commit
-pyzmq==25.0.0
+pyzmq==25.0.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -368,7 +372,9 @@ traitlets==5.9.0
     #   nbformat
     #   notebook
 typing-extensions==4.5.0
-    # via pydantic
+    # via
+    #   -c requirements.txt
+    #   pydantic
 uplink==0.9.7
     # via humanloop
 uri-template==1.2.0
@@ -379,7 +385,7 @@ urllib3==1.26.15
     # via
     #   -c requirements.txt
     #   requests
-virtualenv==20.20.0
+virtualenv==20.21.0
     # via pre-commit
 wcwidth==0.2.6
     # via prompt-toolkit
@@ -391,7 +397,7 @@ webencodings==0.5.1
     #   tinycss2
 websocket-client==1.5.1
     # via jupyter-server
-wheel==0.38.4
+wheel==0.40.0
     # via pip-tools
 wrapt==1.15.0
     # via astroid
