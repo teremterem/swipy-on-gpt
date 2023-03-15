@@ -3,6 +3,7 @@ import random
 import traceback
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from pprint import pprint
 from typing import Any
 
 import openai
@@ -274,14 +275,14 @@ class ChatGptCompletion(BaseDialogGptCompletion):
             top_p=self.gpt_completion_in_db.top_p,
             frequency_penalty=self.gpt_completion_in_db.frequency_penalty,
             presence_penalty=self.gpt_completion_in_db.presence_penalty,
-            blah=0,
             # TODO oleksandr: submit user id from Telegram (or from your database) too
         )
+        pprint(self.prompt_raw)
         messages = [ChatMessage(content=m["content"], role=m["role"]) for m in self.prompt_raw]
-        response_content = chat_llm(messages)
+        response_message = chat_llm(messages)
         # TODO oleksandr: how to still get the full api response ?
         # self.gpt_completion_in_db.full_api_response = gpt_response
-        return response_content
+        return response_message.content
 
     def _get_token_limit(self) -> int:
         token_limit = 3840 - self.settings.max_tokens  # minus maximum number of tokens for the response
