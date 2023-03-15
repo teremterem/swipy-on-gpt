@@ -161,10 +161,10 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
                 tg_update_in_db.swipy_user.language_code = "uk"
             await sync_to_async(tg_update_in_db.swipy_user.save)(update_fields=["language_code"])
 
+            lang = tg_update_in_db.swipy_user.get_lang()
+
         # start a new conversation
         await tg_update_in_db.swipy_user.detach_current_conversation()
-
-        lang = tg_update_in_db.swipy_user.get_lang()
 
         response_msg = await send_and_save_message(
             tg_update_in_db=tg_update_in_db,
