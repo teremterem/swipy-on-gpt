@@ -19,7 +19,7 @@ class SwipyL10n:
     BTN_PROCEED_WITH_SUBJECT: str = "Let's proceed with this subject 📚"
 
     MSG_START_TEMPLATE: str = "Hi {USER}! My name is {BOT}🤖\n\nHow can I help you? 😊"
-    MSG_MAIN_MENU: str = "Sure, how can I help you? 😊"
+    MSG_MAIN_MENU: str = "Sure, how can I help you? 😊"  # TODO oleksandr: not needed anymore - remove ?
     MSG_HELP_FIGHT_PROCRAST: str = (
         "Sure, I'd be happy to help! Can you tell me more about what you're procrastinating on and why you're "
         "finding it difficult to get started?"
@@ -44,7 +44,7 @@ LANGUAGES = {
         BTN_NOT_HELPFUL="Не допомогло 💔",
         BTN_PROCEED_WITH_SUBJECT="Продовжуймо цю тему 📚",
         MSG_START_TEMPLATE="Привіт {USER}!\n\nМене звати {BOT}🤖\n\nЯк я можу тобі допомогти? 😊",
-        MSG_MAIN_MENU="Звичайно, як я можу тобі допомогти? 😊",
+        MSG_MAIN_MENU="Звичайно, як я можу тобі допомогти? 😊",  # TODO oleksandr: not needed anymore - remove ?
         MSG_HELP_FIGHT_PROCRAST=(
             "Звичайно, радий допомогти! Чи можеш розповісти мені, з чим саме ти затягуєш і чому тобі важко розпочати?"
         ),

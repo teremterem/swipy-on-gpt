@@ -150,14 +150,16 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
             ],
         )
 
-    elif language_selected:
+    elif language_selected or main_menu_was_requested:
         gpt_completion_in_db = None
 
-        if update.effective_message.text == lang.BTN_ENGLISH:
-            tg_update_in_db.swipy_user.language_code = "en"
-        elif update.effective_message.text == lang.BTN_UKRAINIAN:
-            tg_update_in_db.swipy_user.language_code = "uk"
-        await sync_to_async(tg_update_in_db.swipy_user.save)(update_fields=["language_code"])
+        if language_selected:
+            # update language
+            if update.effective_message.text == lang.BTN_ENGLISH:
+                tg_update_in_db.swipy_user.language_code = "en"
+            elif update.effective_message.text == lang.BTN_UKRAINIAN:
+                tg_update_in_db.swipy_user.language_code = "uk"
+            await sync_to_async(tg_update_in_db.swipy_user.save)(update_fields=["language_code"])
 
         # start a new conversation
         await tg_update_in_db.swipy_user.detach_current_conversation()
@@ -170,15 +172,6 @@ async def reply_with_gpt_completion(update: Update, context: ContextTypes.DEFAUL
                 USER=user_first_name,
                 BOT=gpt_completion_settings.prompt_settings.bot_name,
             ),
-            reply_markup=get_main_menu(lang),
-        )
-
-    elif main_menu_was_requested:
-        gpt_completion_in_db = None
-
-        response_msg = await send_and_save_message(
-            tg_update_in_db=tg_update_in_db,
-            text=lang.MSG_MAIN_MENU,
             reply_markup=get_main_menu(lang),
         )
 
