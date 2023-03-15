@@ -8,6 +8,8 @@ from typing import Any
 import openai
 import tiktoken
 from asgiref.sync import sync_to_async
+from langchain.chat_models import ChatOpenAI
+from langchain.schema import ChatMessage
 
 from swipy_app.models import GptCompletion, TelegramUpdate, Utterance, SwipyUser, UtteranceConversation
 from swipy_app.swipy_config import MOCK_GPT
@@ -264,23 +266,22 @@ class ChatGptCompletion(BaseDialogGptCompletion):
     async def _make_openai_call(self) -> str:
         assert self.context_utterances, "Expected at least one utterance in the context, cannot call GPT without it"
 
-        gpt_response = await openai.ChatCompletion.acreate(
-            # TODO oleksandr: submit user id from Telegram (or from your database) too
-            messages=self.prompt_raw,  # this time it's a list of dicts
+        # TODO oleksandr: do I need to create a new instance of ChatOpenAI for each call ?
+        chat_llm = ChatOpenAI(
             model=self.gpt_completion_in_db.engine,
             max_tokens=self.gpt_completion_in_db.max_tokens,
             temperature=self.gpt_completion_in_db.temperature,
             top_p=self.gpt_completion_in_db.top_p,
             frequency_penalty=self.gpt_completion_in_db.frequency_penalty,
             presence_penalty=self.gpt_completion_in_db.presence_penalty,
+            blah=0,
+            # TODO oleksandr: submit user id from Telegram (or from your database) too
         )
-        self.gpt_completion_in_db.full_api_response = gpt_response
-        # TODO oleksandr: are you sure the following assertion in necessary at all?
-        assert len(gpt_response.choices) == 1, f"Expected only one gpt choice, but got {len(gpt_response.choices)}"
-        assert (
-            gpt_response.choices[0].message.role == "assistant"
-        ), f"Expected assistant's response, but got {gpt_response.choices[0].message.role}"
-        return gpt_response.choices[0].message.content
+        messages = [ChatMessage(content=m["content"], role=m["role"]) for m in self.prompt_raw]
+        response_content = chat_llm(messages)
+        # TODO oleksandr: how to still get the full api response ?
+        # self.gpt_completion_in_db.full_api_response = gpt_response
+        return response_content
 
     def _get_token_limit(self) -> int:
         token_limit = 3840 - self.settings.max_tokens  # minus maximum number of tokens for the response

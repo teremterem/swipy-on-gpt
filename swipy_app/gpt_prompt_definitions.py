@@ -71,7 +71,7 @@ GEN_ALT_BUTTONS = {
         [
             GptPromptSettings(
                 # _U - receives updates
-                prompt_name="active-listening-CHATGPT_U-0.8",
+                prompt_name="LCHAIN-active-listening-CHATGPT_U-0.8",
                 prompt_template=(
                     PROMPT_HEADER_TEMPLATE,
                     ACTIVE_LISTENING_CHATGPT_PROMPT_TEMPLATE,
@@ -82,7 +82,7 @@ GEN_ALT_BUTTONS = {
             ),
             GptPromptSettings(
                 # _U - receives updates
-                prompt_name="active-listening-CHATGPT_U-0.8-early-prompt",
+                prompt_name="LCHAIN-active-listening-CHATGPT_U-0.8-early-prompt",
                 prompt_template=" ".join(
                     [
                         PROMPT_HEADER_TEMPLATE,
@@ -99,7 +99,7 @@ GEN_ALT_BUTTONS = {
         [
             GptPromptSettings(
                 # _U - receives updates
-                prompt_name="CHATGPT_U-NO-PROMPT",
+                prompt_name="LCHAIN-CHATGPT_U-NO-PROMPT",
                 engine=CHATGPT_U_MODEL,
                 completion_class=ChatGptCompletion,
                 prompt_template=None,
@@ -142,7 +142,7 @@ GEN_ALT_BUTTONS = {
             ),
             GptPromptSettings(
                 # _U - receives updates
-                prompt_name="ask-everything-CHATGPT_U-0.1",
+                prompt_name="LCHAIN-ask-everything-CHATGPT_U-0.1",
                 prompt_template=(
                     ASK_EVERYTHING_0_1_PROMPT_HEADER_TEMPLATE,
                     ASK_EVERYTHING_0_1_PROMPT_TEMPLATE,
@@ -153,7 +153,7 @@ GEN_ALT_BUTTONS = {
             ),
             GptPromptSettings(
                 # _U - receives updates
-                prompt_name="ask-everything-CHATGPT-0.1_U-early-prompt",
+                prompt_name="LCHAIN-ask-everything-CHATGPT-0.1_U-early-prompt",
                 prompt_template=" ".join(
                     [
                         ASK_EVERYTHING_0_1_PROMPT_HEADER_TEMPLATE,
@@ -169,9 +169,9 @@ GEN_ALT_BUTTONS = {
 }
 
 MAIN_COMPLETION_CONFIG = GEN_ALT_BUTTONS[("chatgpt_alts", "ChatGPT alternatives")][0]
-assert MAIN_COMPLETION_CONFIG.prompt_settings.prompt_name == "active-listening-CHATGPT_U-0.8"
+assert MAIN_COMPLETION_CONFIG.prompt_settings.prompt_name == "LCHAIN-active-listening-CHATGPT_U-0.8"
 assert MAIN_COMPLETION_CONFIG.temperature == 0.0
 
 NO_PROMPT_COMPLETION_CONFIG = GEN_ALT_BUTTONS[("chatgpt_no_prompt_alts", 'ChatGPT "no prompt"')][0]
-assert NO_PROMPT_COMPLETION_CONFIG.prompt_settings.prompt_name == "CHATGPT_U-NO-PROMPT"
+assert NO_PROMPT_COMPLETION_CONFIG.prompt_settings.prompt_name == "LCHAIN-CHATGPT_U-NO-PROMPT"
 assert NO_PROMPT_COMPLETION_CONFIG.temperature == 0.0
